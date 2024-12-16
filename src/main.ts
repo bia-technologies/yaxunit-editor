@@ -8,6 +8,7 @@ import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 // import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 // import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import './languages/bsl/contribution'
+import './yaxunit'
 
 self.MonacoEnvironment = {
   getWorker(_): Worker {

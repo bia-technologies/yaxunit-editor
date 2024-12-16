@@ -1,4 +1,5 @@
-import { Scope, SymbolType } from "../../scope/Scope"
+import { Scope, SymbolType } from "../scope/Scope"
+import GlobalScope from "../scope/globalScope"
 
 const scope: Scope = {
     id: '',
@@ -368,7 +369,7 @@ const symbols: Scope[] = [
         ]
     }
 ]
-export default {
-    global: scope,
-    symbols
-}
+
+
+GlobalScope.registerGlobalSymbols(scope.members)
+GlobalScope.registerTypes(symbols)

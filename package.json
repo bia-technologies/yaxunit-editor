@@ -10,18 +10,13 @@
     "test": "npx vitest"
   },
   "devDependencies": {
-    "@jest/globals": "^27.0.0",
-    "@types/jest": "^27.0.0",
-    "jest": "^27.5.1",
-    "jest-environment-jsdom": "^27.0.0",
-    "ts-jest": "^27.0.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.1",
-    "vite-jest": "^0.1.4",
     "vite-plugin-singlefile": "^2.1.0",
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "monaco-editor": "^0.52.2"
+    "monaco-editor": "^0.52.2",
+    "onec-syntaxparser": "^0.1.11"
   }
 }

@@ -1,6 +1,6 @@
 import { editor, languages, Position, Range } from 'monaco-editor';
 import resolver from './resolver'
-import globalScope from './GlobalScope'
+import globalScope from '../../scope/globalScope'
 import { Symbol, SymbolType } from '../../scope/Scope';
 
 const provider: languages.CompletionItemProvider = {
