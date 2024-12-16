@@ -1,7 +1,7 @@
-import { Scope, SymbolType } from "../scope/Scope"
+import { TypeDefinition, SymbolType } from "../scope/Scope"
 import GlobalScope from "../scope/globalScope"
 
-const scope: Scope = {
+const scope: TypeDefinition = {
     id: '',
     members: [
         {
@@ -12,7 +12,7 @@ const scope: Scope = {
     ]
 }
 
-const symbols: Scope[] = [
+const symbols: TypeDefinition[] = [
     {
         id: 'CommonModule.ЮТест',
         members: [

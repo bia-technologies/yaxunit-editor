@@ -1,7 +1,8 @@
 export enum SymbolType {
     function,
     procedure,
-    property
+    property,
+    enum
 }
 export interface Symbol {
     kind:SymbolType,
@@ -9,8 +10,9 @@ export interface Symbol {
     type?: string
 }
 
-export interface Scope {
+export interface TypeDefinition {
     id: string,
     members: Symbol[]
+    getMembers(): Symbol[]
 }
 

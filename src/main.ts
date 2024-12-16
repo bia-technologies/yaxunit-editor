@@ -9,6 +9,7 @@ import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 // import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import './languages/bsl/contribution'
 import './yaxunit'
+import {createEditorScope} from './scope/scopeStore'
 
 self.MonacoEnvironment = {
   getWorker(_): Worker {
@@ -80,6 +81,7 @@ const editor = monaco.editor.create(container, {
   glyphMargin: true,
 });
 
+
 // editor.createDecorationsCollection([
 //   {
 //     range: new monaco.Range(3, 1, 5, 1),
@@ -110,7 +112,4 @@ function updateDecorations(_: any) {
   ]);
 }
 updateDecorations(undefined)
-
-editor.getModel()?.onDidChangeContent(updateDecorations);
-editor.onDidChangeModel(updateDecorations);
-editor.getModel()?.setValue(content)
+createEditorScope(editor)

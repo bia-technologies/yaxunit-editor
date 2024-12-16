@@ -2,6 +2,7 @@ import { editor, languages, Position, Range } from 'monaco-editor';
 import resolver from './resolver'
 import globalScope from '../../scope/globalScope'
 import { Symbol, SymbolType } from '../../scope/Scope';
+import { getModelScope, UnionScope } from '../../scope/scopeStore';
 
 const provider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
@@ -9,85 +10,52 @@ const provider: languages.CompletionItemProvider = {
      * Provide completion items for the given position and document.
      */
     provideCompletionItems(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.CompletionList> {
-        // const word = model.getWordUntilPosition(position);
-        // const prevWord = getPrevWord(model, position);
-        // console.log(word);
-        // console.log(prevWord);
+        return new Promise(async (resolve) => {
+            const tokens = resolver.resolve(model, position)
 
-        const tokens = resolver.resolve(model, position)
+            if (tokens === undefined) {
+                return resolve(undefined)
+            }
 
-        if (tokens === undefined) {
-            return undefined
-        }
+            const scope = getModelScope(model)
 
-        let symbols: Symbol[] | undefined
-
-        if (tokens.length === 0) {
-            symbols = globalScope.members
-        } else {
-            symbols = objectScopeCompletion(tokens)
-        }
-
-        if (symbols === undefined) {
-            return undefined
-        } else {
+            const suggestions: languages.CompletionItem[] = []
             const word = model.getWordAtPosition(position)
             const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
-            return {
-                suggestions: scopeCompletion(symbols, range)
+
+            if (tokens.length === 0) {
+                scope.getScopes(position.lineNumber).forEach(s => {
+                    s.members.forEach(m => suggestions.push(newCompletionItem(m, range)))
+                })
+            } else {
+                const members = objectScopeCompletion(tokens, scope, position.lineNumber)
+                if (members !== undefined) {
+                    members.forEach(m => suggestions.push(newCompletionItem(m, range)))
+                } else {
+                    resolve(undefined)
+                }
             }
-        }
 
+            return resolve({
+                suggestions: suggestions
+            })
+        })
 
-
-        // var last_chars = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 0, endLineNumber: position.lineNumber, endColumn: position.column });
-        // var words = last_chars.replace("\t", "").split(" ");
-        // var active_typing = words[words.length - 1]; // What the user is currently typing (everything after the last space)
-        // console.log(last_chars);
-        // console.log(words);
-        // console.log(active_typing);
-
-        const wordInfo = model.getWordUntilPosition(position);
-        const wordRange = new Range(
-            position.lineNumber,
-            wordInfo.startColumn,
-            position.lineNumber,
-            wordInfo.endColumn
-        );
-        if (model.isDisposed()) {
-            return;
-        }
-
-        return {
-            suggestions: createDependencyProposals(wordRange),
-        };
     },
-    // /**
-    //  * Given a completion item fill in more data, like {@link CompletionItem.documentation doc-comment}
-    //  * or {@link CompletionItem.detail details}.
-    //  *
-    //  * The editor will only resolve a completion item once.
-    //  */
-    // resolveCompletionItem(item: languages.CompletionItem, token: CancellationToken): languages.ProviderResult<languages.CompletionItem>{
-    //     return undefined;
-    // }
 }
 
-function scopeCompletion(scope: Symbol[], range: Range): languages.CompletionItem[] {
-    return scope.map(m => {
-        let insertText = m.name
-        if(m.kind===SymbolType.function||m.kind===SymbolType.procedure){
-            insertText += '('
-        }
-        return {
-            label: m.name,
-            kind: completionItemKind(m.kind),
-            range: range,
-            insertText: insertText
-        }
-    })
+function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionItem {
+    let insertText = symbol.name
+    if (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) {
+        insertText += '('
+    }
+    return {
+        label: symbol.name,
+        kind: completionItemKind(symbol.kind),
+        range: range,
+        insertText: insertText
+    }
 }
-
 function completionItemKind(type: SymbolType): languages.CompletionItemKind {
     switch (type) {
         case SymbolType.function:
@@ -95,15 +63,40 @@ function completionItemKind(type: SymbolType): languages.CompletionItemKind {
         case SymbolType.procedure:
             return languages.CompletionItemKind.Method
         case SymbolType.property:
-            return languages.CompletionItemKind.Property
+            return languages.CompletionItemKind.Field
         default:
             return languages.CompletionItemKind.Class
     }
 }
-function objectScopeCompletion(tokens: string[]): Symbol[] | undefined {
-    let scope: Symbol[] | undefined = globalScope.members
 
-    for (let index = tokens.length - 1; index > 0; index--) {
+function resolveInUnionScope(token: string, unionScope: UnionScope, lineNumber: number): Symbol[] | undefined {
+    const scopes = unionScope.getScopes(lineNumber);
+
+    for (let index = scopes.length - 1; index >= 0; index--) {
+        const scope = scopes[index]
+        const member = scope.members.find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
+        if (member !== undefined) {
+            if (member.type !== undefined) {
+                const tokenScope = globalScope.resolveType(member.type)
+                if (tokenScope !== undefined) {
+                    return tokenScope.members
+                }
+            }
+            return undefined
+        }
+    }
+    return undefined
+}
+
+function objectScopeCompletion(tokens: string[], unionScope: UnionScope, lineNumber: number): Symbol[] | undefined {
+
+    const lastToken = tokens[tokens.length - 1];
+    let scopeMembers = resolveInUnionScope(lastToken, unionScope, lineNumber)
+
+    if (scopeMembers === undefined) {
+        return undefined
+    }
+    for (let index = tokens.length - 2; index > 0; index--) {
         let token = tokens[index];
 
         const pos1 = token.indexOf('(')
@@ -116,21 +109,21 @@ function objectScopeCompletion(tokens: string[]): Symbol[] | undefined {
         } else if (pos2 > 0) {
             token = token.substring(0, pos2)
         }
-        const member = scope.find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
+        const member = scopeMembers.find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
         if (member !== undefined && member.type !== undefined) {
             const tokenScope = globalScope.resolveType(member.type)
             if (tokenScope !== undefined) {
-                scope = tokenScope.members
+                scopeMembers = tokenScope.members
             } else {
-                scope = undefined
+                scopeMembers = undefined
                 break
             }
         } else {
-            scope = undefined
+            scopeMembers = undefined
             break
         }
     }
-    return scope
+    return scopeMembers
 }
 
 export default provider;
@@ -191,39 +184,3 @@ export default provider;
 //     return result;
 // }
 
-function createDependencyProposals(range: Range) {
-    // returning a static list of proposals, not even looking at the prefix (filtering is done by the Monaco editor),
-    // here you could do a server side lookup
-    return [
-        {
-            label: 'ЮТест',
-            kind: languages.CompletionItemKind.Class,
-            documentation: "The Lodash library exported as Node.js modules.",
-            insertText: 'ЮТест.',
-            range: range,
-        },
-        {
-            label: '"express"',
-            kind: languages.CompletionItemKind.Unit,
-            documentation: "Fast, unopinionated, minimalist web framework",
-            insertText: '"express": "*"',
-            range: range,
-        },
-        {
-            label: '"mkdirp"',
-            kind: languages.CompletionItemKind.Constructor,
-            documentation: "Recursively mkdir, like <code>mkdir -p</code>",
-            insertText: '"mkdirp": "*"',
-            range: range,
-        },
-        {
-            label: '"my-third-party-library"',
-            kind: languages.CompletionItemKind.Variable,
-            documentation: "Describe your library here",
-            insertText: '"${1:my-third-party-library}": "${2:1.2.3}"',
-            insertTextRules:
-                languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range: range,
-        },
-    ];
-}

@@ -1,6 +1,6 @@
-import { Scope, Symbol } from './Scope'
+import { TypeDefinition, Symbol } from './Scope'
 
-const registry: Map<string, Scope> = new Map
+const registry: Map<string, TypeDefinition> = new Map
 const globalScope: Symbol[] = []
 
 function resolveType(type:string){
@@ -13,12 +13,13 @@ function registerGlobalSymbols(symbols: Symbol[]):void{
     })
 }
 
-function registerTypes(symbols:Scope[]):void {
+function registerTypes(symbols:TypeDefinition[]):void {
     symbols.forEach(s => {
         registry.set(s.id, s)
     });
 }
 export default {
+    id: 'global-scope',
     members: globalScope,
     resolveType,
     registerGlobalSymbols,

@@ -41,7 +41,10 @@ function collectTokens(model: editor.ITextModel, startPosition: Position) {
                     }
                     else {
                         squareLevel--;
-                    }
+                        if (squareLevel < 0) {
+                            done = true
+                            break;
+                        }                   }
                 }
                 if (tokenIs(token, TokenType.DelimiterParenthesis)) {
                     if (value === ')') {
@@ -49,6 +52,10 @@ function collectTokens(model: editor.ITextModel, startPosition: Position) {
                     }
                     else {
                         parenthesisLevel--;
+                        if (parenthesisLevel < 0) {
+                            done = true
+                            break;
+                        }
                     }
                 }
                 if (isBreak(token, value)) {
