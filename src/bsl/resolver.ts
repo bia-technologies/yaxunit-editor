@@ -1,5 +1,5 @@
 import { editor, Position, Token } from 'monaco-editor';
-import { TokenType } from "./tokenTypes";
+import { TokenType } from "../languages/bsl/tokenTypes";
 
 export default {
     resolve(model: editor.ITextModel, position: Position): string[] | undefined {

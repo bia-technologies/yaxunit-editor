@@ -1,10 +1,10 @@
 import { editor, languages, Position, Range } from 'monaco-editor';
-import resolver from './resolver'
-import globalScope from '../../scope/globalScope'
-import { Symbol, SymbolType } from '../../scope/Scope';
-import { getModelScope, UnionScope } from '../../scope/scopeStore';
+import resolver from '../../../bsl/resolver'
+import globalScope from '../../../scope/globalScope'
+import { Symbol, SymbolType } from '../../../scope/Scope';
+import { getModelScope, UnionScope } from '../../../scope/scopeStore';
 
-const provider: languages.CompletionItemProvider = {
+const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
     /**
      * Provide completion items for the given position and document.
@@ -126,7 +126,9 @@ function objectScopeCompletion(tokens: string[], unionScope: UnionScope, lineNum
     return scopeMembers
 }
 
-export default provider;
+export {
+    completionItemProvider
+}
 
 // function getPrevWord(model: editor.ITextModel,
 //     position: Position): editor.IWordAtPosition | null {

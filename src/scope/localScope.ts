@@ -57,6 +57,8 @@ class LocalScope implements TypeDefinition {
     updateMembers() {
         const source = this.model?.getValue()
         if (source !== undefined) {
+            this.members.length = 0
+
             this.module = parse(source)
             for (let i = 0; i < this.module.methods.length; i++) {
                 this.members.push({

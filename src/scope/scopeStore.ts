@@ -5,6 +5,7 @@ import globalScope from '../scope/globalScope'
 
 
 const editorsScopes: Map<editor.ITextModel, UnionScope> = new Map()
+let activeEditornstance: editor.IStandaloneCodeEditor | undefined
 
 export class UnionScope {
 
@@ -36,6 +37,7 @@ export class UnionScope {
 }
 
 export function createEditorScope(editor: editor.IStandaloneCodeEditor) {
+    activeEditornstance = editor
     const model = editor.getModel()
 
     if (model === null) {
@@ -52,6 +54,7 @@ export function getEditorScope(editor: editor.IStandaloneCodeEditor): UnionScope
     }
     return getModelScope(model)
 }
+
 export function getModelScope(model: editor.ITextModel): UnionScope {
     const res = editorsScopes.get(model)
     if (res === undefined) {
@@ -59,5 +62,9 @@ export function getModelScope(model: editor.ITextModel): UnionScope {
     }
     res.update()
     return res
+}
+
+export function activeEditor(): editor.IStandaloneCodeEditor | undefined {
+    return activeEditornstance
 }
 

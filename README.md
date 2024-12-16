@@ -1,6 +1,6 @@
 # Редактор тестов YAxUnit
 
-![Screen](/docs/images/intellisense.png)
+![Screen](/docs/images/screencast.gif)
 
 Планируемые возможности:
 

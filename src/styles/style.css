@@ -39,6 +39,10 @@ body {
 	margin-left: 3px;
 }
 
+.success {
+  color: green;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

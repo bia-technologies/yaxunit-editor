@@ -1,4 +1,4 @@
-import resolver from '../src/languages/bsl/resolver';
+import resolver from '../src/bsl/resolver';
 import '../src/main';
 import { editor, Position } from 'monaco-editor';
 
