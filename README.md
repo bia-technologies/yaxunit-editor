@@ -31,7 +31,7 @@
 
 Хочу выразить благодарность авторам этих продуктов
 
-* @lintest
-* @nixel2007
-* @salexdv
-* @zeegin
+* [@lintest](https://github.com/lintest)
+* [@nixel2007](https://github.com/nixel2007)
+* [@salexdv](https://github.com/salexdv)
+* [@zeegin](https://github.com/zeegin)
