@@ -1,8 +1,8 @@
 import { editor, languages, Position, Range } from 'monaco-editor';
-import resolver from '../../../bsl/resolver'
-import globalScope from '../../../scope/globalScope'
-import { Symbol, SymbolType } from '../../../scope/Scope';
-import { getModelScope, UnionScope } from '../../../scope/scopeStore';
+import resolver from '../resolver'
+import globalScope from '../../scope/globalScope'
+import { Symbol, SymbolType } from '../../scope/Scope';
+import { getModelScope, UnionScope } from '../../scope/scopeStore';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],

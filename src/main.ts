@@ -1,7 +1,7 @@
 import './styles/style.css'
 import './styles/glyphs.css'
 
-import * as monaco from 'monaco-editor';
+// import {Registry} from 'monaco-editor/esm/vs/platform/registry/common/platform.js'
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 // import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
 // import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
@@ -9,7 +9,8 @@ import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 // import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import './languages/bsl/contribution'
 import './yaxunit'
-import {createEditorScope} from './scope/scopeStore'
+import {YAxUnitEditor} from './yaxunit'
+
 
 self.MonacoEnvironment = {
   getWorker(_): Worker {
@@ -29,11 +30,7 @@ self.MonacoEnvironment = {
   }
 };
 
-const container = document.getElementById('container')
-if (container === null) {
-  throw 'Error!';
-}
-const content =
+const content:string =
 `
 Функция УстановитьТелоКакСтроку(Строка) Экспорт
   
@@ -76,27 +73,8 @@ const content =
       .Свойство("[4].Сумма").Равно(300.5);
   
 КонецФункции
-`
-const editor = monaco.editor.create(container, {
-  value: content,
-  language: 'bsl',
-  automaticLayout: true,
-  glyphMargin: true,
-});
+`;
 
+// const bslEditor = new YAxUnitEditor(content)
+(window as any).bslEditor = new YAxUnitEditor(content);
 
-editor.createDecorationsCollection([
-  {
-    range: new monaco.Range(2, 1, 2, 1),
-    options: {
-      isWholeLine: true,
-      glyphMarginClassName: "codicon-play success",
-      glyphMarginHoverMessage: {
-        value: 'Run test'
-      },
-      
-    },
-  }
-]);
-
-createEditorScope(editor)

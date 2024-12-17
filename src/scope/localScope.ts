@@ -1,7 +1,7 @@
 import { Symbol, SymbolType, TypeDefinition } from "./Scope";
-import { editor } from "monaco-editor";
+import { Position, editor } from "monaco-editor";
 import { parse } from "../bsl/parser";
-import { Module } from "../bsl/Symbols";
+import { Method, Module } from "../bsl/Symbols";
 
 
 class LocalScope implements TypeDefinition {
@@ -28,8 +28,12 @@ class LocalScope implements TypeDefinition {
         return this.members.length === 0
     }
 
+    getMethodAtLine(line: number): Method | undefined {
+        return this.module.methods.find(m => m.startLine <= line && m.endLine >= line)
+    }
+
     getMethodScope(line: number): TypeDefinition | undefined {
-        const method = this.module.methods.find(m => m.startLine <= line && m.endLine >= line)
+        const method = this.getMethodAtLine(line)
         if (method === undefined) {
             return undefined
         }

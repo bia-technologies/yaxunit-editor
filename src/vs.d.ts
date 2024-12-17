@@ -1,0 +1,1 @@
+declare module 'monaco-editor/esm/vs/platform/registry/common/platform.js'
