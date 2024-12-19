@@ -25,7 +25,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
 
             if (tokens.length === 0) {
                 scope.getScopes(position.lineNumber).forEach(s => {
-                    s.members.forEach(m => suggestions.push(newCompletionItem(m, range)))
+                    s.getMembers().forEach(m => suggestions.push(newCompletionItem(m, range)))
                 })
             } else {
                 const members = objectScopeCompletion(tokens, scope, position.lineNumber)
@@ -74,12 +74,12 @@ function resolveInUnionScope(token: string, unionScope: UnionScope, lineNumber: 
 
     for (let index = scopes.length - 1; index >= 0; index--) {
         const scope = scopes[index]
-        const member = scope.members.find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
+        const member = scope.getMembers().find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
         if (member !== undefined) {
             if (member.type !== undefined) {
                 const tokenScope = globalScope.resolveType(member.type)
                 if (tokenScope !== undefined) {
-                    return tokenScope.members
+                    return tokenScope.getMembers()
                 }
             }
             return undefined
@@ -113,7 +113,7 @@ function objectScopeCompletion(tokens: string[], unionScope: UnionScope, lineNum
         if (member !== undefined && member.type !== undefined) {
             const tokenScope = globalScope.resolveType(member.type)
             if (tokenScope !== undefined) {
-                scopeMembers = tokenScope.members
+                scopeMembers = tokenScope.getMembers()
             } else {
                 scopeMembers = undefined
                 break

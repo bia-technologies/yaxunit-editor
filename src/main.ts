@@ -9,7 +9,9 @@ import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 // import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import './languages/bsl/contribution'
 import './yaxunit'
-import {YAxUnitEditor} from './yaxunit'
+import './bsl/platform'
+import { YAxUnitEditor } from './yaxunit'
+import { TestStatus } from './yaxunit/TestDefinition'
 
 
 self.MonacoEnvironment = {
@@ -30,8 +32,8 @@ self.MonacoEnvironment = {
   }
 };
 
-const content:string =
-`
+const content: string =
+  `
 Процедура ИсполняемыеСценарии() Экспорт
 
 	ЮТТесты
@@ -55,6 +57,21 @@ const content:string =
 КонецПроцедуры
 `;
 
-// const bslEditor = new YAxUnitEditor(content)
-(window as any).bslEditor = new YAxUnitEditor(content);
+const bslEditor = new YAxUnitEditor(content);
+(window as any).bslEditor = bslEditor;
 
+bslEditor.tests.updateTestsStatus([{
+  method: 'ТестУспешно',
+  status: TestStatus.passed,
+  duration: 10
+}, {
+  method: 'ТестОшибка',
+  status: TestStatus.failed,
+  duration: 10,
+  message: 'Ожидали что-то там'
+}, {
+  method: 'ТестСломан',
+  status: TestStatus.broken,
+  duration: 10,
+  message: 'Объект не содержит метод'
+}])

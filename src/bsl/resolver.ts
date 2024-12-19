@@ -44,7 +44,8 @@ function collectTokens(model: editor.ITextModel, startPosition: Position) {
                         if (squareLevel < 0) {
                             done = true
                             break;
-                        }                   }
+                        }
+                    }
                 }
                 if (tokenIs(token, TokenType.DelimiterParenthesis)) {
                     if (value === ')') {
@@ -83,8 +84,12 @@ function collectTokens(model: editor.ITextModel, startPosition: Position) {
     if (currentSymbol !== '') {
         symbols.push(currentSymbol);
     }
-    console.log(symbols);
-    return symbols
+
+    const result = symbols.map(s => s.trim())
+        .filter(s=>s)
+
+    console.log(result);
+    return result
 }
 
 function getTokens(line: string): Token[] {

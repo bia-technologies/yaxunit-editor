@@ -13,11 +13,10 @@ export enum TestStatus {
 
 export interface TestResult {
     status: TestStatus,
-    present: string,
     method: string,
     duration: number,
-    message: string,
-    trace: string
+    message?: string,
+    trace?: string
 }
 
 export class TestDefinition {
@@ -48,21 +47,29 @@ export class TestsModel {
         return this.tests
     }
     updateTests(methods: Method[]) {
-        this.tests.length = 0
+        let changed = false
         methods.forEach(m => {
-            this.tests.push(new TestDefinition(m))
+            const test = this.findTest(m.name)
+            if (test) {
+                test.lineNumber = m.startLine
+            } else {
+                this.tests.push(new TestDefinition(m))
+                changed = true
+            }
         })
-        this.emitter.fire(this)
+        if (changed) {
+            this.emitter.fire(this)
+        }
     }
 
     updateTestsStatus(result: TestResult[]) {
-        result.forEach(i=>this.updateTest(i))
+        result.forEach(i => this.updateTest(i))
         this.emitter.fire(this)
     }
 
-    private updateTest(result:TestResult){
-        const test = this.tests.find(t=>t.method === result.method)
-        if(!test){
+    private updateTest(result: TestResult) {
+        const test = this.findTest(result.method)
+        if (!test) {
             return
         }
 
@@ -72,6 +79,9 @@ export class TestsModel {
         test.trace = result.trace
     }
 
+    private findTest(methodName: string): TestDefinition | undefined {
+        return this.tests.find(t => t.method === methodName)
+    }
     onDidChangeContent: IEvent<TestsModel> = (listener) => {
         return this.emitter.event(listener)
     }

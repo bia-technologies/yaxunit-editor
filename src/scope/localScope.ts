@@ -1,5 +1,5 @@
 import { Symbol, SymbolType, TypeDefinition } from "./Scope";
-import { Position, editor } from "monaco-editor";
+import { editor } from "monaco-editor";
 import { parse } from "../bsl/parser";
 import { Method, Module } from "../bsl/Symbols";
 

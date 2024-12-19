@@ -1,4 +1,4 @@
-import { TestsModel, TestStatus } from '../TestDefinition'
+import { TestDefinition, TestsModel, TestStatus } from '../TestDefinition'
 import { editor, Range } from 'monaco-editor'
 
 
@@ -16,8 +16,8 @@ export class TestStatusDecorator {
                     isWholeLine: false,
                     glyphMarginClassName: getGlyphClass(t.status),
                     glyphMarginHoverMessage: {
-                        value: 'Run test'
-                    },
+                        value: getHover(t)
+                    }
                 }
             }
         })
@@ -27,6 +27,16 @@ export class TestStatusDecorator {
             this.decorationsIds = this.editor.createDecorationsCollection(decorations)
         }
     }
+}
+
+function getHover(test: TestDefinition): string {
+    const lines = []
+    lines.push(`### Тест \`${test.method}\``, `Статус: ${test.status}`, `Продолжительность: ${test.duration} мс`)
+    
+    if(test.message){
+        lines.push(`Сообщение: ${test.message}`)
+    }
+    return lines.join('  \n')
 }
 
 function getGlyphClass(status: TestStatus) {
