@@ -41,7 +41,7 @@ export class YAxUnitEditor {
         })
         this.updateTestsModel()
 
-        this.editor.getModel()?.onDidChangeContent((e) => {
+        this.editor.getModel()?.onDidChangeContent(() => {
             this.module.updateMembers()
             this.tests.updateTests(this.module.module.methods)
         })

@@ -54,8 +54,7 @@ class LocalScope implements TypeDefinition {
 
         return {
             id: 'method-' + method.name,
-            members: members,
-            getMembers: () => []
+            getMembers: () => members
         }
     }
     updateMembers() {

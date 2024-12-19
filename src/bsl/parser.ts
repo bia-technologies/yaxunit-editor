@@ -19,15 +19,15 @@ export function parse(source: string): Module {
                 endColumn: 0,
                 isExport: m.isexport,
                 isProc: m.isproc,
-                params: m._method.Params.map(p=>{return {
+                params: m._method.Params.map((p:any)=>{return {
                     name: p.name,
                     default: p.default,
                     byVal: p.byval
                 }}),
-                vars: m._method.DeclaredVars.map(v=>{return {
+                vars: m._method.DeclaredVars.map((v:any)=>{return {
                     name: v
                 }}),
-                autoVars: m._method.AutomaticVars.map(v=>{return {
+                autoVars: m._method.AutomaticVars.map((v:any)=>{return {
                     name: v
                 }})
             }

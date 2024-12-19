@@ -11,7 +11,6 @@ export class UnionScope {
 
     scopes: TypeDefinition[] = [{
         id: globalScope.id,
-        members: globalScope.members,
         getMembers: () => globalScope.members
     }]
 

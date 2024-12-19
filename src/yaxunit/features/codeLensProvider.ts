@@ -30,7 +30,7 @@ const codeLensProvider: languages.CodeLensProvider = {
             },
         };
     },
-    resolveCodeLens: function (model, codeLens, token) {
+    resolveCodeLens: function (_, codeLens) {
         return codeLens;
     },
 }
