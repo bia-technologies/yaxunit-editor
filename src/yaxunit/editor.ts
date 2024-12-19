@@ -1,13 +1,18 @@
-import { editor, Range } from 'monaco-editor'
-import {createEditorScope} from '../scope/scopeStore'
+import { editor } from 'monaco-editor'
+import { createEditorScope } from '../scope/scopeStore'
 import LocalScope from '../scope/localScope'
-import {registerCommands} from './features/runner'
+import { registerCommands } from './features/runner'
+import { TestsModel } from './TestDefinition'
+import { TestStatusDecorator } from './features/TestStatusDecorator'
 
-let activeEditor: YAxUnitEditor|undefined
+let activeEditor: YAxUnitEditor | undefined
 
 export class YAxUnitEditor {
     editor: editor.IStandaloneCodeEditor
     module: LocalScope
+    tests: TestsModel = new TestsModel()
+    decorator: TestStatusDecorator
+    
     commands: {
         runTest?: string
     } = {}
@@ -27,27 +32,34 @@ export class YAxUnitEditor {
             useShadowDOM: false,
             contextmenu: false
         });
-        this.editor.createDecorationsCollection([
-            {
-                range: new Range(2, 1, 2, 1),
-                options: {
-                    isWholeLine: true,
-                    glyphMarginClassName: "codicon-play success",
-                    glyphMarginHoverMessage: {
-                        value: 'Run test'
-                    },
-
-                },
-            }
-        ]);
         this.module = createEditorScope(this.editor).localScope
-        this.module.updateMembers()
-        this.commands.runTest = registerCommands(this)??undefined
-
+        this.commands.runTest = registerCommands(this) ?? undefined
         activeEditor = this
+        this.decorator = new TestStatusDecorator(this.editor)
+        this.tests.onDidChangeContent(_=>{
+            this.decorator.updateDecorations(this.tests)
+        })
+        this.updateTestsModel()
+
+        this.editor.getModel()?.onDidChangeContent((e) => {
+            this.module.updateMembers()
+            this.tests.updateTests(this.module.module.methods)
+        })
+
     }
+
+    getText(): string {
+        const model = this.editor.getModel()
+        return model ? model.getValue() : ''
+    }
+
+    updateTestsModel() {
+        this.module.updateMembers()
+        this.tests.updateTests(this.module.module.methods)
+    }
+
 }
 
-export function getActiveEditor(){
+export function getActiveEditor() {
     return activeEditor
 }

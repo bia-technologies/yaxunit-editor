@@ -9,15 +9,17 @@ const codeLensProvider: languages.CodeLensProvider = {
         const lenses = editor ? editor.module.module.methods.map(m => {
             return {
                 range: {
-                    startLineNumber: m.startLine + 1,
+                    startLineNumber: m.startLine,
                     startColumn: 1,
-                    endLineNumber: m.endLine + 1,
+                    endLineNumber: m.endLine,
                     endColumn: 1,
                 },
                 id: "RunTest" + m.name,
                 command: {
                     id: editor.commands.runTest ?? '',
                     title: "Run test",
+                    arguments: [m.name]
+
                 },
             }
         }) : []

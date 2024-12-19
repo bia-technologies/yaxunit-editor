@@ -39,7 +39,27 @@ body {
 	margin-left: 3px;
 }
 
-.success {
+.passed {
+  color: green;
+}
+
+.failed {
+  color: red;
+}
+
+.broken {
+  color: orange;
+}
+
+.skipped {
+  color: silver;
+}
+
+.execution {
+  color: blue;
+}
+
+.pending {
   color: green;
 }
 

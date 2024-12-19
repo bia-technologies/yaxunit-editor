@@ -1,21 +1,24 @@
 import { YAxUnitEditor } from '../index'
 import V8Proxy from '../../onec/V8Proxy'
 import './codeLensProvider'
+import { TestResult } from '../TestDefinition'
 
-export function runTest(methodName: string) {
-    V8Proxy.fetch('runTest', methodName)
-}
+(window as any).V8Proxy = V8Proxy
 
 export function registerCommands(bslEditor: YAxUnitEditor) {
-    const commandId = bslEditor.editor.addCommand(0, () => {
-        const position = bslEditor.editor.getPosition()
-        const method = position === null ? undefined : bslEditor.module.getMethodAtLine(position?.lineNumber)
-        if (method !== undefined) {
-            console.log(method.name)
-            V8Proxy.fetch('runTest', method.name)
-        }
+    const commandId = bslEditor.editor.addCommand(0, (_, methodName) => {
+        runTest(methodName, bslEditor)
     })
 
     return commandId
+}
+
+async function runTest(methodName: string, editor: YAxUnitEditor) {
+    var response = await V8Proxy.fetch('runTest', {
+        method: methodName, module: editor.getText()
+    })
+    var result = <TestResult[]>response.json()
+
+    editor.tests.updateTestsStatus(result)
 }
 

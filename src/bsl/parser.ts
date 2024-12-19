@@ -13,9 +13,9 @@ export function parse(source: string): Module {
         methods: result.getMethodsTable().find().map(m => {
             return {
                 name: m.name,
-                startLine: m.line,
+                startLine: m.line + 1,
                 startColumn: 0,
-                endLine: m.endline,
+                endLine: m.endline + 1,
                 endColumn: 0,
                 isExport: m.isexport,
                 isProc: m.isproc,

@@ -1,6 +1,11 @@
 # Редактор тестов YAxUnit
 
+> [!WARNING]  
+> В процессе разработки. Релиза еще нет.
+
 ![Screen](/docs/images/screencast.gif)
+
+![Run test](/docs/images/run-tests.gif)
 
 Планируемые возможности:
 
