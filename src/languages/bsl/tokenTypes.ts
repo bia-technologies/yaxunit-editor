@@ -9,5 +9,6 @@ export enum TokenType {
     StringEscapeInvalid = 'string.escape.invalid',
     MetaTag = 'metatag',
     Number = 'number',
-    NumberFloat = 'number.float'
+    NumberFloat = 'number.float',
+    Operator = 'operator'
 }

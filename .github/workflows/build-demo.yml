@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Сборка документации
+    name: Build demo
     runs-on: ubuntu-latest
 
     steps:
@@ -38,6 +38,7 @@ jobs:
 
   # Deploy job
   deploy:
+    name: Deploy demo
     # Add a dependency to the build job
     needs: build
 

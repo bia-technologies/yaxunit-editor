@@ -65,7 +65,7 @@ export const language: IMonarchLanguage = <IMonarchLanguage>{
       [/[()\[\]]/, '@brackets'],
       [/@symbols/, {
         cases: {
-          '@operators': 'operator',
+          '@operators': TokenType.Operator,
           '@default': ''
         }
       }],
