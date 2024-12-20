@@ -1,7 +1,7 @@
 import { YAxUnitEditor } from '../index'
 import V8Proxy from '../../onec/V8Proxy'
 import './lensProvider'
-import { TestResult } from '../TestDefinition'
+import { RunResult } from '../TestDefinition'
 
 (window as any).V8Proxy = V8Proxy
 
@@ -17,7 +17,7 @@ async function runTest(methodName: string, editor: YAxUnitEditor) {
     var response = await V8Proxy.fetch('runTest', {
         method: methodName, module: editor.getText()
     })
-    var result = <TestResult[]>response.json()
+    var result = <RunResult>response.json()
 
     editor.tests.updateTestsStatus(result)
 }

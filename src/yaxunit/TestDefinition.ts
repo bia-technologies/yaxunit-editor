@@ -11,12 +11,16 @@ export enum TestStatus {
     notImplemented = 'НеРеализован',
 }
 
+export interface RunResult {
+    tests: TestResult[]
+    errors: string[]
+}
+
 export interface TestResult {
     status: TestStatus,
     method: string,
     duration: number,
-    message?: string,
-    trace?: string
+    message?: string
 }
 
 export class TestDefinition {
@@ -42,9 +46,13 @@ export class TestDefinition {
 
 export class TestsModel {
     private readonly tests: TestDefinition[] = []
+    private errors: string[] = []
     emitter: Emitter<TestsModel> = new Emitter()
     getTests() {
         return this.tests
+    }
+    getErrors() {
+        return this.errors
     }
     updateTests(methods: Method[]) {
         let changed = false
@@ -62,8 +70,9 @@ export class TestsModel {
         }
     }
 
-    updateTestsStatus(result: TestResult[]) {
-        result.forEach(i => this.updateTest(i))
+    updateTestsStatus(result: RunResult) {
+        result.tests.forEach(i => this.updateTest(i))
+        this.errors = result.errors
         this.emitter.fire(this)
     }
 

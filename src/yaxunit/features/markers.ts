@@ -34,12 +34,12 @@ export class TestMessageMarkersProvider implements TestModelRender{
         })
     }
     private getErrorsMarkers(testsModel: TestsModel, editorModel: editor.ITextModel): editor.IMarkerData[] {
-        return testsModel.getTests().filter(t => t.trace).map(t => getErrorMarker(t, editorModel))
+        return testsModel.getErrors().filter(e => e).map(t => getErrorMarker(t, editorModel))
     }
 }
 
-function getErrorMarker(test: TestDefinition, editorModel: editor.ITextModel): editor.IMarkerData {
-    const trace = parseTrace(test.trace ?? '', editorModel.getEOL())
+function getErrorMarker(error: string, editorModel: editor.ITextModel): editor.IMarkerData {
+    const trace = parseTrace(error, editorModel.getEOL())
     if (trace) {
         return {
             message: trace.message,
@@ -51,12 +51,12 @@ function getErrorMarker(test: TestDefinition, editorModel: editor.ITextModel): e
         }
     } else {
         return {
-            message: test.trace??'',
+            message: error??'',
             severity: MarkerSeverity.Error,
-            startLineNumber: test.lineNumber,
-            startColumn: editorModel.getLineFirstNonWhitespaceColumn(test.lineNumber),
-            endLineNumber: test.lineNumber,
-            endColumn: editorModel.getLineLength(test.lineNumber)
+            startLineNumber: 1,
+            startColumn: editorModel.getLineFirstNonWhitespaceColumn(1),
+            endLineNumber: 1,
+            endColumn: editorModel.getLineLength(1)
         }
     }
 }
