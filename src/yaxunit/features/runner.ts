@@ -1,6 +1,6 @@
 import { YAxUnitEditor } from '../index'
 import V8Proxy from '../../onec/V8Proxy'
-import './codeLensProvider'
+import './lensProvider'
 import { TestResult } from '../TestDefinition'
 
 (window as any).V8Proxy = V8Proxy

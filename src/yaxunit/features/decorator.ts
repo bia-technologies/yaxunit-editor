@@ -1,14 +1,15 @@
 import { TestDefinition, TestsModel, TestStatus } from '../TestDefinition'
 import { editor, Range } from 'monaco-editor'
+import { TestModelRender } from './interfaces'
 
 
-export class TestStatusDecorator {
+export class TestStatusDecorator implements TestModelRender{
     editor: editor.IStandaloneCodeEditor
     decorationsIds: editor.IEditorDecorationsCollection | undefined
     constructor(editor: editor.IStandaloneCodeEditor) {
         this.editor = editor
     }
-    updateDecorations(model: TestsModel): void {
+    update(model: TestsModel): void {
         const decorations = model.getTests().map(t => {
             return {
                 range: new Range(t.lineNumber, 1, t.lineNumber, 1),
