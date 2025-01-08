@@ -45,7 +45,7 @@ function getGlyphClass(status: TestStatus) {
         case TestStatus.pending:
             return 'codicon-debug-start pending'
         case TestStatus.execution:
-            return 'codicon-issue-draft execution'
+            return 'codicon-record execution'
         case TestStatus.passed:
             return 'codicon-pass passed'
         case TestStatus.failed:

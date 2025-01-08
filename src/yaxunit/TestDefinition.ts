@@ -13,7 +13,7 @@ export enum TestStatus {
 
 export interface RunResult {
     tests: TestResult[]
-    errors: string[]
+    errors?: string[]
 }
 
 export interface TestResult {
@@ -72,7 +72,9 @@ export class TestsModel {
 
     updateTestsStatus(result: RunResult) {
         result.tests.forEach(i => this.updateTest(i))
-        this.errors = result.errors
+        if(result.errors){
+            this.errors = result.errors
+        }
         this.emitter.fire(this)
     }
 
@@ -85,7 +87,6 @@ export class TestsModel {
         test.status = result.status
         test.duration = result.duration
         test.message = result.message
-        test.trace = result.trace
     }
 
     private findTest(methodName: string): TestDefinition | undefined {

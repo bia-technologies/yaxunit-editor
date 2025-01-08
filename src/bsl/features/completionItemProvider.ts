@@ -10,11 +10,11 @@ const completionItemProvider: languages.CompletionItemProvider = {
      * Provide completion items for the given position and document.
      */
     provideCompletionItems(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.CompletionList> {
-        return new Promise(async (resolve) => {
+        
             const tokens = resolver.resolve(model, position)
 
             if (tokens === undefined) {
-                return resolve(undefined)
+                return (undefined)
             }
 
             const scope = getModelScope(model)
@@ -32,14 +32,13 @@ const completionItemProvider: languages.CompletionItemProvider = {
                 if (members !== undefined) {
                     members.forEach(m => suggestions.push(newCompletionItem(m, range)))
                 } else {
-                    resolve(undefined)
+                    (undefined)
                 }
             }
 
-            return resolve({
+            return ({
                 suggestions: suggestions
             })
-        })
 
     },
 }

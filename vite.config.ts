@@ -4,11 +4,11 @@ import { viteSingleFile } from "vite-plugin-singlefile"
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
-    target: "ESNext",
+    target: "ES6",
     minify: true
   },
   plugins: [
-    viteSingleFile({ removeViteModuleLoader: true })
+    viteSingleFile()
   ],
   
 })

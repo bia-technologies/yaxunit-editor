@@ -1,4 +1,4 @@
-import { TestDefinition, TestsModel } from '../TestDefinition'
+import { TestsModel } from '../TestDefinition'
 import { editor, MarkerSeverity } from 'monaco-editor'
 import { TestModelRender } from './interfaces'
 
