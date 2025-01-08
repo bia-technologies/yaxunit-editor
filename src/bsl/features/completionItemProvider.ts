@@ -19,7 +19,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
 
         scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
         console.debug('suggestions', suggestions)
-        
+
         return {
             suggestions: suggestions
         }
@@ -35,7 +35,8 @@ function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionIt
         label: symbol.name,
         kind: completionItemKind(symbol.kind),
         range: range,
-        insertText: insertText
+        insertText: insertText,
+        documentation: symbol.description
     }
 }
 

@@ -8,8 +8,10 @@ export enum SymbolType {
 export interface Symbol {
     kind: SymbolType,
     name: string,
-    type?: string
+    type?: string,
+    description?: string
 }
+
 export interface MethodSymbol extends Symbol {
     params: Parameter[],
 }

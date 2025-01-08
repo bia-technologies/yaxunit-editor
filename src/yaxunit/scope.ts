@@ -1,4 +1,4 @@
-import { TypeDefinition, SymbolType, PredefinedType } from "../scope/Scope"
+import { TypeDefinition, SymbolType, PredefinedType, MethodSymbol } from "../scope/Scope"
 import GlobalScope from "../scope/globalScope"
 
 const scope: TypeDefinition = new PredefinedType('', [
@@ -14,8 +14,19 @@ const symbols: TypeDefinition[] = [
         {
             kind: SymbolType.function,
             name: 'ОжидаетЧто',
+            params: [
+                {
+                    name: 'ПроверяемоеЗначение',
+                    type: 'Произвольный',
+                    def: 'Проверяемое фактическое значение'
+                }, {
+                    name: 'Сообщение',
+                    type: 'Строка',
+                    def: 'Описание проверки, которое будет выведено при возникновении ошибки'
+                }
+            ],
             type: 'CommonModule.ЮТУтверждения'
-        },
+        } as MethodSymbol,
         {
             kind: SymbolType.function,
             name: 'ОжидаетЧтоТаблицаБазы',

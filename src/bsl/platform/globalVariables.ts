@@ -404,6 +404,7 @@ GlobalScope.registerGlobalSymbols(definition.map(d => {
     return {
         name: d.name,
         kind: SymbolType.property,
-        type: d.name_en
+        type: d.name_en,
+        description: d.description
     }
 }))

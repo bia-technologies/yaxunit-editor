@@ -1,5 +1,6 @@
 import { languages } from 'monaco-editor';
 import { completionItemProvider } from '../../bsl/features/completionItemProvider'
+import { signatureHelpProvider } from '../../bsl/features/signatureHelpProvider'
 
 interface ILangImpl {
   conf: languages.LanguageConfiguration;
@@ -17,6 +18,7 @@ languages.onLanguage(language.id, () => {
   import("./configuration").then((module: ILangImpl) => {
     languages.setLanguageConfiguration(language.id, module.conf);
     languages.setMonarchTokensProvider(language.id, module.language);
-    languages.registerCompletionItemProvider(language.id, completionItemProvider)
+    languages.registerCompletionItemProvider(language.id, completionItemProvider);
+    languages.registerSignatureHelpProvider(language.id, signatureHelpProvider)
   });
 });

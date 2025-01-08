@@ -19603,14 +19603,17 @@ GlobalScope.registerGlobalSymbols(definition.map(d => {
     const t = new PredefinedType(d.name_en, d.values.map(v => {
         return {
             name: v.name,
-            kind: SymbolType.property, type: 'unknown'
+            kind: SymbolType.property,
+            description: (v as any).description ?? '',
+            type: 'unknown'
         }
     }))
     symbols.push(t)
     return {
         name: d.name,
         kind: SymbolType.enum,
-        type: d.name_en
+        type: d.name_en,
+        description: d.description
     }
 }))
 
