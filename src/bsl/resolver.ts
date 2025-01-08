@@ -104,7 +104,7 @@ function tokenIs(token: Token, type: TokenType): boolean {
 function isBreak(token: Token, value: string): boolean {
     const type = token.type.substring(0, token.type.length - 4)
 
-    if (type === TokenType.MetaTag || type === TokenType.Number || type === TokenType.NumberFloat|| type === TokenType.Operator) {
+    if (type === TokenType.MetaTag || type === TokenType.Operator) {
         return true;
     }
     if (tokenIs(token, TokenType.Delimiter) && value === ';') {

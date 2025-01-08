@@ -1,18 +1,15 @@
 import { editor } from "monaco-editor"
 import LocalScope from "./localScope"
-import { TypeDefinition } from "./Scope"
+import { BaseScope, Scope, Symbol } from "./Scope"
 import globalScope from '../scope/globalScope'
 
 
 const editorsScopes: Map<editor.ITextModel, UnionScope> = new Map()
 let activeEditorInstance: editor.IStandaloneCodeEditor | undefined
 
-export class UnionScope {
+export class UnionScope implements Scope {
 
-    scopes: TypeDefinition[] = [{
-        id: globalScope.id,
-        getMembers: () => globalScope.members
-    }]
+    scopes: Scope[] = [new BaseScope(globalScope.members)]
 
     localScope: LocalScope
     constructor(model: editor.ITextModel | null) {
@@ -20,7 +17,7 @@ export class UnionScope {
         this.scopes.push(this.localScope)
     }
 
-    getScopes(line: number): TypeDefinition[] {
+    getScopes(line: number): Scope[] {
         const method = this.localScope.getMethodScope(line)
         if (method === undefined) {
             return this.scopes
@@ -30,8 +27,26 @@ export class UnionScope {
             return clone
         }
     }
+    
     update() {
         this.localScope.getMembers()
+    }
+
+    getMembers(): Symbol[] {
+        let result: Symbol[] | undefined = undefined;
+        for (let index = 1; index < this.scopes.length; index++) {
+            if (result) {
+                result = result.concat(this.scopes[index].getMembers());
+            } else {
+                result = this.scopes[index].getMembers()
+            }
+        }
+
+        return result ?? []
+    }
+
+    forEachMembers(callbackfn: (value: Symbol, index: number, array: Symbol[]) => void): void {
+        this.scopes.forEach(s => s.getMembers().forEach(callbackfn))
     }
 }
 

@@ -18,6 +18,7 @@ function registerTypes(symbols:TypeDefinition[]):void {
         registry.set(s.id, s)
     });
 }
+
 export default {
     id: 'global-scope',
     members: globalScope,

@@ -4,24 +4,56 @@ export enum SymbolType {
     property,
     enum
 }
+
 export interface Symbol {
     kind: SymbolType,
     name: string,
     type?: string
 }
-
-export interface TypeDefinition {
-    id: string,
-    getMembers(): Symbol[]
+export interface MethodSymbol extends Symbol {
+    params: Parameter[],
 }
 
-export class PredefinedType implements TypeDefinition{
+export interface Parameter {
+    name: string,
+    type: string,
+    def: string
+}
+
+export interface Scope {
+    getMembers(): Symbol[]
+    forEachMembers(callbackfn: (value: Symbol, index: number, array: Symbol[]) => void): void;
+}
+
+export interface TypeDefinition extends Scope {
     id: string
+}
+
+
+export class BaseScope implements Scope {
     members: Symbol[]
-    constructor(id: string, members: Symbol[]) {
-        this.id = id
+    
+    constructor(members: Symbol[]) {
         this.members = members
+    } 
+    
+    getMembers(): Symbol[] {
+        return this.members
     }
+
+    forEachMembers(callbackfn: (value: Symbol, index: number, array: Symbol[]) => void): void {
+        this.members.forEach(callbackfn)
+    }
+}
+
+export class PredefinedType extends BaseScope implements TypeDefinition {
+    id: string
+    
+    constructor(id: string, members: Symbol[]) {
+        super(members)
+        this.id = id
+    }
+    
     getMembers(): Symbol[] {
         return this.members
     }

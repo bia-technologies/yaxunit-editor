@@ -1,12 +1,11 @@
-import { Symbol, SymbolType, TypeDefinition } from "./Scope";
+import { BaseScope, Scope, Symbol, SymbolType, TypeDefinition } from "./Scope";
 import { editor } from "monaco-editor";
 import { parse } from "../bsl/parser";
 import { Method, Module } from "../bsl/Symbols";
 
 
-class LocalScope implements TypeDefinition {
+class LocalScope extends BaseScope implements TypeDefinition {
     model: editor.ITextModel | null
-    members: Symbol[] = [];
     module: Module = {
         vars: [], methods: []
     }
@@ -14,25 +13,22 @@ class LocalScope implements TypeDefinition {
     id: string = 'local-module'
 
     constructor(model: editor.ITextModel | null) {
+        super([])
         this.model = model
     }
 
-    getMembers = () => {
+    getMembers() {
         if (this.needUpdateMembers()) {
             this.updateMembers()
         }
         return this.members
     }
 
-    needUpdateMembers(): boolean {
-        return this.members.length === 0
-    }
-
     getMethodAtLine(line: number): Method | undefined {
         return this.module.methods.find(m => m.startLine <= line && m.endLine >= line)
     }
 
-    getMethodScope(line: number): TypeDefinition | undefined {
+    getMethodScope(line: number): Scope | undefined {
         const method = this.getMethodAtLine(line)
         if (method === undefined) {
             return undefined
@@ -52,12 +48,14 @@ class LocalScope implements TypeDefinition {
             kind: SymbolType.property,
         }))
 
-        return {
-            id: 'method-' + method.name,
-            getMembers: () => members
-        }
+        return new BaseScope(members)
     }
-    updateMembers() {
+
+    private needUpdateMembers(): boolean {
+        return this.members.length === 0
+    }
+
+    private updateMembers() {
         const source = this.model?.getValue()
         if (source !== undefined) {
             this.members.length = 0
