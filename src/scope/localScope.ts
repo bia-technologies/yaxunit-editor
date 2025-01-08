@@ -55,7 +55,7 @@ class LocalScope extends BaseScope implements TypeDefinition {
         return this.members.length === 0
     }
 
-    private updateMembers() {
+    updateMembers() {
         const source = this.model?.getValue()
         if (source !== undefined) {
             this.members.length = 0

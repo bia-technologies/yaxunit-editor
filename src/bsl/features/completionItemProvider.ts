@@ -5,22 +5,24 @@ import { scopeProvider } from '../scopeProvider';
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
     provideCompletionItems(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.CompletionList> {
+
+        const scope = scopeProvider.resolveScope(model, position)
+
+        console.debug('completion scope: ', scope)
+        if (scope === undefined) {
+            return undefined
+        }
+
+        const suggestions: languages.CompletionItem[] = []
+        const word = model.getWordAtPosition(position)
+        const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
+
+        scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
+        console.debug('suggestions', suggestions)
         
-            const scope = scopeProvider.resolveScope(model, position)
-
-            if (scope === undefined) {
-                return undefined
-            }
-
-            const suggestions: languages.CompletionItem[] = []
-            const word = model.getWordAtPosition(position)
-            const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
-            
-            scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
-
-            return {
-                suggestions: suggestions
-            }
+        return {
+            suggestions: suggestions
+        }
     },
 }
 

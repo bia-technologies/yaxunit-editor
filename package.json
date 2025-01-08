@@ -10,6 +10,8 @@
     "test": "npx vitest"
   },
   "devDependencies": {
+    "jsdom": "^25.0.1",
+    "path": "^0.12.7",
     "typescript": "^5.7.2",
     "vite": "^6.0.1",
     "vite-plugin-singlefile": "^2.1.0",

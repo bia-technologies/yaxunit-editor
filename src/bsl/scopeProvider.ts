@@ -1,38 +1,46 @@
 import { editor, Position } from 'monaco-editor';
-import resolver from './resolver'
+import tokensProvider, { TokensSequence } from './tokensProvider'
 import { getModelScope, UnionScope } from '../scope/scopeStore';
 import { Scope } from '../scope/Scope';
 import globalScope from '../scope/globalScope'
 
 const scopeProvider = {
     resolveScope(model: editor.ITextModel, position: Position): Scope | undefined {
-        const tokens = resolver.resolve(model, position)
+        const tokensSequence = tokensProvider.resolve(model, position)
 
-        if (tokens === undefined) {
+        console.debug('tokensSequence: ', tokensSequence)
+        if (tokensSequence === undefined || tokensSequence.lastSymbol === ')') {
             return undefined
         }
 
         const scope = getModelScope(model)
-        if (tokens.length === 0) {
+
+        if (tokensSequence.tokens.length === 0 || tokensSequence.tokens.length === 1 && !tokensSequence.closed) {
             return scope
         } else {
-            return objectScopeCompletion(tokens, scope, position.lineNumber)
+            return objectScope(tokensSequence, scope, position.lineNumber)
         }
     }
 }
 
-function objectScopeCompletion(tokens: string[], unionScope: UnionScope, lineNumber: number): Scope | undefined {
+function objectScope(tokensSequence: TokensSequence, unionScope: UnionScope, lineNumber: number): Scope | undefined {
 
+    console.debug('calculate objectScope');
+
+    const tokens = tokensSequence.tokens
     const lastToken = tokens[tokens.length - 1];
     let scope = resolveInUnionScope(lastToken, unionScope, lineNumber)
 
     if (!scope) {
+        console.debug('don\'t found in global scope')
         return undefined
     }
 
-    for (let index = tokens.length - 2; index > 0; index--) {
+    const minIndex = tokensSequence.closed ? 1 : 0
+    for (let index = tokens.length - 2; index > - minIndex; index--) {
         let token = tokens[index];
 
+        console.debug('analyze token ' + token)
         const pos1 = token.indexOf('(')
         const pos2 = token.indexOf('[')
 

@@ -25,9 +25,7 @@ const codeLensProvider: languages.CodeLensProvider = {
         }) : []
         return {
             lenses: lenses,
-            dispose: () => {
-                console.log('dispose')
-            },
+            dispose: () => { },
         };
     },
     resolveCodeLens: function (_, codeLens) {

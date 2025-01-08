@@ -10,5 +10,6 @@ export enum TokenType {
     MetaTag = 'metatag',
     Number = 'number',
     NumberFloat = 'number.float',
-    Operator = 'operator'
+    Operator = 'operator',
+    Source = 'source'
 }

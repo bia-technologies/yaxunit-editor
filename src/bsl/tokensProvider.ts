@@ -1,26 +1,26 @@
 import { editor, Position, Token } from 'monaco-editor';
 import { TokenType } from "../languages/bsl/tokenTypes";
 
+export interface TokensSequence {
+    tokens: string[],
+    lastSymbol: string,
+    closed: boolean
+}
 export default {
-    resolve(model: editor.ITextModel, position: Position): string[] | undefined {
-        return collectTokens(model, position);
-    }
+    resolve: collectTokens
 }
 
-function collectTokens(model: editor.ITextModel, startPosition: Position) {
+function collectTokens(model: editor.ITextModel, startPosition: Position): TokensSequence | undefined {
     let line = model.getLineContent(startPosition.lineNumber).substring(0, startPosition.column - 1);
 
     const symbols: string[] = []
 
-    let currentSymbol = ''
-
-    let squareLevel = 0;
-    let parenthesisLevel = 0;
-    let done = false
     let lineNumber = startPosition.lineNumber
     let isFirst = true
 
-    while (!done && lineNumber > 0) {
+    const state: State = { parenthesisLevel: 0, squareLevel: 0, done: false, currentSymbol: '', lastToken: '' }
+
+    while (!state.done && lineNumber > 0) {
         if (line !== '') {
             const lineTokens = getTokens(line)
             if (isFirst) {
@@ -35,61 +35,78 @@ function collectTokens(model: editor.ITextModel, startPosition: Position) {
                 const token = lineTokens[index];
                 const value = line.substring(token.offset, lastTokenOffset);
 
-                if (tokenIs(token, TokenType.DelimiterSquare)) {
-                    if (value === ']') {
-                        squareLevel++;
-                    }
-                    else {
-                        squareLevel--;
-                        if (squareLevel < 0) {
-                            done = true
-                            break;
-                        }
-                    }
-                }
-                if (tokenIs(token, TokenType.DelimiterParenthesis)) {
-                    if (value === ')') {
-                        parenthesisLevel++;
-                    }
-                    else {
-                        parenthesisLevel--;
-                        if (parenthesisLevel < 0) {
-                            done = true
-                            break;
-                        }
-                    }
-                }
-                if (isBreak(token, value)) {
-                    done = true
+                updateState(state, value, token)
+
+                if (state.done || isBreak(token, value)) {
+                    state.done = true
                     break;
                 }
-                if (tokenIs(token, TokenType.Delimiter) && value === '.') {
-                    symbols.push(currentSymbol)
-                    currentSymbol = ''
+                if (value === '.') {
+                    symbols.push(state.currentSymbol)
+                    state.currentSymbol = ''
                 } else {
-                    currentSymbol = value + currentSymbol;
+                    state.currentSymbol = value + state.currentSymbol;
                 }
                 lastTokenOffset = token.offset
-                console.log(value + ': ' + token);
+                console.debug('Tokens resolve state: ', state)
             }
         }
         if (lineNumber === 1) {
-            done = true
+            state.done = true
         }
-        if (!done) {
+
+        if (!state.done) {
             lineNumber--;
             line = model.getLineContent(lineNumber)
         }
     }
-    if (currentSymbol !== '') {
-        symbols.push(currentSymbol);
+    if (state.currentSymbol !== '') {
+        symbols.push(state.currentSymbol);
     }
 
-    const result = symbols.map(s => s.trim())
-        .filter(s=>s)
+    const tokens = symbols.map(s => s.trim())
+        .filter(s => s)
 
-    console.log(result);
-    return result
+    console.debug(tokens);
+
+    return {
+        tokens: tokens,
+        closed: state.lastToken === '.',
+        lastSymbol: state.lastToken
+    }
+}
+
+function updateState(state: State, value: string, token: Token): void {
+    console.debug('Token: ', token)
+    if (!state.lastToken && !tokenIs(token, TokenType.Source)) {
+        state.lastToken = value
+    }
+    if (value === ']') {
+        state.squareLevel++;
+    }
+    else if (value === ')') {
+        state.parenthesisLevel++;
+    }
+    else if (value === '[') {
+        state.squareLevel--;
+        if (state.squareLevel < 0) {
+            state.done = true
+        }
+    }
+    else if (value === '(') {
+        state.parenthesisLevel--;
+        if (state.parenthesisLevel < 0) {
+            state.done = true
+        }
+    }
+}
+
+interface State {
+    squareLevel: number,
+    parenthesisLevel: number,
+    done: boolean,
+    currentSymbol: string,
+    lastToken: string,
 }
 
 function getTokens(line: string): Token[] {
@@ -107,9 +124,11 @@ function isBreak(token: Token, value: string): boolean {
     if (type === TokenType.MetaTag || type === TokenType.Operator) {
         return true;
     }
+
     if (tokenIs(token, TokenType.Delimiter) && value === ';') {
         return true;
     }
+
     return false;
 }
 
