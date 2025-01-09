@@ -1,7 +1,8 @@
-import { TypeDefinition, Symbol } from './Scope'
+import { TypeDefinition } from './scope'
+import { Symbol } from './symbols'
 
 const registry: Map<string, TypeDefinition> = new Map
-const globalScope: Symbol[] = []
+const globalMembers: Symbol[] = []
 
 function resolveType(type:string){
     return registry.get(type)
@@ -9,7 +10,7 @@ function resolveType(type:string){
 
 function registerGlobalSymbols(symbols: Symbol[]):void{
     symbols.forEach(s => {
-        globalScope.push(s)
+        globalMembers.push(s)
     })
 }
 
@@ -19,9 +20,9 @@ function registerTypes(symbols:TypeDefinition[]):void {
     });
 }
 
-export default {
+export const GlobalScope = {
     id: 'global-scope',
-    members: globalScope,
+    members: globalMembers,
     resolveType,
     registerGlobalSymbols,
     registerTypes

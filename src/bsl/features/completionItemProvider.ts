@@ -1,5 +1,5 @@
 import { editor, languages, Position, Range } from 'monaco-editor';
-import { Symbol, SymbolType } from '../../scope/Scope';
+import { Symbol, SymbolType } from '../../scope';
 import { scopeProvider } from '../scopeProvider';
 
 const completionItemProvider: languages.CompletionItemProvider = {

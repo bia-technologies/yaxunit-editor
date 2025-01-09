@@ -1,10 +1,10 @@
-import { BaseScope, Scope, Symbol, SymbolType, TypeDefinition } from "./Scope";
+import { BaseScope, Scope, TypeDefinition } from './scope';
+import { Symbol, SymbolType } from './symbols';
 import { editor } from "monaco-editor";
 import { parse } from "../bsl/parser";
 import { Method, Module } from "../bsl/Symbols";
 
-
-class LocalScope extends BaseScope implements TypeDefinition {
+export class LocalScope extends BaseScope implements TypeDefinition {
     model: editor.ITextModel | null
     module: Module = {
         vars: [], methods: []
@@ -76,5 +76,3 @@ class LocalScope extends BaseScope implements TypeDefinition {
         }
     }
 }
-
-export default LocalScope

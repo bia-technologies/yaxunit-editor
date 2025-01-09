@@ -1,17 +1,16 @@
 import { editor } from 'monaco-editor'
-import { createEditorScope } from '../scope/scopeStore'
-import LocalScope from '../scope/localScope'
 import { registerCommands } from './features/runner'
 import { TestsModel } from './TestDefinition'
 import { TestStatusDecorator } from './features/decorator'
 import { TestMessageMarkersProvider } from './features/markers'
 import { TestModelRender } from './features/interfaces'
+import { EditorScope } from '../scope'
 
 let activeEditor: YAxUnitEditor | undefined
 
 export class YAxUnitEditor {
     editor: editor.IStandaloneCodeEditor
-    module: LocalScope
+    scope: EditorScope
     tests: TestsModel = new TestsModel()
     renders: TestModelRender[] = []
 
@@ -37,7 +36,7 @@ export class YAxUnitEditor {
 
         tuneEditor(this.editor)
 
-        this.module = createEditorScope(this.editor).localScope
+        this.scope = EditorScope.getScope(this.editor)
         this.commands.runTest = registerCommands(this) ?? undefined
 
         this.renders.push(new TestStatusDecorator(this.editor), new TestMessageMarkersProvider(this.editor))
@@ -46,8 +45,8 @@ export class YAxUnitEditor {
         this.updateTestsModel()
 
         this.editor.getModel()?.onDidChangeContent(() => {
-            this.module.updateMembers()
-            this.tests.updateTests(this.module.module.methods)
+            this.scope.update()
+            this.tests.updateTests(this.scope.getMethods())
         })
     }
 
@@ -57,8 +56,8 @@ export class YAxUnitEditor {
     }
 
     updateTestsModel() {
-        this.module.updateMembers()
-        this.tests.updateTests(this.module.module.methods)
+        this.scope.update()
+        this.tests.updateTests(this.scope.getMethods())
     }
 
 }

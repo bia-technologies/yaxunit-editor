@@ -1,5 +1,4 @@
-import { SymbolType, TypeDefinition, PredefinedType } from "../../scope/Scope"
-import GlobalScope from "../../scope/globalScope"
+import { SymbolType, TypeDefinition, PredefinedType, GlobalScope } from "../../scope"
 
 const definition = [
     {

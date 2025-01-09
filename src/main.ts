@@ -10,7 +10,7 @@ import './yaxunit'
 import './bsl/platform'
 import { YAxUnitEditor } from './yaxunit'
 import { TestStatus } from './yaxunit/TestDefinition'
-
+import './checkESVersion.js'
 
 self.MonacoEnvironment = {
   getWorker(_): Worker {
@@ -31,7 +31,7 @@ self.MonacoEnvironment = {
 };
 
 const content: string =
-  `
+`
 Процедура ИсполняемыеСценарии() Экспорт
 
 	ЮТТесты
