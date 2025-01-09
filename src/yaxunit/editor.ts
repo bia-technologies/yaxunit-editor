@@ -18,8 +18,7 @@ export class YAxUnitEditor {
     commands: {
         runTest?: string
     } = {}
-    constructor(
-        content: string) {
+    constructor(content: string) {
         activeEditor = this
         const container = document.getElementById('container')
         if (container === null) {
@@ -35,6 +34,9 @@ export class YAxUnitEditor {
             useShadowDOM: false,
             contextmenu: false
         });
+
+        tuneEditor(this.editor)
+
         this.module = createEditorScope(this.editor).localScope
         this.commands.runTest = registerCommands(this) ?? undefined
 
@@ -59,6 +61,13 @@ export class YAxUnitEditor {
         this.tests.updateTests(this.module.module.methods)
     }
 
+}
+
+function tuneEditor(editor: editor.IStandaloneCodeEditor){
+    const controller = editor.getContribution('editor.contrib.suggestController');
+    if (controller) {
+        (controller as any).widget.value._setDetailsVisible(true);
+    }
 }
 
 export function getActiveEditor() {
