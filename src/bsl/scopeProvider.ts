@@ -20,6 +20,7 @@ const scopeProvider = {
         }
     },
     currentSymbol(model: editor.ITextModel, position: Position): Symbol | undefined {
+        console.debug('current symbol')
         const tokensSequence = tokensProvider.resolve(model, position)
 
         console.debug('tokensSequence: ', tokensSequence)
@@ -27,20 +28,36 @@ const scopeProvider = {
             return undefined
         }
 
+        tokensSequence.closed = false
+
         const scope = EditorScope.getScope(model)
         const word = model.getWordAtPosition(position)?.word
         return currentMember(tokensSequence, scope, position.lineNumber, word)
+    },
+    currentMethod(model: editor.ITextModel, position: Position): Symbol | undefined {
+        console.debug('current word', model.getWordUntilPosition(position)?.word)
+
+        console.debug('current symbol')
+        const tokensSequence = tokensProvider.findMethod(model, position)
+
+        console.debug('tokensSequence: ', tokensSequence)
+        if (tokensSequence === undefined) {
+            return undefined
+        }
+
+        tokensSequence.closed = true
+        const scope = EditorScope.getScope(model)
+        return currentMember(tokensSequence, scope, position.lineNumber)
     }
 }
 
-function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, lineNumber: number, word?:string): Symbol | undefined {
-    tokensSequence.closed = false
+function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, lineNumber: number, word?: string): Symbol | undefined {
     if (tokensSequence.tokens.length === 1) {
-        return globalScopeMember(word??tokensSequence.tokens[0], editorScope, lineNumber)
+        return globalScopeMember(word ?? tokensSequence.tokens[0], editorScope, lineNumber)
     }
     const scope = objectScope(tokensSequence, editorScope, lineNumber)
     if (scope) {
-        return findMember(scope, word??tokensSequence.tokens[tokensSequence.tokens.length - 1])
+        return findMember(scope, word ?? tokensSequence.tokens[tokensSequence.tokens.length - 1])
     }
 }
 

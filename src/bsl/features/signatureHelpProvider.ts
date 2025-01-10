@@ -1,24 +1,29 @@
-import { editor, languages, Position } from 'monaco-editor';
-import { scopeProvider } from '../scopeProvider';
+import { editor, languages, Position, CancellationToken } from 'monaco-editor'
+import { scopeProvider } from '../scopeProvider'
+import { Symbol, PlatformMethodSymbol, SymbolType } from '../../scope'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpRetriggerCharacters: ['(', ','],
     signatureHelpTriggerCharacters: [')'],
 
-    provideSignatureHelp(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.SignatureHelpResult> {
-        const symbol = scopeProvider.currentSymbol(model, position)
+    provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): languages.ProviderResult<languages.SignatureHelpResult> {
+        const symbol = scopeProvider.currentMethod(model, position)
         if (symbol) {
+            const signatures = (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) ?
+                methodSignature(symbol) :
+                [{
+                    label: symbol.name,
+                    parameters: [],
+                    documentation: {
+                        value: symbol.description ?? ''
+                    }
+                }]
+
             return {
                 value: {
-                    signatures: [{
-                        label: symbol.name,
-                        parameters: [],
-                        documentation: {
-                            value: symbol.description??''
-                        }
-                    }],
-                    activeParameter: 0,
-                    activeSignature: 0
+                    signatures: signatures,
+                    activeParameter: context.activeSignatureHelp?.activeParameter ?? 0,
+                    activeSignature: context.activeSignatureHelp?.activeSignature ?? 0
                 }, dispose: () => { }
             }
         } else {
@@ -26,6 +31,28 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         }
 
     },
+}
+
+function isPlatformMethod(symbol: Symbol): symbol is PlatformMethodSymbol {
+    return (<PlatformMethodSymbol>symbol).signatures !== undefined
+}
+
+function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
+    if (isPlatformMethod(symbol)) {
+        return symbol.signatures.map(s => {
+            return {
+                label: s.description === '' ? symbol.name : s.description,
+                documentation: s.description === '' ? symbol.description : s.description, activeParameter: 0,
+                parameters: s.params.map(p => {
+                    return {
+                        label: p.name,
+                        documentation: p.description ? { value: p.description } : 'Type: ' + p.type
+                    }
+                })
+            }
+        })
+    }
+    return []
 }
 
 export {

@@ -6,7 +6,7 @@ const codeLensProvider: languages.CodeLensProvider = {
 
     provideCodeLenses: function () {
         const editor = getActiveEditor()
-        const lenses = editor ? editor.module.module.methods.map(m => {
+        const lenses = editor ? editor.scope.getMethods().map(m => {
             return {
                 range: {
                     startLineNumber: m.startLine,

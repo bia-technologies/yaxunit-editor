@@ -16,8 +16,17 @@ export interface MethodSymbol extends Symbol {
     params: Parameter[],
 }
 
+export interface PlatformMethodSymbol extends Symbol {
+    signatures: MethodSignature[],
+}
+
+export interface MethodSignature {
+    description: string,
+    params: Parameter[],
+}
+
 export interface Parameter {
     name: string,
     type: string,
-    def: string
+    description: string
 }
