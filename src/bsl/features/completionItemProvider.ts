@@ -4,11 +4,12 @@ import { scopeProvider } from '../scopeProvider';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
-    provideCompletionItems(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.CompletionList> {
 
+    provideCompletionItems(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.CompletionList> {
         const scope = scopeProvider.resolveScope(model, position)
 
         console.debug('completion scope: ', scope)
+
         if (scope === undefined) {
             return undefined
         }

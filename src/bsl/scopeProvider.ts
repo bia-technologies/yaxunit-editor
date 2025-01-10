@@ -35,12 +35,12 @@ const scopeProvider = {
         return currentMember(tokensSequence, scope, position.lineNumber, word)
     },
     currentMethod(model: editor.ITextModel, position: Position): Symbol | undefined {
+        console.debug('Get current method')
         console.debug('current word', model.getWordUntilPosition(position)?.word)
 
-        console.debug('current symbol')
         const tokensSequence = tokensProvider.findMethod(model, position)
-
         console.debug('tokensSequence: ', tokensSequence)
+
         if (tokensSequence === undefined) {
             return undefined
         }

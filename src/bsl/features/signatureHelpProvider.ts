@@ -1,6 +1,7 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor'
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, PlatformMethodSymbol, SymbolType } from '../../scope'
+import { signatureDocumentation, signatureLabel } from './documentationRender'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpRetriggerCharacters: ['(', ','],
@@ -29,7 +30,6 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         } else {
             return undefined
         }
-
     },
 }
 
@@ -41,8 +41,9 @@ function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
     if (isPlatformMethod(symbol)) {
         return symbol.signatures.map(s => {
             return {
-                label: s.description === '' ? symbol.name : s.description,
-                documentation: s.description === '' ? symbol.description : s.description, activeParameter: 0,
+                label: signatureLabel(s),
+                documentation: signatureDocumentation(symbol, s),
+                activeParameter: 0,
                 parameters: s.params.map(p => {
                     return {
                         label: p.name,
