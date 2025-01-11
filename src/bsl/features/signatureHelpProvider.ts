@@ -2,14 +2,37 @@ import { editor, languages, Position, CancellationToken } from 'monaco-editor'
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, PlatformMethodSymbol, SymbolType } from '../../scope'
 import { signatureDocumentation, signatureLabel } from './documentationRender'
+import tokensProvider from '../tokensProvider'
+
+function currentMethodInfo(model: editor.ITextModel, position: Position) {
+    const tokensSequence = tokensProvider.findMethod(model, position)
+    if (!tokensSequence) {
+        return undefined
+    }
+
+    const symbol = scopeProvider.currentMethod(model, position)
+    if (!symbol) {
+        return undefined
+    }
+
+    return {
+        tokensSequence,
+        symbol,
+        activeParameter: tokensSequence.end ? tokensProvider.getParameterNumber(model, tokensSequence.end, position) : 0
+    }
+}
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
-    signatureHelpRetriggerCharacters: ['(', ','],
-    signatureHelpTriggerCharacters: [')'],
+    signatureHelpTriggerCharacters: ['(', ','],
+    signatureHelpRetriggerCharacters: [')'],
 
     provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): languages.ProviderResult<languages.SignatureHelpResult> {
-        const symbol = scopeProvider.currentMethod(model, position)
-        if (symbol) {
+
+        const methodInfo = currentMethodInfo(model, position)
+        console.debug('Method info', methodInfo)
+        console.debug('Method context', context)
+        if (methodInfo) {
+            const symbol = methodInfo.symbol
             const signatures = (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) ?
                 methodSignature(symbol) :
                 [{
@@ -23,8 +46,8 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
             return {
                 value: {
                     signatures: signatures,
-                    activeParameter: context.activeSignatureHelp?.activeParameter ?? 0,
-                    activeSignature: context.activeSignatureHelp?.activeSignature ?? 0
+                    activeParameter: methodInfo.activeParameter,
+                    activeSignature: 0
                 }, dispose: () => { }
             }
         } else {
@@ -41,9 +64,8 @@ function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
     if (isPlatformMethod(symbol)) {
         return symbol.signatures.map(s => {
             return {
-                label: signatureLabel(s),
+                label: signatureLabel(symbol, s),
                 documentation: signatureDocumentation(symbol, s),
-                activeParameter: 0,
                 parameters: s.params.map(p => {
                     return {
                         label: p.name,

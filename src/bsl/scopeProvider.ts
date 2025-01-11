@@ -34,11 +34,13 @@ const scopeProvider = {
         const word = model.getWordAtPosition(position)?.word
         return currentMember(tokensSequence, scope, position.lineNumber, word)
     },
-    currentMethod(model: editor.ITextModel, position: Position): Symbol | undefined {
+    currentMethod(model: editor.ITextModel, position: Position, tokensSequence?: TokensSequence): Symbol | undefined {
         console.debug('Get current method')
         console.debug('current word', model.getWordUntilPosition(position)?.word)
 
-        const tokensSequence = tokensProvider.findMethod(model, position)
+        if (!tokensSequence) {
+            tokensSequence = tokensProvider.findMethod(model, position)
+        }
         console.debug('tokensSequence: ', tokensSequence)
 
         if (tokensSequence === undefined) {
