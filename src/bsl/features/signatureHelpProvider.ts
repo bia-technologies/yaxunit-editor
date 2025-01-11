@@ -1,7 +1,7 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor'
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, PlatformMethodSymbol, SymbolType } from '../../scope'
-import { signatureDocumentation, signatureLabel } from './documentationRender'
+import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
 import tokensProvider from '../tokensProvider'
 
 function currentMethodInfo(model: editor.ITextModel, position: Position) {
@@ -69,7 +69,7 @@ function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
                 parameters: s.params.map(p => {
                     return {
                         label: p.name,
-                        documentation: p.description ? { value: p.description } : 'Type: ' + p.type
+                        documentation: parameterDocumentation(p)
                     }
                 })
             }

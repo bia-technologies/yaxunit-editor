@@ -33,11 +33,16 @@ function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionIt
         insertText += '('
     }
     return {
-        label: symbol.name,
+        label: {
+            label: symbol.name,
+            description: symbol.description
+        },
         kind: completionItemKind(symbol.kind),
         range: range,
         insertText: insertText,
-        documentation: symbol.description
+        documentation: symbol.description ? {
+            value: symbol.description
+        } : undefined
     }
 }
 
