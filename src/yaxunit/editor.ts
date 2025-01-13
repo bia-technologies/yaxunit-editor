@@ -62,7 +62,7 @@ export class YAxUnitEditor {
 
 }
 
-function tuneEditor(editor: editor.IStandaloneCodeEditor){
+function tuneEditor(editor: editor.IStandaloneCodeEditor) {
     const controller = editor.getContribution('editor.contrib.suggestController');
     if (controller) {
         (controller as any).widget.value._setDetailsVisible(true);

@@ -1,6 +1,6 @@
-import * as monaco from 'monaco-editor';
-import LanguageConfiguration = monaco.languages.LanguageConfiguration;
-import IMonarchLanguage = monaco.languages.IMonarchLanguage;
+import { languages } from 'monaco-editor';
+import LanguageConfiguration = languages.LanguageConfiguration;
+import IMonarchLanguage = languages.IMonarchLanguage;
 import { TokenType } from "./tokenTypes";
 
 export const conf: LanguageConfiguration = {
@@ -45,7 +45,7 @@ export const language: IMonarchLanguage = <IMonarchLanguage>{
   symbols: /[=><!~?:&+\-*\/\^%]+/,
 
   escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-  
+
   tokenizer: {
 
     root: [

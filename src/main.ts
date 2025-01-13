@@ -1,4 +1,5 @@
-import './styles/style.css'
+import './styles/style.css';
+import './polyfill .js';
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 // import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
@@ -10,10 +11,10 @@ import './yaxunit'
 import './bsl/platform'
 import { YAxUnitEditor } from './yaxunit'
 import { TestStatus } from './yaxunit/TestDefinition'
-import './checkESVersion.js'
 
-self.MonacoEnvironment = {
-  getWorker(_): Worker {
+
+(window as any).MonacoEnvironment = {
+  getWorker(): Worker {
     // if (label === 'json') {
     //   return new jsonWorker()
     // }
@@ -31,7 +32,7 @@ self.MonacoEnvironment = {
 };
 
 const content: string =
-`
+  `
 Процедура ИсполняемыеСценарии() Экспорт
 
 	ЮТТесты
@@ -63,6 +64,8 @@ const content: string =
 `;
 
 const bslEditor = new YAxUnitEditor(content);
+// const view: any = (bslEditor.editor as any)._modelData.view;
+// (bslEditor.editor as any)._modelData.view = makeLogProxy(view);
 (window as any).bslEditor = bslEditor;
 
 bslEditor.tests.updateTestsStatus({
