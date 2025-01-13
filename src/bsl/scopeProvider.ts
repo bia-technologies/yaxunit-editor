@@ -61,6 +61,7 @@ function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope,
     if (scope) {
         return findMember(scope, word ?? tokensSequence.tokens[tokensSequence.tokens.length - 1])
     }
+    return undefined
 }
 
 function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope, lineNumber: number): Scope | undefined {
@@ -136,8 +137,8 @@ function resolveInEditorScope(token: string, editorScope: EditorScope, lineNumbe
                 return tokenScope
             }
         }
-        return undefined
     }
+    return undefined
 }
 
 export {
