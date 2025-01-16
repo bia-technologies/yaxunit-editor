@@ -31,7 +31,11 @@ export class YAxUnitEditor {
             detectIndentation: false,
             insertSpaces: false,
             useShadowDOM: false,
-            contextmenu: false
+            contextmenu: false,
+            unicodeHighlight: {
+                ambiguousCharacters: false
+            },
+            autoClosingQuotes: 'beforeWhitespace',
         });
 
         tuneEditor(this.editor)
