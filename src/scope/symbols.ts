@@ -12,8 +12,7 @@ export interface Symbol {
     description?: string
 }
 
-export interface MethodSymbol extends Symbol {
-    params: Parameter[],
+export interface MethodSymbol extends Symbol, MethodSignature {
 }
 
 export interface PlatformMethodSymbol extends Symbol {
@@ -21,7 +20,7 @@ export interface PlatformMethodSymbol extends Symbol {
 }
 
 export interface MethodSignature {
-    description: string,
+    description?: string,
     params: Parameter[],
 }
 

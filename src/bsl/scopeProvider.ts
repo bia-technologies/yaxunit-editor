@@ -47,7 +47,7 @@ const scopeProvider = {
             return undefined
         }
 
-        tokensSequence.closed = true
+        tokensSequence.closed = false
         const scope = EditorScope.getScope(model)
         return currentMember(tokensSequence, scope, position.lineNumber)
     }
@@ -59,7 +59,7 @@ function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope,
     }
     const scope = objectScope(tokensSequence, editorScope, lineNumber)
     if (scope) {
-        return findMember(scope, word ?? tokensSequence.tokens[tokensSequence.tokens.length - 1])
+        return findMember(scope, word ?? tokensSequence.lastSymbol)
     }
     return undefined
 }

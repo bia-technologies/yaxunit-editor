@@ -1,7 +1,7 @@
 import { SymbolType, PredefinedType, MethodSymbol, GlobalScope } from "../scope"
-import * as scopeData from './scope.json'
+import scopeData from './scope.json'
 
-const scope = scopeData.default.map(t => {
+const scope: PredefinedType[] = scopeData.map((t: any) => {
     return new PredefinedType(t.name, t.methods.map(handleMethod))
 })
 
@@ -15,7 +15,7 @@ function handleMethod(m: any): MethodSymbol {
     }
 }
 
-const member = scope.filter((v) => v.id.startsWith("ОбщийМодуль."))
+const member = scope.filter(v => v.id.startsWith("ОбщийМодуль."))
     .map(t => {
         return {
             kind: SymbolType.property,

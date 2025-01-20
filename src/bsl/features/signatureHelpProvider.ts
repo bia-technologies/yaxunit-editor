@@ -1,6 +1,6 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor'
 import { scopeProvider } from '../scopeProvider'
-import { Symbol, PlatformMethodSymbol, SymbolType } from '../../scope'
+import { Symbol, PlatformMethodSymbol, SymbolType, MethodSymbol, MethodSignature } from '../../scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
 import tokensProvider from '../tokensProvider'
 
@@ -10,7 +10,7 @@ function currentMethodInfo(model: editor.ITextModel, position: Position) {
         return undefined
     }
 
-    const symbol = scopeProvider.currentMethod(model, position)
+    const symbol = scopeProvider.currentMethod(model, position, tokensSequence)
     if (!symbol) {
         return undefined
     }
@@ -62,20 +62,24 @@ function isPlatformMethod(symbol: Symbol): symbol is PlatformMethodSymbol {
 
 function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
     if (isPlatformMethod(symbol)) {
-        return symbol.signatures.map(s => {
+        return symbol.signatures.map(s => createSignature(symbol, s))
+    }else {
+        const methodSymbol  = symbol as MethodSymbol;
+        return [createSignature(methodSymbol, methodSymbol)]
+    }
+}
+
+function  createSignature(method: Symbol, sign: MethodSignature): languages.SignatureInformation{
+    return {
+        label: signatureLabel(method, sign),
+        documentation: signatureDocumentation(method, sign),
+        parameters: sign.params.map(p => {
             return {
-                label: signatureLabel(symbol, s),
-                documentation: signatureDocumentation(symbol, s),
-                parameters: s.params.map(p => {
-                    return {
-                        label: p.name,
-                        documentation: parameterDocumentation(p)
-                    }
-                })
+                label: p.name,
+                documentation: parameterDocumentation(p)
             }
         })
     }
-    return []
 }
 
 export {
