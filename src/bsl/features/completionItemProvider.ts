@@ -1,5 +1,5 @@
 import { editor, languages, Position, Range } from 'monaco-editor';
-import { Symbol, SymbolType } from '../../scope';
+import { isMethod, isPlatformMethod, Symbol, SymbolType } from '../../scope';
 import { scopeProvider } from '../scopeProvider';
 
 const completionItemProvider: languages.CompletionItemProvider = {
@@ -28,9 +28,12 @@ const completionItemProvider: languages.CompletionItemProvider = {
 }
 
 function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionItem {
-    let insertText = symbol.name
+    let insertText: string
+
     if (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) {
-        insertText += '('
+        insertText = methodInsertText(symbol)
+    } else {
+        insertText = symbol.name
     }
     return {
         label: {
@@ -44,6 +47,20 @@ function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionIt
             value: symbol.description
         } : undefined
     }
+}
+
+function methodInsertText(symbol: Symbol): string {
+    let close = false
+
+    if (isPlatformMethod(symbol)) {
+        if (symbol.signatures.length && symbol.signatures[0].params.length === 0) {
+            close = true
+        }
+    } if (isMethod(symbol)) {
+        close = symbol.params.length === 0
+    }
+
+    return symbol.name + (close ? "()" : "(");
 }
 
 function completionItemKind(type: SymbolType): languages.CompletionItemKind {

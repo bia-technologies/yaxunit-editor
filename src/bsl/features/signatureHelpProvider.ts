@@ -1,6 +1,6 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor'
 import { scopeProvider } from '../scopeProvider'
-import { Symbol, PlatformMethodSymbol, SymbolType, MethodSymbol, MethodSignature } from '../../scope'
+import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod } from '../../scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
 import tokensProvider from '../tokensProvider'
 
@@ -54,10 +54,6 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
             return undefined
         }
     },
-}
-
-function isPlatformMethod(symbol: Symbol): symbol is PlatformMethodSymbol {
-    return (<PlatformMethodSymbol>symbol).signatures !== undefined
 }
 
 function methodSignature(symbol: Symbol): languages.SignatureInformation[] {

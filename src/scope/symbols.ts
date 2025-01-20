@@ -29,3 +29,12 @@ export interface Parameter {
     type: string,
     description: string
 }
+
+export function isPlatformMethod(symbol: Symbol): symbol is PlatformMethodSymbol {
+    return (<PlatformMethodSymbol>symbol).signatures !== undefined
+}
+
+export function isMethod(symbol: Symbol): symbol is MethodSymbol {
+    return (<MethodSymbol>symbol).params !== undefined
+}
+
