@@ -36,6 +36,14 @@ export class YAxUnitEditor {
                 ambiguousCharacters: false
             },
             autoClosingQuotes: 'beforeWhitespace',
+            autoClosingBrackets: 'never',
+            autoClosingDelete: 'auto',
+            autoClosingOvertype: 'auto',
+            autoSurround: 'quotes',
+            acceptSuggestionOnCommitCharacter:true,
+            // fontFamily: 'Courier New',
+            // fontSize: 12,
+            fontLigatures: true
         });
 
         tuneEditor(this.editor)
