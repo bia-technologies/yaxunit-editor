@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor';
+import { languages } from 'monaco-editor-core'
 
 import { getActiveEditor } from '../editor'
 

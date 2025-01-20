@@ -1,5 +1,5 @@
 import tokensProvider from '../src/bsl/tokensProvider';
-import { editor, Position } from 'monaco-editor';
+import { editor, Position } from 'monaco-editor-core';
 import { expect, test } from 'vitest'
 
 {

@@ -1,4 +1,4 @@
-import { editor, languages, Position, Range } from 'monaco-editor';
+import { editor, languages, Position, Range } from 'monaco-editor-core';
 import { isMethod, isPlatformMethod, Symbol, SymbolType } from '../../scope';
 import { scopeProvider } from '../scopeProvider';
 

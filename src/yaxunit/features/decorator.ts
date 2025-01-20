@@ -1,5 +1,5 @@
 import { TestDefinition, TestsModel, TestStatus } from '../TestDefinition'
-import { editor, Range } from 'monaco-editor'
+import { editor, Range } from 'monaco-editor-core'
 import { TestModelRender } from './interfaces'
 
 

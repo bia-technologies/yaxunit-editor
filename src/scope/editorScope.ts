@@ -1,6 +1,6 @@
 import { BaseScope, Scope, UnionScope } from './scope'
 import { LocalScope } from './localScope'
-import { editor } from 'monaco-editor'
+import { editor } from 'monaco-editor-core'
 import { GlobalScope } from '.'
 import { Method } from '../bsl/Symbols'
 

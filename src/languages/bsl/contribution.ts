@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor';
+import { languages } from 'monaco-editor-core';
 import { completionItemProvider } from '../../bsl/features/completionItemProvider'
 import { signatureHelpProvider } from '../../bsl/features/signatureHelpProvider'
 

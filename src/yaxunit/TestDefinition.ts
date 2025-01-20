@@ -1,4 +1,4 @@
-import { IEvent, Emitter } from 'monaco-editor'
+import { IEvent, Emitter } from 'monaco-editor-core'
 import { Method } from '../bsl/Symbols'
 
 export enum TestStatus {

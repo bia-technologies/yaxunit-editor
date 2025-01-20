@@ -3,7 +3,7 @@ import { viteSingleFile } from "vite-plugin-singlefile"
 
 export default defineConfig({
   build: {
-    target: 'es2018',
+    target: 'es2018'
   },
   esbuild: {
     // Configure this value when the browser version of the development environment is lower
@@ -12,5 +12,5 @@ export default defineConfig({
   },
   plugins: [
     viteSingleFile()
-  ],
+  ]
 })

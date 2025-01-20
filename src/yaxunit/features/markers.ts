@@ -1,5 +1,5 @@
 import { TestsModel } from '../TestDefinition'
-import { editor, MarkerSeverity } from 'monaco-editor'
+import { editor, MarkerSeverity } from 'monaco-editor-core'
 import { TestModelRender } from './interfaces'
 
 

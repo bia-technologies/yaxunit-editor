@@ -1,4 +1,4 @@
-import { editor, languages, Position, CancellationToken } from 'monaco-editor'
+import { editor, languages, Position, CancellationToken } from 'monaco-editor-core'
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod } from '../../scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'

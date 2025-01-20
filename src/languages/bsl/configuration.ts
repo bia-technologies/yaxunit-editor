@@ -1,7 +1,7 @@
-import { languages } from 'monaco-editor';
-import LanguageConfiguration = languages.LanguageConfiguration;
-import IMonarchLanguage = languages.IMonarchLanguage;
-import { TokenType } from "./tokenTypes";
+import { languages } from 'monaco-editor-core'
+import LanguageConfiguration = languages.LanguageConfiguration
+import IMonarchLanguage = languages.IMonarchLanguage
+import { TokenType } from "./tokenTypes"
 
 export const conf: LanguageConfiguration = {
   comments: {

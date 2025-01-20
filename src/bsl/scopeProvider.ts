@@ -1,4 +1,4 @@
-import { editor, Position } from 'monaco-editor';
+import { editor, Position } from 'monaco-editor-core';
 import tokensProvider, { TokensSequence } from './tokensProvider'
 import { Scope, Symbol, GlobalScope, EditorScope } from '../scope';
 
