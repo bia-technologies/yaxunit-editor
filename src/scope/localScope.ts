@@ -5,14 +5,14 @@ import { parse } from "../bsl/parser"
 import { Method, Module } from "../bsl/Symbols"
 
 export class LocalScope extends BaseScope implements TypeDefinition {
-    model: editor.ITextModel | null
+    model: editor.ITextModel
     module: Module = {
         vars: [], methods: []
     }
 
     id: string = 'local-module'
 
-    constructor(model: editor.ITextModel | null) {
+    constructor(model: editor.ITextModel) {
         super([])
         this.model = model
     }

@@ -40,7 +40,7 @@ export class YAxUnitEditor {
             autoClosingDelete: 'auto',
             autoClosingOvertype: 'auto',
             autoSurround: 'quotes',
-            acceptSuggestionOnCommitCharacter:true,
+            acceptSuggestionOnCommitCharacter: true,
             // fontFamily: 'Courier New',
             // fontSize: 12,
             fontLigatures: true
@@ -48,7 +48,7 @@ export class YAxUnitEditor {
 
         tuneEditor(this.editor)
 
-        this.scope = EditorScope.getScope(this.editor)
+        this.scope = EditorScope.createScope(this.editor)
         this.commands.runTest = registerCommands(this) ?? undefined
 
         this.renders.push(new TestStatusDecorator(this.editor), new TestMessageMarkersProvider(this.editor))

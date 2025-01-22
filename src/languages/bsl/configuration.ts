@@ -2,6 +2,7 @@ import { languages } from 'monaco-editor-core'
 import LanguageConfiguration = languages.LanguageConfiguration
 import IMonarchLanguage = languages.IMonarchLanguage
 import { TokenType } from "./tokenTypes"
+import { keywords_all } from './keywords';
 
 export const conf: LanguageConfiguration = {
   comments: {
@@ -23,18 +24,7 @@ export const conf: LanguageConfiguration = {
 export const language: IMonarchLanguage = <IMonarchLanguage>{
   ignoreCase: true,
 
-  keywords: [
-    'КонецПроцедуры', 'EndProcedure', 'КонецФункции', 'EndFunction',
-    'Прервать', 'Break', 'Продолжить', 'Continue', 'Возврат', 'Return',
-    'Если', 'If', 'Иначе', 'Else', 'ИначеЕсли', 'ElsIf', 'Тогда', 'Then',
-    'КонецЕсли', 'EndIf', 'Попытка', 'Try', 'Исключение', 'Except',
-    'КонецПопытки', 'EndTry', 'Raise', 'ВызватьИсключение', 'Пока',
-    'While', 'Для', 'For', 'Каждого', 'Each', 'Из', 'In', 'По', 'To', 'Цикл',
-    'Do', 'КонецЦикла', 'EndDo', 'НЕ', 'NOT', 'И', 'AND', 'ИЛИ', 'OR', 'Новый',
-    'New', 'Процедура', 'Procedure', 'Функция', 'Function', 'Перем', 'Var',
-    'Экспорт', 'Export', 'Знач', 'Val', 'Неопределено', 'Выполнить',
-    'Истина', 'Ложь', 'True', 'False', 'Undefined'
-  ],
+  keywords: keywords_all,
 
   brackets: [
     { open: '[', close: ']', token: TokenType.DelimiterSquare },
