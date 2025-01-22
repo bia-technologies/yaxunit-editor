@@ -82,17 +82,8 @@ function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope, l
         let token = tokens[index];
 
         console.debug('analyze token ' + token)
-        const pos1 = token.indexOf('(')
-        const pos2 = token.indexOf('[')
 
-        if (pos1 > 0 && pos2 > 0) {
-            token = token.substring(0, Math.min(pos1, pos2))
-        } else if (pos1 > 0) {
-            token = token.substring(0, pos1)
-        } else if (pos2 > 0) {
-            token = token.substring(0, pos2)
-        }
-
+        token = cleanToken(token)
         const member = findMember(scope, token)
         if (member !== undefined && member.type !== undefined) {
             const tokenScope = GlobalScope.resolveType(member.type)
@@ -111,7 +102,9 @@ function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope, l
 }
 
 function findMember(scope: Scope, token: string): Symbol | undefined {
-    return scope.getMembers().find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
+    const member = scope.getMembers().find(s => s.name.localeCompare(token, undefined, { sensitivity: 'accent' }) === 0)
+    console.debug('find member', token, 'in scope', scope, 'result = ', member)
+    return member
 }
 
 function globalScopeMember(token: string, editorScope: EditorScope, lineNumber: number): Symbol | undefined {
@@ -141,6 +134,19 @@ function resolveInEditorScope(token: string, editorScope: EditorScope, lineNumbe
     return undefined
 }
 
+function cleanToken(token: string): string {
+    const pos1 = token.indexOf('(')
+    const pos2 = token.indexOf('[')
+
+    if (pos1 > 0 && pos2 > 0) {
+        return token.substring(0, Math.min(pos1, pos2))
+    } else if (pos1 > 0) {
+        return token.substring(0, pos1)
+    } else if (pos2 > 0) {
+        return token.substring(0, pos2)
+    }
+    return token;
+}
 export {
     scopeProvider
 }
