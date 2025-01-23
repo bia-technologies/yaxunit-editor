@@ -110,6 +110,8 @@ function findMember(scope: Scope, token: string): Symbol | undefined {
 function globalScopeMember(token: string, editorScope: EditorScope, lineNumber: number): Symbol | undefined {
     const scopes = editorScope.getScopesAtLine(lineNumber);
 
+    token = cleanToken(token)
+    
     for (let index = scopes.length - 1; index >= 0; index--) {
         const scope = scopes[index]
         const member = findMember(scope, token)

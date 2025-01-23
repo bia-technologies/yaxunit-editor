@@ -34,7 +34,9 @@ export const keywords_ru = [
     'Неопределено',
     'Перейти',
     'ДобавитьОбработчик',
-    'УдалитьОбработчик'
+    'УдалитьОбработчик',
+    'Ждать',
+    'Асинх'
 ]
 export const keywords_en = [
     'Procedure',
@@ -72,7 +74,9 @@ export const keywords_en = [
     'Undefined',
     'Goto',
     'AddHandler',
-    'RemoveHandler'
+    'RemoveHandler',
+    'Await',
+    'Async'
 ]
 
 export const keywords_all = keywords_en.concat(keywords_ru)

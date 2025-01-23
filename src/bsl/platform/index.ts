@@ -1,3 +1,1 @@
-import './globalFunctions'
-import './globalVariables'
-import './enums'
+import './loader'

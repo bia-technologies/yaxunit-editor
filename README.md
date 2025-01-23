@@ -9,12 +9,16 @@
 
 Планируемые возможности:
 
-1. Запуск и отображение состояния тестов.
-2. Контекстная подсказка по YAxUnit, с поддержкой fluent.
-3. Подсказка по методам платформы.
-4. Подсказка по методам конфигурации.
-5. Интеграция с 1с(встраивание в приложение 1с).
-6. Подключение к отладчику 1с.
+* [x] Запуск тестов.
+* [x] Отображение состояния тестов.
+* [x] Контекстная подсказка по YAxUnit, с поддержкой fluent.
+* [ ] Подсказка по методам платформы.
+  * [x] Глобальный контекст (свойства, методы, перечисления)
+  * [ ] Конструкторы
+  * [x] Свойства/методы платформенных типов
+* [ ] Подсказка по методам конфигурации.
+* [x] Интеграция с 1с(встраивание в приложение 1с).
+* [ ] Подключение к отладчику 1с.
 
 Также планируется реализовать в виде расширений monaco для возможности быстрого и простого подключения к своим проектам.
 
@@ -30,7 +34,6 @@
 * [bsl_console](https://github.com/salexdv/bsl_console)
 * [VAEditor](https://github.com/Pr-Mex/VAEditor)
 * [vsc-language-1c-bsl](https://github.com/1c-syntax/vsc-language-1c-bsl)
-* [onec-syntaxparser](https://github.com/xDrivenDevelopment/onec-syntaxparser)
 * [onec-syntaxparser](https://github.com/xDrivenDevelopment/onec-syntaxparser)
 * [react-1cv8-web-app](https://github.com/IngvarConsulting/react-1cv8-web-app)
 

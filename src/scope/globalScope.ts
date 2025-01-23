@@ -19,11 +19,15 @@ function registerTypes(symbols:TypeDefinition[]):void {
         registry.set(s.id, s)
     });
 }
+function registerType(symbol:TypeDefinition):void {
+    registry.set(symbol.id, symbol)
+}
 
 export const GlobalScope = {
     id: 'global-scope',
     members: globalMembers,
     resolveType,
     registerGlobalSymbols,
-    registerTypes
+    registerTypes,
+    registerType
 }
