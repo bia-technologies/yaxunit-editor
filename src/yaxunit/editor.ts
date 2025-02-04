@@ -1,6 +1,6 @@
 import { editor } from 'monaco-editor-core'
 import { registerCommands } from './features/runner'
-import { TestsModel } from './TestDefinition'
+import { TestsModel } from './test-model'
 import { TestStatusDecorator } from './features/decorator'
 import { TestMessageMarkersProvider } from './features/markers'
 import { TestModelRender } from './features/interfaces'

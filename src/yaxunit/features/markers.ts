@@ -1,9 +1,10 @@
-import { TestsModel } from '../TestDefinition'
+import { TestsModel } from '../test-model'
 import { editor, MarkerSeverity } from 'monaco-editor-core'
 import { TestModelRender } from './interfaces'
+import { Error } from '../test-model/report'
 
 
-export class TestMessageMarkersProvider implements TestModelRender{
+export class TestMessageMarkersProvider implements TestModelRender {
     editor: editor.IStandaloneCodeEditor
     decorationsIds: editor.IEditorDecorationsCollection | undefined
     constructor(editor: editor.IStandaloneCodeEditor) {
@@ -22,15 +23,27 @@ export class TestMessageMarkersProvider implements TestModelRender{
     }
 
     private getTestsMarkers(testsModel: TestsModel, editorModel: editor.ITextModel): editor.IMarkerData[] {
-        return testsModel.getTests().filter(t => t.message).map(t => {
-            return {
-                message: t.message ?? '',
-                severity: MarkerSeverity.Warning,
-                startLineNumber: t.lineNumber,
-                startColumn: editorModel.getLineFirstNonWhitespaceColumn(t.lineNumber),
-                endLineNumber: t.lineNumber,
-                endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber)
+        return testsModel.getTests().filter(t => t.errors).flatMap(t => {
+            return (t.errors as Error[]).map(e => {
+                return {
+                    code: '123',
+                    message: `${e.context}: ${e.message}`,
+                    severity: MarkerSeverity.Error,
+                    startLineNumber: t.lineNumber,
+                    startColumn: editorModel.getLineFirstNonWhitespaceColumn(t.lineNumber),
+                    endLineNumber: t.lineNumber,
+                    endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber),
+                    relatedInformation: [{
+                        resource: editorModel.uri,
+                        message: e.trace,
+                        startLineNumber: t.lineNumber + 2,
+                        startColumn: editorModel.getLineFirstNonWhitespaceColumn(t.lineNumber),
+                        endLineNumber: t.lineNumber + 2,
+                        endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber),
+                        }]
+                }
             }
+            )
         })
     }
     private getErrorsMarkers(testsModel: TestsModel, editorModel: editor.ITextModel): editor.IMarkerData[] {
@@ -51,7 +64,7 @@ function getErrorMarker(error: string, editorModel: editor.ITextModel): editor.I
         }
     } else {
         return {
-            message: error??'',
+            message: error ?? '',
             severity: MarkerSeverity.Error,
             startLineNumber: 1,
             startColumn: editorModel.getLineFirstNonWhitespaceColumn(1),
@@ -61,7 +74,7 @@ function getErrorMarker(error: string, editorModel: editor.ITextModel): editor.I
     }
 }
 
-function parseTrace(traceMessage: string, EOL:string) {
+function parseTrace(traceMessage: string, EOL: string) {
     const lines = traceMessage.split(EOL)
 
     let endLine = 0

@@ -1,7 +1,7 @@
 import { YAxUnitEditor } from '../index'
 import V8Proxy from '../../onec/V8Proxy'
 import './lensProvider'
-import { RunResult, TestStatus } from '../TestDefinition'
+import { RunResult, TestStatus } from '../test-model'
 
 (window as any).V8Proxy = V8Proxy
 
@@ -14,12 +14,12 @@ export function registerCommands(bslEditor: YAxUnitEditor) {
 }
 
 function runTest(methodName: string, editor: YAxUnitEditor) {
-    editor.tests.updateTestsStatus({tests: [{method: methodName, duration: 0, status: TestStatus.execution}]})
+    editor.tests.onRunTest(methodName)
     V8Proxy.fetch('runTest', {
         method: methodName, module: editor.getText()
     }).then((response) => {
         var result = <RunResult>response.json()
-        editor.tests.updateTestsStatus(result)
+        editor.tests.loadReport(result)
     })
 }
 

@@ -1,4 +1,4 @@
-import { TestDefinition, TestsModel, TestStatus } from '../TestDefinition'
+import { TestDefinition, TestsModel, TestStatus } from '../test-model'
 import { editor, Range } from 'monaco-editor-core'
 import { TestModelRender } from './interfaces'
 
@@ -23,8 +23,10 @@ export class TestStatusDecorator implements TestModelRender{
             }
         })
         if (this.decorationsIds) {
+            console.debug('update decorations', decorations)
             this.decorationsIds.set(decorations)
         } else {
+            console.debug('new decorations', decorations)
             this.decorationsIds = this.editor.createDecorationsCollection(decorations)
         }
     }
@@ -32,10 +34,10 @@ export class TestStatusDecorator implements TestModelRender{
 
 function getHover(test: TestDefinition): string {
     const lines = []
-    lines.push(`### Тест \`${test.method}\``, `Статус: ${test.status}`, `Продолжительность: ${test.duration} мс`)
+    lines.push(`Статус: ${test.status}`, `Продолжительность: ${test.duration} мс`)
     
-    if(test.message){
-        lines.push(`Сообщение: ${test.message}`)
+    if(test.errors){
+        test.errors.forEach(e=>lines.push(`**Ошибка(${e.context})**: ${e.message}`))
     }
     return lines.join('  \n')
 }
