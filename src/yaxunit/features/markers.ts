@@ -17,60 +17,59 @@ export class TestMessageMarkersProvider implements TestModelRender {
             return
         }
         const markers: editor.IMarkerData[] = this.getTestsMarkers(model, editorModel)
-        const errorsMarkers: editor.IMarkerData[] = this.getErrorsMarkers(model, editorModel)
-        markers.push(...errorsMarkers)
         editor.setModelMarkers(editorModel, "owner", markers);
     }
 
     private getTestsMarkers(testsModel: TestsModel, editorModel: editor.ITextModel): editor.IMarkerData[] {
-        return testsModel.getTests().filter(t => t.errors).flatMap(t => {
-            return (t.errors as Error[]).map(e => {
-                return {
-                    code: '123',
+        const markers: editor.IMarkerData[] = []
+
+        testsModel.getTests().filter(t => t.errors).forEach(t => {
+            (t.errors as Error[]).map(e => {
+                let traceMarket: editor.IMarkerData | undefined
+
+                if (e.trace) {
+                    const trace = parseTrace(e.trace, editorModel.getEOL())
+                    if (trace) {
+                        traceMarket = createMarket(trace.message, trace.line, editorModel)
+                        markers.push(traceMarket)
+                    } else {
+                        markers.push(createMarket(e.trace, 1, editorModel))
+                    }
+                }
+                const messageMarker: editor.IMarkerData = {
                     message: `${e.context}: ${e.message}`,
                     severity: MarkerSeverity.Error,
                     startLineNumber: t.lineNumber,
                     startColumn: editorModel.getLineFirstNonWhitespaceColumn(t.lineNumber),
                     endLineNumber: t.lineNumber,
-                    endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber),
-                    relatedInformation: [{
+                    endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber)
+                }
+                markers.push(messageMarker)
+                if (traceMarket) {
+                    messageMarker.relatedInformation = [{
                         resource: editorModel.uri,
-                        message: e.trace,
-                        startLineNumber: t.lineNumber + 2,
-                        startColumn: editorModel.getLineFirstNonWhitespaceColumn(t.lineNumber),
-                        endLineNumber: t.lineNumber + 2,
-                        endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber),
-                        }]
+                        message: traceMarket.message,
+                        startLineNumber: traceMarket.startLineNumber,
+                        startColumn: traceMarket.startColumn,
+                        endLineNumber: traceMarket.endLineNumber,
+                        endColumn: traceMarket.endColumn,
+                    }]
                 }
             }
             )
         })
-    }
-    private getErrorsMarkers(testsModel: TestsModel, editorModel: editor.ITextModel): editor.IMarkerData[] {
-        return testsModel.getErrors().filter(e => e).map(t => getErrorMarker(t, editorModel))
+        return markers
     }
 }
 
-function getErrorMarker(error: string, editorModel: editor.ITextModel): editor.IMarkerData {
-    const trace = parseTrace(error, editorModel.getEOL())
-    if (trace) {
-        return {
-            message: trace.message,
-            severity: MarkerSeverity.Error,
-            startLineNumber: trace.line,
-            startColumn: editorModel.getLineFirstNonWhitespaceColumn(trace.line),
-            endLineNumber: trace.line,
-            endColumn: editorModel.getLineLength(trace.line)
-        }
-    } else {
-        return {
-            message: error ?? '',
-            severity: MarkerSeverity.Error,
-            startLineNumber: 1,
-            startColumn: editorModel.getLineFirstNonWhitespaceColumn(1),
-            endLineNumber: 1,
-            endColumn: editorModel.getLineLength(1)
-        }
+function createMarket(message: string, line: number, editorModel: editor.ITextModel): editor.IMarkerData {
+    return {
+        message: message,
+        severity: MarkerSeverity.Error,
+        startLineNumber: line,
+        startColumn: editorModel.getLineFirstNonWhitespaceColumn(line),
+        endLineNumber: line,
+        endColumn: editorModel.getLineLength(line)
     }
 }
 
