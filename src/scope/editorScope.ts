@@ -3,6 +3,7 @@ import { LocalScope } from './localScope'
 import { editor } from 'monaco-editor-core'
 import { GlobalScope } from '.'
 import { Method } from '../bsl/Symbols'
+import { ModelChangeHandler } from '../yaxunit/features/interfaces'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -18,15 +19,16 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
     }
 }
 
-export class EditorScope extends UnionScope {
+export class EditorScope extends UnionScope implements ModelChangeHandler {
     localScope: LocalScope
     editor: editor.IStandaloneCodeEditor
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
-        this.scopes.push(new BaseScope(GlobalScope.members))
         this.localScope = new LocalScope(model)
-        this.scopes.push(this.localScope)
         this.editor = editor
+
+        this.scopes.push(this.localScope)
+        this.scopes.push(new BaseScope(GlobalScope.members))
     }
 
     getScopesAtLine(line: number | undefined): Scope[] {
@@ -34,12 +36,10 @@ export class EditorScope extends UnionScope {
             return this.scopes;
         }
         const method = this.localScope.getMethodScope(line)
-        if (method === undefined) {
+        if (!method) {
             return this.scopes;
         } else {
-            const clone = Object.assign([], this.scopes)
-            clone.push(method)
-            return clone
+            return [method].concat(this.scopes)
         }
     }
 
@@ -48,11 +48,19 @@ export class EditorScope extends UnionScope {
     }
 
     getMethods(): Method[] {
-        return this.localScope.module.methods
+        return this.localScope.getMethods()
     }
 
     update() {
         this.localScope.updateMembers()
+    }
+
+    onDidChangeContent(_: editor.IModelContentChangedEvent): void {
+        this.update()
+    }
+
+    init(): void {
+        this.update()
     }
 
     static createScope(value: editor.IStandaloneCodeEditor): EditorScope {

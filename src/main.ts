@@ -66,7 +66,7 @@ const bslEditor = new YAxUnitEditor(content);
 // (bslEditor.editor as any)._modelData.view = makeLogProxy(view);
 (window as any).bslEditor = bslEditor;
 
-bslEditor.tests.loadReport({
+bslEditor.testsModel.loadReport({
   testsuite: [{
     classname: 'ОМ_Тест',
     name: 'ОМ_Тест',

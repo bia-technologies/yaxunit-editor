@@ -5,8 +5,8 @@ import { parse } from "../bsl/parser"
 import { Method, Module } from "../bsl/Symbols"
 
 export class LocalScope extends BaseScope implements TypeDefinition {
-    model: editor.ITextModel
-    module: Module = {
+    private readonly model: editor.ITextModel
+    private module: Module = {
         vars: [], methods: []
     }
 
@@ -74,5 +74,9 @@ export class LocalScope extends BaseScope implements TypeDefinition {
                 })
             }
         }
+    }
+
+    getMethods(): Method[] {
+        return this.module.methods;
     }
 }
