@@ -25,15 +25,15 @@ export class TestMessageMarkersProvider implements TestModelRender {
 
         testsModel.getTests().filter(t => t.errors).forEach(t => {
             (t.errors as Error[]).map(e => {
-                let traceMarket: editor.IMarkerData | undefined
+                let traceMarker: editor.IMarkerData | undefined
 
                 if (e.trace) {
                     const trace = parseTrace(e.trace, editorModel.getEOL())
                     if (trace) {
-                        traceMarket = createMarket(trace.message, trace.line, editorModel)
-                        markers.push(traceMarket)
+                        traceMarker = createMarker(trace.message, trace.line, editorModel)
+                        markers.push(traceMarker)
                     } else {
-                        markers.push(createMarket(e.trace, 1, editorModel))
+                        markers.push(createMarker(e.trace, 1, editorModel))
                     }
                 }
                 const messageMarker: editor.IMarkerData = {
@@ -45,14 +45,14 @@ export class TestMessageMarkersProvider implements TestModelRender {
                     endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber)
                 }
                 markers.push(messageMarker)
-                if (traceMarket) {
+                if (traceMarker) {
                     messageMarker.relatedInformation = [{
                         resource: editorModel.uri,
-                        message: traceMarket.message,
-                        startLineNumber: traceMarket.startLineNumber,
-                        startColumn: traceMarket.startColumn,
-                        endLineNumber: traceMarket.endLineNumber,
-                        endColumn: traceMarket.endColumn,
+                        message: traceMarker.message,
+                        startLineNumber: traceMarker.startLineNumber,
+                        startColumn: traceMarker.startColumn,
+                        endLineNumber: traceMarker.endLineNumber,
+                        endColumn: traceMarker.endColumn,
                     }]
                 }
             }
@@ -62,7 +62,7 @@ export class TestMessageMarkersProvider implements TestModelRender {
     }
 }
 
-function createMarket(message: string, line: number, editorModel: editor.ITextModel): editor.IMarkerData {
+function createMarker(message: string, line: number, editorModel: editor.ITextModel): editor.IMarkerData {
     return {
         message: message,
         severity: MarkerSeverity.Error,

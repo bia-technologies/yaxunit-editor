@@ -9,9 +9,9 @@ export default defineConfig({
 		environment: "jsdom",
 		alias: [
 			{
-				find: /^monaco-editor$/,
+				find: /^monaco-editor-core$/,
 				replacement:
-					path.resolve(__dirname, "./node_modules/monaco-editor/esm/vs/editor/editor.api")
+					path.resolve(__dirname, "./node_modules/monaco-editor-core/esm/vs/editor/editor.api")
 			},
 		],
 
