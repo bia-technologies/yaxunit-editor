@@ -4,7 +4,7 @@ import { ModelChangeHandler } from "../features/interfaces";
 import { YAxUnitEditor } from "../editor";
 import { Method } from "../../bsl/Symbols";
 
-const REGISTERED_TEST_PATTERN = new RegExp('\.\s*(?:ДобавитьТест|ДобавитьСерверныйТест|ДобавитьКлиентскийТест)\s*\\(\s*\"([\w\dА-Яа-я_]+\)"\s*\\)', 'guim')
+const REGISTERED_TEST_PATTERN = /\.\s*(?:ДобавитьТест|ДобавитьСерверныйТест|ДобавитьКлиентскийТест)\s*\(\s*"([\w\dА-Яа-я_]+)"\s*\)/guim
 
 export class TestsResolver implements ModelChangeHandler {
     editor: YAxUnitEditor
