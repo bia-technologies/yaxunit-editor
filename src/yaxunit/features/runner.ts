@@ -1,7 +1,7 @@
 import { YAxUnitEditor } from '../index'
 import V8Proxy from '../../onec/V8Proxy'
 import './lensProvider'
-import { RunResult, TestStatus } from '../test-model'
+import { Report } from '../test-model'
 
 (window as any).V8Proxy = V8Proxy
 
@@ -18,7 +18,7 @@ function runTest(methodName: string, editor: YAxUnitEditor) {
     V8Proxy.fetch('runTest', {
         method: methodName, module: editor.getText()
     }).then((response) => {
-        var result = <RunResult>response.json()
+        var result = <Report>response.json()
         editor.tests.loadReport(result)
     })
 }

@@ -2,12 +2,12 @@ import { IEvent, Emitter } from 'monaco-editor-core'
 
 import { TestDefinition, TestStatus } from './types'
 import { Method } from '../../bsl/Symbols'
-import { Error, Report, TestCaseResult, TestSuiteResult } from './report'
+import { Report, TestCaseResult, TestSuiteResult } from './report'
 
 const ROOT_METHOD = 'ИсполняемыеСценарии'
 
 export class TestsModel {
-    private readonly tests: TestDefinition[] = []
+    private tests: TestDefinition[] = []
     private errors: string[] = []
     emitter: Emitter<TestsModel> = new Emitter()
     lastReport?: Report
@@ -25,12 +25,26 @@ export class TestsModel {
         methods.forEach(m => {
             const test = this.findTest(m.name)
             if (test) {
-                test.lineNumber = m.startLine
+                if (test.lineNumber !== m.startLine) {
+                    test.lineNumber = m.startLine
+                    changed = true
+                }
             } else {
                 this.tests.push(new TestDefinition(m))
                 changed = true
             }
         })
+        const forDeleting: TestDefinition[] = []
+        this.tests.forEach(t => {
+            if (!methods.find(m => m.name === t.method)) {
+                forDeleting.push(t)
+            }
+        })
+
+        if (forDeleting.length) {
+            this.tests = this.tests.filter(t => forDeleting.indexOf(t) == -1)
+            changed = true
+        }
         if (changed) {
             this.emitter.fire(this)
         }
@@ -79,13 +93,13 @@ export class TestsModel {
         if (method.status !== TestStatus.passed) {
             var errors = method.errors ? method.errors : method.errors = []
             if (test.error) {
-                test.error.forEach(e => {errors.push(e);e.context = suite.context})
+                test.error.forEach(e => { errors.push(e); e.context = suite.context })
             }
             if (test.failure) {
-                test.failure.forEach(e => {errors.push(e);e.context = suite.context})
+                test.failure.forEach(e => { errors.push(e); e.context = suite.context })
             }
             if (test.skipped) {
-                test.skipped.forEach(e => {errors.push(e);e.context = suite.context})
+                test.skipped.forEach(e => { errors.push(e); e.context = suite.context })
             }
         }
         method.duration += test.time * 1000
