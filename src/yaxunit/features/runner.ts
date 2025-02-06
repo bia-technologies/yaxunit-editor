@@ -14,12 +14,12 @@ export function registerCommands(bslEditor: YAxUnitEditor) {
 }
 
 function runTest(methodName: string, editor: YAxUnitEditor) {
-    editor.tests.onRunTest(methodName)
+    editor.testsModel.onRunTest(methodName)
     V8Proxy.fetch('runTest', {
         method: methodName, module: editor.getText()
     }).then((response) => {
         var result = <Report>response.json()
-        editor.tests.loadReport(result)
+        editor.testsModel.loadReport(result)
     })
 }
 

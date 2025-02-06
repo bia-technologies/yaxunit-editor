@@ -6,19 +6,19 @@ const codeLensProvider: languages.CodeLensProvider = {
 
     provideCodeLenses: function () {
         const editor = getActiveEditor()
-        const lenses = editor ? editor.scope.getMethods().map(m => {
+        const lenses = editor ? editor.testsModel.getTests().map(m => {
             return {
                 range: {
-                    startLineNumber: m.startLine,
+                    startLineNumber: m.lineNumber,
                     startColumn: 1,
-                    endLineNumber: m.endLine,
+                    endLineNumber: m.lineNumber,
                     endColumn: 1,
                 },
-                id: "RunTest" + m.name,
+                id: "RunTest" + m.method,
                 command: {
                     id: editor.commands.runTest ?? '',
                     title: "Run test",
-                    arguments: [m.name]
+                    arguments: [m.method]
 
                 },
             }

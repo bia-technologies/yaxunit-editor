@@ -5,14 +5,16 @@ import { TestStatusDecorator } from './features/decorator'
 import { TestMessageMarkersProvider } from './features/markers'
 import { TestModelRender } from './features/interfaces'
 import { EditorScope } from '../scope'
+import { TestsResolver } from './test-resolver/resolver'
 
 let activeEditor: YAxUnitEditor | undefined
 
 export class YAxUnitEditor {
     editor: editor.IStandaloneCodeEditor
     scope: EditorScope
-    tests: TestsModel = new TestsModel()
+    testsModel: TestsModel = new TestsModel()
     renders: TestModelRender[] = []
+    testsResolver: TestsResolver
 
     commands: {
         runTest?: string
@@ -24,7 +26,6 @@ export class YAxUnitEditor {
             throw 'Error!';
         }
         this.editor = editor.create(container, {
-            value: content,
             language: 'bsl',
             automaticLayout: true,
             glyphMargin: true,
@@ -52,26 +53,22 @@ export class YAxUnitEditor {
         this.commands.runTest = registerCommands(this) ?? undefined
 
         this.renders.push(new TestStatusDecorator(this.editor), new TestMessageMarkersProvider(this.editor))
-        this.tests.onDidChangeContent(_ => this.renders.forEach(r => r.update(this.tests)))
+        this.testsModel.onDidChangeContent(_ => this.renders.forEach(r => r.update(this.testsModel)))
 
-        this.updateTestsModel()
+        this.testsResolver = new TestsResolver(this, this.testsModel)
 
-        this.editor.getModel()?.onDidChangeContent(() => {
-            this.scope.update()
-            this.tests.updateTests(this.scope.getMethods())
+        this.editor.getModel()?.onDidChangeContent(e => {
+            this.scope.onDidChangeContent(e)
+            this.testsResolver.onDidChangeContent(e)
         })
+
+        this.editor.setValue(content)
     }
 
     getText(): string {
         const model = this.editor.getModel()
         return model ? model.getValue() : ''
     }
-
-    updateTestsModel() {
-        this.scope.update()
-        this.tests.updateTests(this.scope.getMethods())
-    }
-
 }
 
 function tuneEditor(editor: editor.IStandaloneCodeEditor) {

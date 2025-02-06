@@ -4,7 +4,7 @@ import { TestDefinition, TestStatus } from './types'
 import { Method } from '../../bsl/Symbols'
 import { Report, TestCaseResult, TestSuiteResult } from './report'
 
-const ROOT_METHOD = 'ИсполняемыеСценарии'
+export const ROOT_METHOD = 'ИсполняемыеСценарии'
 
 export class TestsModel {
     private tests: TestDefinition[] = []
