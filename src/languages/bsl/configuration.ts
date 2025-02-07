@@ -18,7 +18,14 @@ export const conf: LanguageConfiguration = {
     { open: "\"", close: "\"" },
     { open: "'", close: "'" },
     { open: "<", close: ">" },
-  ]
+  ],
+  folding: {
+    offSide: false,
+    markers: {
+      start: /^\s*#Область.+/,
+      end: /^\s*#КонецОбласти/
+    }
+  }
 };
 
 export const language: IMonarchLanguage = <IMonarchLanguage>{

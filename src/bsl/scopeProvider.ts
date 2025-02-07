@@ -1,6 +1,7 @@
 import { editor, Position } from 'monaco-editor-core';
 import tokensProvider, { TokensSequence } from './tokensProvider'
 import { Scope, Symbol, GlobalScope, EditorScope } from '../scope';
+import { Method } from './Symbols';
 
 const scopeProvider = {
     resolveScope(model: editor.ITextModel, position: Position): Scope | undefined {
@@ -50,6 +51,14 @@ const scopeProvider = {
         tokensSequence.closed = false
         const scope = EditorScope.getScope(model)
         return currentMember(tokensSequence, scope, position.lineNumber)
+    },
+    getModelMethods(model: editor.ITextModel): Method[] | undefined {
+        const scope = EditorScope.getScope(model)
+        if (scope) {
+            return scope.getMethods()
+        } else {
+            return undefined
+        }
     }
 }
 
@@ -111,7 +120,7 @@ function globalScopeMember(token: string, editorScope: EditorScope, lineNumber: 
     const scopes = editorScope.getScopesAtLine(lineNumber);
 
     token = cleanToken(token)
-    
+
     for (let index = scopes.length - 1; index >= 0; index--) {
         const scope = scopes[index]
         const member = findMember(scope, token)

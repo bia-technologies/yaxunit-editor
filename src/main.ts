@@ -30,7 +30,7 @@ import { YAxUnitEditor } from './yaxunit'
 };
 
 const content: string =
-  `
+  `#Область Тесты
 Процедура ИсполняемыеСценарии() Экспорт
 
 	ЮТТесты
@@ -59,7 +59,7 @@ const content: string =
 	ЮТест.ОжидаетЧто(1).ОтсутствующийМетод(2);
 
 КонецПроцедуры
-`;
+#КонецОбласти`;
 
 const bslEditor = new YAxUnitEditor(content);
 // const view: any = (bslEditor.editor as any)._modelData.view;
