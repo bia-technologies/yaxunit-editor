@@ -1,9 +1,7 @@
-import { Scope, UnionScope } from './scope'
-import { LocalModuleScope } from './localModuleScope'
+import { Scope, UnionScope, GlobalScope } from '@/scope'
+import { LocalModuleScope } from '@/bsl/scope/localModuleScope'
 import { editor } from 'monaco-editor-core'
-import { GlobalScope } from '.'
 import { Method } from '@/bsl/Symbols'
-import { ModelChangeHandler } from '@/yaxunit/features/interfaces'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -19,7 +17,7 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
     }
 }
 
-export class EditorScope extends UnionScope implements ModelChangeHandler {
+export class EditorScope extends UnionScope {
     localScope: LocalModuleScope
     editor: editor.IStandaloneCodeEditor
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {

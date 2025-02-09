@@ -21,9 +21,6 @@ function registerTypes(symbols: TypeDefinition[]): void {
         registry[symbol.id.toLocaleLowerCase()] = symbol
     });
 }
-function registerType(symbol: TypeDefinition): void {
-    registry[symbol.id.toLocaleLowerCase()] = symbol
-}
 
 function replaceType(typeId: string, type: TypeDefinition): void {
     registry[typeId.toLocaleLowerCase()] = type

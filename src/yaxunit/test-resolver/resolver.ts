@@ -1,12 +1,11 @@
 import { editor } from "monaco-editor-core";
 import { ROOT_METHOD, TestsModel } from "../test-model";
-import { ModelChangeHandler } from "../features/interfaces";
 import { YAxUnitEditor } from "../editor";
 import { Method } from "@/bsl/Symbols";
 
 const REGISTERED_TEST_PATTERN = /\.\s*(?:ДобавитьТест|ДобавитьСерверныйТест|ДобавитьКлиентскийТест)\s*\(\s*"([\w\dА-Яа-я_]+)"\s*\)/guim
 
-export class TestsResolver implements ModelChangeHandler {
+export class TestsResolver {
     editor: YAxUnitEditor
     model: TestsModel
 

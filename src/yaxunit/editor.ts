@@ -3,7 +3,7 @@ import { registerCommands } from './features/runner'
 import { TestsModel } from './test-model'
 import { TestStatusDecorator } from './features/decorator'
 import { TestMessageMarkersProvider } from './features/markers'
-import { TestModelRender } from './features/interfaces'
+import { TestModelRender } from './interfaces'
 import { EditorScope } from '@/scope'
 import { TestsResolver } from './test-resolver/resolver'
 

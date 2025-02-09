@@ -17,7 +17,7 @@ const scopeProvider = {
         if (tokensSequence.tokens.length === 0 || tokensSequence.tokens.length === 1 && !tokensSequence.closed) {
             return scope
         } else {
-            return objectScope(tokensSequence, scope, position.lineNumber)
+            return objectScope(tokensSequence, scope)
         }
     },
     currentSymbol(model: editor.ITextModel, position: Position): Symbol | undefined {
@@ -33,7 +33,7 @@ const scopeProvider = {
 
         const scope = EditorScope.getScope(model)
         const word = model.getWordAtPosition(position)?.word
-        return currentMember(tokensSequence, scope, position.lineNumber, word)
+        return currentMember(tokensSequence, scope, word)
     },
     currentMethod(model: editor.ITextModel, position: Position, tokensSequence?: TokensSequence): Symbol | undefined {
         console.debug('Get current method')
@@ -50,7 +50,7 @@ const scopeProvider = {
 
         tokensSequence.closed = false
         const scope = EditorScope.getScope(model)
-        return currentMember(tokensSequence, scope, position.lineNumber)
+        return currentMember(tokensSequence, scope)
     },
     getModelMethods(model: editor.ITextModel): Method[] | undefined {
         const scope = EditorScope.getScope(model)
@@ -62,24 +62,24 @@ const scopeProvider = {
     }
 }
 
-function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, lineNumber: number, word?: string): Symbol | undefined {
+function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, word?: string): Symbol | undefined {
     if (tokensSequence.tokens.length === 1) {
-        return globalScopeMember(word ?? tokensSequence.tokens[0], editorScope, lineNumber)
+        return globalScopeMember(word ?? tokensSequence.tokens[0], editorScope)
     }
-    const scope = objectScope(tokensSequence, editorScope, lineNumber)
+    const scope = objectScope(tokensSequence, editorScope)
     if (scope) {
         return scope.findMember(word ?? tokensSequence.lastSymbol)
     }
     return undefined
 }
 
-function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope, lineNumber: number): Scope | undefined {
+function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): Scope | undefined {
 
     console.debug('calculate objectScope');
 
     const tokens = tokensSequence.tokens
     const firstToken = tokens[tokens.length - 1];
-    let scope = resolveInEditorScope(firstToken, editorScope, lineNumber)
+    let scope = resolveInEditorScope(firstToken, editorScope)
 
     if (!scope) {
         console.debug('don\'t found in global scope')
@@ -115,8 +115,8 @@ function globalScopeMember(token: string, editorScope: EditorScope): Symbol | un
     return editorScope.findMember(token)
 }
 
-function resolveInEditorScope(token: string, editorScope: EditorScope, lineNumber: number): Scope | undefined {
-    const member = globalScopeMember(token, editorScope, lineNumber)
+function resolveInEditorScope(token: string, editorScope: EditorScope): Scope | undefined {
+    const member = globalScopeMember(token, editorScope)
 
     if (member) {
         if (member.type) {
