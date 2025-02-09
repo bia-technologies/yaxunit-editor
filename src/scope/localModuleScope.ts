@@ -1,27 +1,25 @@
-import { BaseScope, Scope, TypeDefinition } from './scope'
+import { BaseScope, Scope } from './scope'
 import { Symbol, SymbolType } from './symbols'
 import { editor } from "monaco-editor-core"
 import { parse } from "../bsl/parser"
 import { Method, Module } from "../bsl/Symbols"
 
-export class LocalScope extends BaseScope implements TypeDefinition {
+export class LocalModuleScope extends BaseScope {
     private readonly model: editor.ITextModel
     private module: Module = {
         vars: [], methods: []
     }
 
-    id: string = 'local-module'
 
     constructor(model: editor.ITextModel) {
         super([])
         this.model = model
     }
 
-    getMembers() {
+    beforeGetMembers() {
         if (this.needUpdateMembers()) {
             this.updateMembers()
         }
-        return this.members
     }
 
     getMethodAtLine(line: number): Method | undefined {

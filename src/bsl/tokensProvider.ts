@@ -1,5 +1,5 @@
 import { editor, Position, Token } from 'monaco-editor-core';
-import { TokenType } from "../languages/bsl/tokenTypes";
+import { TokenType } from "@/languages/bsl/tokenTypes";
 
 export interface TokensSequence {
     tokens: string[],

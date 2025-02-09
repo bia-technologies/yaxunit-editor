@@ -1,9 +1,22 @@
-import { SymbolType, PredefinedType, MethodSymbol, GlobalScope } from "../scope"
-import scopeData from './scope.json'
+import { SymbolType, PredefinedType, MethodSymbol, GlobalScope, GlobalScopeItem } from "@/scope"
 
-const scope: PredefinedType[] = scopeData.map((t: any) => {
-    return new PredefinedType(t.name, t.methods.map(handleMethod))
-})
+class YAxUnitScope extends GlobalScopeItem { }
+
+async function loadScope() {
+    const scopeData = await import('@/assets/yaxunit-scope.json')
+    const types = scopeData.default.map((t: any) => {
+        return new PredefinedType(t.name, t.methods.map(handleMethod))
+    })
+    const members = types.filter(v => v.id.startsWith("ОбщийМодуль."))
+        .map(t => {
+            return {
+                kind: SymbolType.property,
+                name: t.id.substring(12),
+                type: t.id
+            }
+        })
+    return new YAxUnitScope(members, types)
+}
 
 function handleMethod(m: any): MethodSymbol {
     return {
@@ -15,14 +28,4 @@ function handleMethod(m: any): MethodSymbol {
     }
 }
 
-const member = scope.filter(v => v.id.startsWith("ОбщийМодуль."))
-    .map(t => {
-        return {
-            kind: SymbolType.property,
-            name: t.id.substring(12),
-            type: t.id
-        }
-    })
-
-GlobalScope.registerGlobalSymbols(member)
-GlobalScope.registerTypes(scope)
+loadScope().then(GlobalScope.appendScope)

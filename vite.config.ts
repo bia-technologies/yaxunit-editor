@@ -12,5 +12,10 @@ export default defineConfig({
   },
   plugins: [
     viteSingleFile()
-  ]
+  ],
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 })

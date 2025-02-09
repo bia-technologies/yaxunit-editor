@@ -1,9 +1,9 @@
-import { BaseScope, Scope, UnionScope } from './scope'
-import { LocalScope } from './localScope'
+import { Scope, UnionScope } from './scope'
+import { LocalModuleScope } from './localModuleScope'
 import { editor } from 'monaco-editor-core'
 import { GlobalScope } from '.'
-import { Method } from '../bsl/Symbols'
-import { ModelChangeHandler } from '../yaxunit/features/interfaces'
+import { Method } from '@/bsl/Symbols'
+import { ModelChangeHandler } from '@/yaxunit/features/interfaces'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -20,15 +20,15 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 }
 
 export class EditorScope extends UnionScope implements ModelChangeHandler {
-    localScope: LocalScope
+    localScope: LocalModuleScope
     editor: editor.IStandaloneCodeEditor
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
-        this.localScope = new LocalScope(model)
+        this.localScope = new LocalModuleScope(model)
         this.editor = editor
 
         this.scopes.push(this.localScope)
-        this.scopes.push(new BaseScope(GlobalScope.members))
+        this.scopes.push(GlobalScope.scope)
     }
 
     getScopesAtLine(line: number | undefined): Scope[] {

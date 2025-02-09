@@ -6,10 +6,11 @@ import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 // import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
 // import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 // import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
-import './languages/bsl/contribution'
-import './yaxunit'
-import './bsl/platform'
+import '@/languages/bsl/contribution'
+import '@/yaxunit'
+import '@/bsl/scope'
 import { YAxUnitEditor } from './yaxunit'
+// import './bsl/scope/configuration/configurationScope.js'
 
 (window as any).MonacoEnvironment = {
   getWorker(): Worker {
