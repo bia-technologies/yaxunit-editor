@@ -9,7 +9,6 @@ export async function loadScope(): Promise<Scope> {
     const enumsData = await import('@/assets/enums.json')
     const typesData = await import('@/assets/types.json')
 
-
     const properties = propertiesData.default.map(createPropertySymbol)
     const methods = methodsData.default.map(createMethodSymbol)
     const enums = enumsData.default.map(createEnumSymbol)

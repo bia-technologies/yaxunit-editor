@@ -26,7 +26,7 @@ export class EditorScope extends UnionScope {
         this.editor = editor
 
         this.scopes.push(this.localScope)
-        this.scopes.push(GlobalScope.scope)
+        this.scopes.push(GlobalScope)
     }
 
     getScopesAtLine(line: number | undefined): Scope[] {

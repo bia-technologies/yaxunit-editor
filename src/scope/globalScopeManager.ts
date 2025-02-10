@@ -1,35 +1,30 @@
 import { Scope, UnionScope } from './scope'
-import { TypeDefinition, isTypeHolder } from './types'
+import { TypeDefinition, TypeHolder, isTypeHolder } from './types'
 
-const registry: { [key: string]: TypeDefinition } = {}
-const globalScope: UnionScope = new UnionScope()
+export class GlobalScopeManager extends UnionScope implements TypeHolder {
+    readonly typeHolders: TypeHolder[] = []
+    readonly registeredScopes: {[key:string]:Scope} = {}
 
-function resolveType(type: string): TypeDefinition | undefined {
-    return registry[type.toLocaleLowerCase()]
-}
+    registerScope(scopeId: string, scope: Scope) {
+        console.log('registerScope', scopeId, scope)
+        this.scopes.push(scope)
+        this.registeredScopes[scopeId] = scope
 
-function appendScope(scope: Scope) {
-    globalScope.scopes.push(scope)
+        if (isTypeHolder(scope)) {
+            this.typeHolders.push(scope)
+        }
+    }
 
-    if (isTypeHolder(scope)) {
-        registerTypes(scope.getTypes())
+    resolveType(typeId: string): TypeDefinition | undefined {
+        typeId = typeId.toLocaleLowerCase()
+        for (const typeHolder of this.typeHolders) {
+            const type = typeHolder.resolveType(typeId)
+            if (type) {
+                return type
+            }
+        }
+        return undefined
     }
 }
 
-function registerTypes(symbols: TypeDefinition[]): void {
-    symbols.forEach(symbol => {
-        registry[symbol.id.toLocaleLowerCase()] = symbol
-    });
-}
-
-function replaceType(typeId: string, type: TypeDefinition): void {
-    registry[typeId.toLocaleLowerCase()] = type
-}
-
-export const GlobalScope = {
-    id: 'global-scope',
-    scope: globalScope,
-    resolveType,
-    appendScope,
-    replaceType
-}
+export const GlobalScope = new GlobalScopeManager()

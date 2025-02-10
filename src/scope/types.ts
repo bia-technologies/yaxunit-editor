@@ -15,10 +15,10 @@ export class PredefinedType extends BaseScope implements TypeDefinition {
 }
 
 export interface TypeHolder {
-    getTypes(): TypeDefinition[]
+    resolveType(typeId: string): TypeDefinition | undefined
 }
 
-export function isTypeHolder(object:any): object is TypeHolder {
-    return (<TypeHolder>object).getTypes !== undefined
+export function isTypeHolder(object: any): object is TypeHolder {
+    return (<TypeHolder>object).resolveType !== undefined
 
 }
