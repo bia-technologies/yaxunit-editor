@@ -1,6 +1,13 @@
 import { GlobalScopeItem, PlatformMethodSymbol, PredefinedType, Scope, Symbol, SymbolType, TypeDefinition } from '@/scope'
 
-class PlatformScope extends GlobalScopeItem { }
+export class PlatformScope extends GlobalScopeItem {
+    genericTypes: { [key: string]: TypeDefinition } = {}
+    
+    resolveGenericTypes(typeId: string): TypeDefinition | undefined {
+        return this.genericTypes[typeId.toLocaleLowerCase()]
+    }
+
+}
 
 export async function loadScope(): Promise<Scope> {
 
@@ -17,7 +24,14 @@ export async function loadScope(): Promise<Scope> {
     const enumTypes = enumsData.default.map(createEnumType)
     const types = (<any[]>typesData.default).map(createType)
 
-    return new PlatformScope(members, types.concat(enumTypes))
+    const filterPattern = /^.+\.<[\w\s\-а-яА-Я]+>/
+    const replacePattern = /<[\w\s\-а-яА-Я]+?>/gi
+    
+    const genericTypes = types.filter(t => t.id.match(filterPattern))
+
+    const scope = new PlatformScope(members, types.concat(enumTypes))
+    genericTypes.forEach(t => scope.genericTypes[t.id.toLocaleLowerCase().replaceAll(replacePattern, '<?>')] = t)
+    return scope
 }
 
 function executeMethodDescription() {

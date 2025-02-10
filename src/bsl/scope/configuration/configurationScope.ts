@@ -1,14 +1,15 @@
 import { GlobalScope } from "@/scope/globalScopeManager";
 import { Symbol, SymbolType } from "@/scope";
 import { ObjectDefinition } from "./metaObjectDefinition";
-import { MetaObjectType } from "./metaObjectType";
 import { GlobalScopeItem, PredefinedType, TypeDefinition } from "@/scope";
 import { PLATFORM_SCOPE_ID } from "../platform";
+import { PlatformScope } from "../platform/loader";
 
-const types: { [key: string]: { name: string, collection: string, typePattern: string } } = {}
+interface TypeInfo { name: string, collection: string, typePattern: string }
+const types: { [key: string]:  TypeInfo} = {}
 
-appendType('Документ', 'Документы', 'Имя документа')
-appendType('Обработка', 'Обработки', 'Имя обработки')
+appendType('Документ', 'Документы', '<Имя документа>')
+appendType('Обработка', 'Обработки', '<Имя обработки>')
 
 function appendType(name: string, collection: string, typePattern: string) {
     const def = {
@@ -18,24 +19,8 @@ function appendType(name: string, collection: string, typePattern: string) {
     types[collection] = def
 }
 
-
-
 export class ConfigurationScope extends GlobalScopeItem {
     objects: { [key: string]: ObjectDefinition[] } = {}
-
-    registerType(typeId: string, members: Symbol[]) {
-        const type = getPlatformScope().resolveType(typeId.toLocaleLowerCase())
-        if (!type) {
-            throw 'Unknown type ' + typeId
-        }
-        if (type instanceof MetaObjectType) {
-            (<MetaObjectType>type).members.push(...members)
-            return
-        }
-        console.log(type)
-        const meta = new MetaObjectType(type, members)
-        this.appendType(meta)
-    }
 
     resolveType(typeId: string): TypeDefinition | undefined {
         const type = super.resolveType(typeId)
@@ -58,21 +43,8 @@ export class ConfigurationScope extends GlobalScopeItem {
 
 const configurationScope = new ConfigurationScope([], []);
 
-function getPlatformScope(): GlobalScopeItem {
-    return GlobalScope.registeredScopes[PLATFORM_SCOPE_ID] as GlobalScopeItem
-}
-
-function registerMembers(typeId: string, members: Symbol[]) {
-    const type = GlobalScope.resolveType(typeId)
-    if (!type) {
-        throw 'Unknown type ' + typeId
-    }
-    if (type instanceof MetaObjectType) {
-        (<MetaObjectType>type).members.push(...members)
-        return
-    }
-    const meta = new MetaObjectType(type, members)
-    GlobalScope.replaceType(typeId, meta)
+function getPlatformScope(): PlatformScope {
+    return GlobalScope.registeredScopes[PLATFORM_SCOPE_ID] as PlatformScope
 }
 
 function getCollectionManagerType(type: string): string {
@@ -80,33 +52,26 @@ function getCollectionManagerType(type: string): string {
     return collectionName + 'Менеджер'
 }
 
-function getItemManagerType(type: string, name?: string): string {
-    const typeInfo = types[type]
+function getItemManagerType(typeInfo: TypeInfo, name?: string): string {
     if (name) {
-        return `${typeInfo.name}Менеджер.${name ?? typeInfo.typePattern}`
+        return `${typeInfo.name}Менеджер.${name}`
 
     } else {
-        return `${typeInfo.name}Менеджер.<${name ?? typeInfo.typePattern}>`
+        return `${typeInfo.name}Менеджер.<?>`
     }
 }
 
-function getObjectType(type: string, name?: string): string {
-    const typeInfo = types[type]
+function getObjectType(typeInfo: TypeInfo, name?: string): string {
     if (name) {
-        return `${typeInfo.name}Объект.${name ?? typeInfo.typePattern}`
+        return `${typeInfo.name}Объект.${name}`
 
     } else {
-        return `${typeInfo.name}Объект.<${name ?? typeInfo.typePattern}>`
+        return `${typeInfo.name}Объект.<?>`
     }
-}
-
-function createType(typeId: string, members: Symbol[]) {
-    const type = getPlatformType(typeId)
-    return new MetaObjectType(type, members)
 }
 
 function getPlatformType(typeId: string): TypeDefinition {
-    const type = getPlatformScope().resolveType(typeId.toLocaleLowerCase())
+    const type = getPlatformScope().resolveGenericTypes(typeId)
     if (!type) {
         throw 'Unknown type ' + typeId
     }
@@ -115,40 +80,35 @@ function getPlatformType(typeId: string): TypeDefinition {
 
 function createCollectionManagerType(type: string, names: string[]) {
     const collectionManagerType = getCollectionManagerType(type)
-    const members = names.map(name => { return { kind: SymbolType.property, name, type: getItemManagerType(type, name) } })
-    return createType(collectionManagerType, members)
+    const baseType = getPlatformScope().resolveType(collectionManagerType)
+
+    if (!baseType) {
+        throw 'Unknown type ' + collectionManagerType
+    }
+    const typeInfo = types[type]
+    const baseMembers = [...baseType.getMembers()]
+    const members = names.map(name => { return { kind: SymbolType.property, name, type: getItemManagerType(typeInfo, name) } })
+
+
+    return new PredefinedType(collectionManagerType, baseMembers.concat(members))
 }
 
 function createManagerType(type: string, name: string) {
-    const typeId = getItemManagerType(type, name)
-    const baseType = getPlatformType(getItemManagerType(type))
+    const typeInfo = types[type]
+    const typeId = getItemManagerType(typeInfo, name)
+    const baseType = getPlatformType(getItemManagerType(typeInfo))
 
-    const marker = `<${types[type].typePattern}>`
-
-    const members = baseType.getMembers().map(m => {
-        if (!m.type || !m.type.endsWith(marker)) {
-            return m
-        }
-        const copy = { ...m }
-        copy.type = m.type.replace(marker, name)
-        return copy
-    })
+    const members = getGenericTypeMembers(baseType, typeInfo, name)
     return new PredefinedType(typeId, members)
 }
+
 function createObjectType(type: string, name: string, object: ObjectDefinition) {
-    const typeId = getObjectType(type, name)
-    const baseType = getPlatformType(getObjectType(type))
+    const typeInfo = types[type]
+    const typeId = getObjectType(typeInfo, name)
+    const baseType = getPlatformType(getObjectType(typeInfo))
 
-    const marker = `<${types[type].typePattern}>`
+    const members = getGenericTypeMembers(baseType, typeInfo, name)
 
-    const members = baseType.getMembers().map(m => {
-        if (!m.type || !m.type.endsWith(marker)) {
-            return m
-        }
-        const copy = { ...m }
-        copy.type = m.type.replace(marker, name)
-        return copy
-    })
     object.properties.forEach(p => {
         members.push({
             name: p.name,
@@ -158,6 +118,22 @@ function createObjectType(type: string, name: string, object: ObjectDefinition) 
         } as Symbol)
     })
     return new PredefinedType(typeId, members)
+}
+
+function getGenericTypeMembers(genericType: TypeDefinition, typeInfo:TypeInfo, name: string) {
+    const markers = new Set([getItemManagerType(typeInfo, typeInfo.typePattern), getObjectType(typeInfo, typeInfo.typePattern)])
+    const replacePattern = /<[\w\s\-а-яА-Я]+?>/gi
+
+    const members = genericType.getMembers().map(m => {
+        if (!m.type || !markers.has(m.type)) {
+            return m
+        }
+        const copy = { ...m }
+        copy.type = m.type.replace(replacePattern, name)
+        return copy
+    })
+
+    return members;
 }
 
 GlobalScope.registerScope('configuration-scope', configurationScope)

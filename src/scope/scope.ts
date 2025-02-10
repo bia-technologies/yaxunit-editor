@@ -76,8 +76,9 @@ export class GlobalScopeItem extends BaseScope implements TypeHolder {
     typesRegistry: { [key: string]: TypeDefinition } = {}
 
     resolveType(typeId: string): TypeDefinition | undefined {
-        return this.typesRegistry[typeId]
+        return this.typesRegistry[typeId.toLocaleLowerCase()]
     }
+    
     constructor(members: Symbol[], types: TypeDefinition[]) {
         super(members)
         types.forEach(symbol => {
