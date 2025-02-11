@@ -22,6 +22,7 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 export class EditorScope extends UnionScope implements ModelChangeHandler {
     localScope: LocalScope
     editor: editor.IStandaloneCodeEditor
+    modelVersionId: number = 0
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
         this.localScope = new LocalScope(model)
@@ -52,7 +53,12 @@ export class EditorScope extends UnionScope implements ModelChangeHandler {
     }
 
     update() {
-        this.localScope.updateMembers()
+        const currentVersionId = this.editor.getModel()?.getVersionId()
+        if (currentVersionId != this.modelVersionId) {
+            this.modelVersionId = currentVersionId ?? 0
+            this.localScope.updateMembers()
+        }
+
     }
 
     onDidChangeContent(_: editor.IModelContentChangedEvent): void {

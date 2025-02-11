@@ -20,6 +20,27 @@ const scopeProvider = {
             return objectScope(tokensSequence, scope, position.lineNumber)
         }
     },
+    resolveExpressionType(model: editor.ITextModel, tokens: string[]) {
+        tokens = tokens.reverse()
+        const tokensSequence: TokensSequence = {
+            tokens,
+            lastSymbol: tokens[0],
+            closed: false
+        }
+        const scope = EditorScope.getScope(model)
+        let resolvedScope: Scope | undefined
+        if (tokens.length > 1) {
+            resolvedScope = objectScope(tokensSequence, scope, 0)
+        } else {
+            resolvedScope = scope
+        }
+        if (resolvedScope) {
+            return findMember(resolvedScope, tokensSequence.lastSymbol)?.type
+        } else {
+            return undefined
+        }
+
+    },
     currentSymbol(model: editor.ITextModel, position: Position): Symbol | undefined {
         console.debug('current symbol')
         const tokensSequence = tokensProvider.resolve(model, position)

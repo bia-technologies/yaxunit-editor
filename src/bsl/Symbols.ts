@@ -2,7 +2,7 @@ interface Symbol {
     name: string
 }
 
-interface SymbolRange extends Symbol{
+interface SymbolRange extends Symbol {
     startLine: number
     startColumn: number
     endLine: number
@@ -14,8 +14,10 @@ export interface Parameter extends Symbol {
     byVal: boolean
 }
 
-export type Variable = Symbol
-export interface ModuleVariable extends Symbol{
+export interface Variable extends Symbol {
+    type?: string
+}
+export interface ModuleVariable extends Variable {
     isExport: boolean
 }
 
@@ -23,8 +25,7 @@ export interface Method extends SymbolRange {
     isExport: boolean
     isProc: boolean
     params: Parameter[]
-    vars: Variable[]
-    autoVars: Variable[]
+    vars?: Variable[]
 }
 
 export interface Module {

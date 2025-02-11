@@ -1092,6 +1092,11 @@ vite-plugin-singlefile@^2.1.0:
   dependencies:
     micromatch "^4.0.8"
 
+vite-plugin-wasm@^3.4.1:
+  version "3.4.1"
+  resolved "https://registry.yarnpkg.com/vite-plugin-wasm/-/vite-plugin-wasm-3.4.1.tgz#62b546ac7e25cc2a0e7b1331ed5c4ba1dd71b743"
+  integrity sha512-ja3nSo2UCkVeitltJGkS3pfQHAanHv/DqGatdI39ja6McgABlpsZ5hVgl6wuR8Qx5etY3T5qgDQhOWzc5RReZA==
+
 vite@^5.0.0:
   version "5.4.11"
   resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.11.tgz#3b415cd4aed781a356c1de5a9ebafb837715f6e5"
@@ -1146,6 +1151,11 @@ w3c-xmlserializer@^5.0.0:
   integrity sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==
   dependencies:
     xml-name-validator "^5.0.0"
+
+web-tree-sitter@^0.25.1:
+  version "0.25.1"
+  resolved "https://registry.yarnpkg.com/web-tree-sitter/-/web-tree-sitter-0.25.1.tgz#1aa1aa31456240253f3b61f3152df5745f240cfe"
+  integrity sha512-BtkL7O3Uhn6+yjeAm/d5Ph3hD2BIQarpoVv3HA7qGLHBwCfVcm/v7MEzG+d4yk9f7N4nuag7lHyKwDjr6Clklg==
 
 webidl-conversions@^7.0.0:
   version "7.0.0"
