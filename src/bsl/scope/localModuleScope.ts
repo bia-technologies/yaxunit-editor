@@ -1,10 +1,10 @@
-import { BaseScope, Scope, TypeDefinition } from './scope'
+import { BaseScope, Scope, TypeDefinition } from '@/scope'
 import { Symbol, SymbolType } from './symbols'
 import { editor, IDisposable } from "monaco-editor-core"
 import { Method, Module } from "../bsl/Symbols"
-import { BslParser } from '../tree-sitter/bslAst'
+import { BslParser } from '@/tree-sitter/bslAst'
 
-export class LocalScope extends BaseScope implements TypeDefinition, IDisposable {
+export class LocalScope extends BaseScope implements IDisposable {
     private readonly model: editor.ITextModel
     parser: BslParser
 
@@ -13,8 +13,6 @@ export class LocalScope extends BaseScope implements TypeDefinition, IDisposable
     private module: Module = {
         vars: [], methods: []
     }
-
-    id: string = 'local-module'
 
     constructor(model: editor.ITextModel) {
         super([])
@@ -29,11 +27,10 @@ export class LocalScope extends BaseScope implements TypeDefinition, IDisposable
         this.disposable.push(this.model.onDidChangeContent(e => this.parser.onEditorContentChange(e)))
     }
 
-    getMembers() {
+    beforeGetMembers() {
         if (this.model.getVersionId() != this.modelVersionId) {
             this.updateMembers()
         }
-        return this.members
     }
 
     getMethodAtLine(line: number): Method | undefined {
@@ -45,24 +42,7 @@ export class LocalScope extends BaseScope implements TypeDefinition, IDisposable
         if (method === undefined) {
             return undefined
         }
-
-        const members: Symbol[] = []
-
-        if (!method.vars) {
-            method.vars = []
-            method.vars = this.parser.getMethodVars(method)
-        }
-        method.vars.forEach(v => members.push({
-            name: v.name,
-            kind: SymbolType.property,
-            type: v.type
-        }))
-        method.params.forEach(v => members.push({
-            name: v.name,
-            kind: SymbolType.property,
-        }))
-
-        return new BaseScope(members)
+        return createMethodScope(method)
     }
 
     updateMembers() {

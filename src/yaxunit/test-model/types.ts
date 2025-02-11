@@ -1,4 +1,4 @@
-import { Method } from '../../bsl/Symbols'
+import { Method } from '@/bsl/Symbols'
 import { Error } from './report'
 
 export enum TestStatus {

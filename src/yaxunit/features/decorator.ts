@@ -1,6 +1,6 @@
 import { TestDefinition, TestsModel, TestStatus } from '../test-model'
 import { editor, Range } from 'monaco-editor-core'
-import { TestModelRender } from './interfaces'
+import { TestModelRender } from '../interfaces'
 
 
 export class TestStatusDecorator implements TestModelRender{

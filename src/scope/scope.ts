@@ -1,12 +1,10 @@
 import { Symbol } from './symbols'
+import { TypeDefinition, TypeHolder } from './types';
 
 export interface Scope {
     getMembers(): Symbol[]
+    findMember(name: string): Symbol | undefined
     forEachMembers(callbackfn: (value: Symbol, index: number, array: Symbol[]) => void): void;
-}
-
-export interface TypeDefinition extends Scope {
-    id: string
 }
 
 export class BaseScope implements Scope {
@@ -17,25 +15,23 @@ export class BaseScope implements Scope {
     }
 
     getMembers(): Symbol[] {
+        this.beforeGetMembers()
         return this.members
     }
 
     forEachMembers(callbackfn: (value: Symbol, index: number, array: Symbol[]) => void): void {
+        this.beforeGetMembers()
         this.members.forEach(callbackfn)
     }
-}
 
-export class PredefinedType extends BaseScope implements TypeDefinition {
-    id: string
-
-    constructor(id: string, members: Symbol[]) {
-        super(members)
-        this.id = id
+    findMember(name: string): Symbol | undefined {
+        this.beforeGetMembers()
+        const member = this.members.find(s => s.name.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0)
+        console.debug('find member', name, 'in scope', this, 'result = ', member)
+        return member
     }
 
-    getMembers(): Symbol[] {
-        return this.members
-    }
+    protected beforeGetMembers() { }
 }
 
 export class UnionScope implements Scope {
@@ -62,6 +58,34 @@ export class UnionScope implements Scope {
     }
 
     forEachMembers(callbackfn: (value: Symbol, index: number, array: Symbol[]) => void): void {
-        this.getScopes().forEach(s => s.getMembers().forEach(callbackfn))
+        this.getScopes().forEach(s => s.forEachMembers(callbackfn))
+    }
+
+    findMember(name: string): Symbol | undefined {
+        for (const scope of this.scopes) {
+            const member = scope.findMember(name)
+            if (member) {
+                return member
+            }
+        }
+        return undefined
+    }
+}
+
+export class GlobalScopeItem extends BaseScope implements TypeHolder {
+    typesRegistry: { [key: string]: TypeDefinition } = {}
+
+    resolveType(typeId: string): TypeDefinition | undefined {
+        return this.typesRegistry[typeId.toLocaleLowerCase()]
+    }
+    
+    constructor(members: Symbol[], types: TypeDefinition[]) {
+        super(members)
+        types.forEach(symbol => {
+            this.appendType(symbol)
+        });
+    }
+    protected appendType(symbol: TypeDefinition) {
+        this.typesRegistry[symbol.id.toLocaleLowerCase()] = symbol
     }
 }
