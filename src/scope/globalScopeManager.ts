@@ -15,10 +15,10 @@ export class GlobalScopeManager extends UnionScope implements TypeHolder {
         }
     }
 
-    resolveType(typeId: string): TypeDefinition | undefined {
+    async resolveType(typeId: string): Promise<TypeDefinition | undefined> {
         typeId = typeId.toLocaleLowerCase()
         for (const typeHolder of this.typeHolders) {
-            const type = typeHolder.resolveType(typeId)
+            const type = await typeHolder.resolveType(typeId)
             if (type) {
                 return type
             }

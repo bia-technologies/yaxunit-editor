@@ -1,24 +1,16 @@
 import { GlobalScope, PredefinedType, Symbol, SymbolType, TypeDefinition } from "@/scope"
-import { ObjectDefinition } from "./metaObjectDefinition"
+import { ObjectDefinition } from "./objectDefinition"
 import { PlatformScope } from "../platform/loader"
 import { PLATFORM_SCOPE_ID } from "../platform"
+import { TypeInfo } from "./configurationTypes"
 
-const types: { [key: string]: TypeInfo } = {}
-interface AvailableTypes { manager: boolean, object: boolean, ref: boolean }
-interface AvailableTypesOptions { manager?: boolean, object?: boolean, ref?: boolean }
-
-appendType('Документ', 'Документы', '<Имя документа>', { object: true, ref: true })
-appendType('Обработка', 'Обработки', '<Имя обработки>', { object: true })
-
-export interface TypeInfo { name: string, collection: string, typePattern: string, types: AvailableTypes }
-
-export function getTypeInfo(type: string) {
-    return types[type]
+export async function createConfigurationType(typeId:string, definition: ObjectDefinition) {
+    
 }
 
-export function createCollectionManagerType(type: TypeInfo, names: string[]) {
+export async function createCollectionManagerType(type: TypeInfo, names: string[]) {
     const collectionManagerType = getCollectionManagerType(type)
-    const baseType = getPlatformScope().resolveType(collectionManagerType)
+    const baseType = await getPlatformScope().resolveType(collectionManagerType)
 
     if (!baseType) {
         throw 'Unknown type ' + collectionManagerType
@@ -62,15 +54,6 @@ export function createObjectType(type: TypeInfo, name: string, object: ObjectDef
     return new PredefinedType(typeId, members)
 }
 
-function appendType(name: string, collection: string, typePattern: string, typesOpt: AvailableTypesOptions) {
-    const gTypes = Object.assign({}, { manager: true, object: false, ref: false } as AvailableTypes, typesOpt) as AvailableTypes
-    const def = {
-        name, collection, typePattern, types: gTypes
-    }
-    types[name] = def
-    types[collection] = def
-}
-
 function getGenericTypeMembers(genericType: TypeDefinition, typeInfo: TypeInfo, name: string) {
     const markers = new Set;
     if (typeInfo.types.manager) {
@@ -109,7 +92,7 @@ function getPlatformScope(): PlatformScope {
     return GlobalScope.registeredScopes[PLATFORM_SCOPE_ID] as PlatformScope
 }
 
-function getItemManagerType(typeInfo: TypeInfo, name?: string): string {
+export function getItemManagerType(typeInfo: TypeInfo, name?: string): string {
     return getTypeId(typeInfo, 'Менеджер', name)
 }
 

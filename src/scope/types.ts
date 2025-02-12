@@ -15,7 +15,7 @@ export class PredefinedType extends BaseScope implements TypeDefinition {
 }
 
 export interface TypeHolder {
-    resolveType(typeId: string): TypeDefinition | undefined
+    resolveType(typeId: string): Promise<TypeDefinition | undefined>
 }
 
 export function isTypeHolder(object: any): object is TypeHolder {
