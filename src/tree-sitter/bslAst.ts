@@ -4,6 +4,7 @@ import { editor, IDisposable, Position } from 'monaco-editor-core';
 import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
 import { expressionTokens } from './expression';
 import { scopeProvider } from '../bsl/scopeProvider';
+import { Queries } from './queries';
 
 let bslLanguage: Language | undefined = undefined
 
@@ -12,13 +13,7 @@ export class BslParser implements IDisposable {
     private tree: Tree | null = null
     private model?: editor.IReadOnlyModel
 
-    private queries: {
-        methodDefinitions?: Query,
-        assignments?: Query,
-        varDefinitions?: Query,
-        [key: string]: Query | undefined
-    } = {}
-    private createdQueries: Query[] = []
+    private queries: Queries = new Queries()
 
     setModel(model: editor.IReadOnlyModel) {
         this.model = model
@@ -66,7 +61,7 @@ export class BslParser implements IDisposable {
 
     methods(): Method[] {
         const start = performance.now()
-        const captures = this.methodDefinitionsQuery().captures(this.getRootNode())
+        const captures = this.queries.methodDefinitionsQuery().captures(this.getRootNode())
 
         const methods: Method[] = []
         let currentMethod: Method | undefined
@@ -99,7 +94,7 @@ export class BslParser implements IDisposable {
 
     vars(): ModuleVariable[] {
         const start = performance.now()
-        const captures = this.varDefinitionsQuery().captures(this.getRootNode())
+        const captures = this.queries.varDefinitionsQuery().captures(this.getRootNode())
 
         const vars: ModuleVariable[] = []
 
@@ -124,10 +119,8 @@ export class BslParser implements IDisposable {
         return vars
     }
 
-    getMethodVars(method: Method) {
-        const start = performance.now()
-
-        const captures = this.methodVarsQuery().captures(this.getRootNode(), {
+    *getMethodVars(method: Method) {
+        const captures = this.queries.methodVarsQuery().captures(this.getRootNode(), {
             startPosition: { row: method.startLine, column: method.startColumn },
             endPosition: { row: method.endLine, column: method.endColumn }
         })
@@ -141,21 +134,12 @@ export class BslParser implements IDisposable {
                     name: node.text,
                     ...symbolPosition(node)
                 })
+                yield currentVar
             } else if (name === 'expression' && currentVar) {
                 currentVar.type = this.calculateType(node)
             }
         }
-        console.log('get method vars', performance.now() - start, 'ms')
-        return vars
     }
-
-    createQuery(queryText: string) {
-        if (!bslLanguage) {
-            throw 'Not init'
-        }
-        return new Query(bslLanguage, queryText)
-    }
-
 
     calculateType(expression: Node) {
         if (!this.parser || !this.model) return;
@@ -204,33 +188,16 @@ export class BslParser implements IDisposable {
     dispose(): void {
         this.parser?.delete()
         this.tree?.delete()
-        this.createdQueries.forEach(q => q.delete())
+        this.queries.dispose()
     }
 
-    private methodDefinitionsQuery() {
-        if (!this.queries.methodDefinitions) {
-            this.queries.methodDefinitions = this.createQuery(
-                `(function_definition name: (identifier) @name parameters: (parameters) @parameters) @function
-(procedure_definition name: (identifier) @name parameters: (parameters) @parameters) @procedure`)
-        }
-        return this.queries.methodDefinitions
-    }
-    private varDefinitionsQuery() {
-        if (!this.queries.varDefinitions) {
-            this.queries.varDefinitions = this.createQuery(
-                '(var_definition var_name: (identifier) @name export: (export_modifier) @export) @var')
-        }
-        return this.queries.varDefinitions
-    }
+}
 
-    private methodVarsQuery() {
-        if (!this.queries.assignments) {
-            this.queries.assignments = this.createQuery(
-                `(assignment_statement left: (leftValue) @name right: (expression)@expression) @assignment
-(var_statement var_name: (identifier) @name) @var`)
-        }
-        return this.queries.assignments
+export function createQuery(queryText: string) {
+    if (!bslLanguage) {
+        throw 'Not init'
     }
+    return new Query(bslLanguage, queryText)
 }
 
 function monacoPositionToParserPoint(position: Position): Point {

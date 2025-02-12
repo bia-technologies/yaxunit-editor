@@ -30,12 +30,12 @@ const scopeProvider = {
         const scope = EditorScope.getScope(model)
         let resolvedScope: Scope | undefined
         if (tokens.length > 1) {
-            resolvedScope = objectScope(tokensSequence, scope, 0)
+            resolvedScope = objectScope(tokensSequence, scope)
         } else {
             resolvedScope = scope
         }
         if (resolvedScope) {
-            return findMember(resolvedScope, tokensSequence.lastSymbol)?.type
+            return resolvedScope.findMember(tokensSequence.lastSymbol)?.type
         } else {
             return undefined
         }

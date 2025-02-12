@@ -62,7 +62,7 @@ export class UnionScope implements Scope {
     }
 
     findMember(name: string): Symbol | undefined {
-        for (const scope of this.scopes) {
+        for (const scope of this.getScopes()) {
             const member = scope.findMember(name)
             if (member) {
                 return member

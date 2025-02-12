@@ -1,10 +1,10 @@
-import { BaseScope, Scope, TypeDefinition } from '@/scope'
-import { Symbol, SymbolType } from './symbols'
+import { BaseScope, Scope, SymbolType } from '@/scope'
 import { editor, IDisposable } from "monaco-editor-core"
-import { Method, Module } from "../bsl/Symbols"
+import { Method, Module } from "@/bsl/Symbols"
 import { BslParser } from '@/tree-sitter/bslAst'
+import { createMethodScope } from './methodScope'
 
-export class LocalScope extends BaseScope implements IDisposable {
+export class LocalModuleScope extends BaseScope implements IDisposable {
     private readonly model: editor.ITextModel
     parser: BslParser
 
@@ -42,7 +42,7 @@ export class LocalScope extends BaseScope implements IDisposable {
         if (method === undefined) {
             return undefined
         }
-        return createMethodScope(method)
+        return createMethodScope(method, this.parser)
     }
 
     updateMembers() {
