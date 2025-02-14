@@ -2,30 +2,14 @@ import './styles/style.css';
 import './polyfill .js';
 
 import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
-// import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
-// import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
-// import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
-// import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import '@/languages/bsl/contribution'
 import '@/yaxunit'
 import '@/bsl/scope'
 import { YAxUnitEditor } from './yaxunit'
-// import './bsl/scope/configuration/configurationScope.js'
+import { useTreeSitterBsl } from './tree-sitter/bslAst.js';
 
-(window as any).MonacoEnvironment = {
+(self as any).MonacoEnvironment = {
   getWorker(): Worker {
-    // if (label === 'json') {
-    //   return new jsonWorker()
-    // }
-    // if (label === 'css' || label === 'scss' || label === 'less') {
-    //   return new cssWorker()
-    // }
-    // if (label === 'html' || label === 'handlebars' || label === 'razor') {
-    //   return new htmlWorker()
-    // }
-    // if (label === 'typescript' || label === 'javascript') {
-    //   return new tsWorker()
-    // }
     return new editorWorker()
   }
 };
@@ -62,10 +46,14 @@ const content: string =
 КонецПроцедуры
 #КонецОбласти`;
 
-const bslEditor = new YAxUnitEditor(content);
-afterLoad()
+useTreeSitterBsl().then(() => {
+  const bslEditor = new YAxUnitEditor(content);
+  (window as any).bslEditor = bslEditor;
+  setDemoData(bslEditor)
 
-function afterLoad(){
+})
+
+function setDemoData(bslEditor: YAxUnitEditor) {
   bslEditor.testsModel.loadReport({
     testsuite: [{
       classname: 'ОМ_Тест',
@@ -114,7 +102,7 @@ function afterLoad(){
   {YAXUNIT ОбщийМодуль.ЮТИсполнительСлужебныйКлиентСервер.Модуль(133)}:Результат = ВыполнитьНаборТестов(ТестовыйМодуль, Набор, ОписаниеТестовогоОбъекта);
   {YAXUNIT ОбщийМодуль.ЮТИсполнительСлужебныйВызовСервера.Модуль(41)}:Возврат ЮТИсполнительСлужебныйКлиентСервер.ВыполнитьГруппуНаборовТестов(Наборы, ТестовыйМодуль);`}]
       }]
-    },{
+    }, {
       classname: 'ОМ_Тест',
       name: 'ОМ_Тест',
       context: 'Сервер',
@@ -166,5 +154,5 @@ function afterLoad(){
 }
 // const view: any = (bslEditor.editor as any)._modelData.view;
 // (bslEditor.editor as any)._modelData.view = makeLogProxy(view);
-(window as any).bslEditor = bslEditor;
+
 

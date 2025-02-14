@@ -17,13 +17,7 @@ export class LocalModuleScope extends BaseScope implements IDisposable {
     constructor(model: editor.ITextModel) {
         super([])
         this.model = model
-        this.disposable.push(this.parser = new BslParser())
-        this.init()
-    }
-
-    async init() {
-        await this.parser.init();
-        await this.parser.setModel(this.model)
+        this.disposable.push(this.parser = new BslParser(model))
         this.disposable.push(this.model.onDidChangeContent(e => this.parser.onEditorContentChange(e)))
     }
 

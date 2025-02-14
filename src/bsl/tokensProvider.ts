@@ -54,9 +54,11 @@ function currentMethod(model: editor.ITextModel, startPosition: Position): Token
     }
 
     if(containsIndex){
+        console.debug('Unsupport index access')
         // TODO support index access
         return undefined
     }
+    console.debug('Expression tokens', tokens)
     return {
         tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0]
     }
@@ -96,7 +98,7 @@ function currentProperty(model: editor.ITextModel, startPosition: Position): Tok
             case 'method_call':
                 tokens.push(node.childForFieldName('name')?.text || '')
                 break
-            // case 'identifier':
+            case 'identifier':
             case 'property':
                 tokens.push(node.text)
                 break
@@ -109,9 +111,11 @@ function currentProperty(model: editor.ITextModel, startPosition: Position): Tok
     }
 
     if(containsIndex){
+        console.debug('Unsupport index access')
         // TODO support index access
         return undefined
     }
+    console.debug('Expression tokens', tokens)
     return {
         tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0]
     }

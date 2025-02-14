@@ -9,11 +9,22 @@ import { Queries } from './queries';
 let bslLanguage: Language | undefined = undefined
 
 export class BslParser implements IDisposable {
-    private parser?: Parser
+    private parser: Parser
     private tree: Tree | null = null
-    private model?: editor.IReadOnlyModel
+    private model: editor.IReadOnlyModel
 
     private queries: Queries = new Queries()
+
+    constructor(model: editor.IReadOnlyModel) {
+        if (!bslLanguage) {
+            throw 'Not init'
+        }
+        const start = performance.now()
+        this.parser = new Parser()
+        this.parser.setLanguage(bslLanguage)
+        this.setModel(this.model = model)
+        console.log('parser init', performance.now() - start, 'ms')
+    }
 
     setModel(model: editor.IReadOnlyModel) {
         this.model = model
@@ -77,25 +88,6 @@ export class BslParser implements IDisposable {
         return undefined
     }
 
-    async init() {
-        const start = performance.now()
-        if (!bslLanguage) {
-            await Parser.init()
-            bslLanguage = await Language.load(bslURL)
-        }
-
-        this.parser = new Parser()
-        this.parser.setLanguage(bslLanguage)
-        console.log('parser init', performance.now() - start, 'ms')
-        // this.parser.setLogger((message, lexing) => {
-        //     if (lexing) {
-        //         console.log(">>", message);
-        //     } else {
-        //         console.log(message);
-        //     }
-        // })
-    }
-
     methods(): Method[] {
         const start = performance.now()
         const captures = this.queries.methodDefinitionsQuery().captures(this.getRootNode())
@@ -123,10 +115,12 @@ export class BslParser implements IDisposable {
                 methods.push(currentMethod)
             } else if (name === 'name' && currentMethod) {
                 currentMethod.name = node.text
+            } else if (name === 'export' && currentMethod) {
+                currentMethod.isExport = true
             }
         }
         console.log('get methods', performance.now() - start, 'ms')
-        return methods
+        return methods.filter(m => m.name)
     }
 
     vars(): ModuleVariable[] {
@@ -158,8 +152,8 @@ export class BslParser implements IDisposable {
 
     *getMethodVars(method: Method) {
         const captures = this.queries.methodVarsQuery().captures(this.getRootNode(), {
-            startPosition: { row: method.startLine, column: method.startColumn },
-            endPosition: { row: method.endLine, column: method.endColumn }
+            startPosition: { row: method.startLine - 1, column: method.startColumn - 1 },
+            endPosition: { row: method.endLine - 1, column: method.endColumn - 1 }
         })
 
         const vars: Variable[] = []
@@ -207,6 +201,7 @@ export class BslParser implements IDisposable {
             this.tree = this.parser.parse(this.model.getValue());
             return
         }
+        console.log('changed', e)
         const start = performance.now()
         for (const change of e.changes) {
             const startIndex = change.rangeOffset;
@@ -241,22 +236,25 @@ function monacoOffsetToPoint(model: editor.ITextModel, offset: number): Point {
 }
 
 function monacoPositionToPoint(position: Position): Point {
-    return { row: position.lineNumber, column: position.column };
+    return { row: position.lineNumber - 1, column: position.column - 1 };
 }
 
 function symbolPosition(node: Node) {
     return {
-        startLine: node.startPosition.row,
-        startColumn: node.startPosition.column,
-        endLine: node.endPosition.row,
-        endColumn: node.endPosition.column,
+        startLine: node.startPosition.row + 1,
+        startColumn: node.startPosition.column + 1,
+        endLine: node.endPosition.row + 1,
+        endColumn: node.endPosition.column + 1,
     }
 }
 
+export async function useTreeSitterBsl(): Promise<void> {
+    if (bslLanguage) {
+        return
+    }
+    await Parser.init()
+    bslLanguage = await Language.load(bslURL)
+}
+
 if (!bslLanguage) {
-    Parser.init().then(_ =>
-        Language.load(bslURL).then(module => {
-            bslLanguage = module
-        })
-    )
 }

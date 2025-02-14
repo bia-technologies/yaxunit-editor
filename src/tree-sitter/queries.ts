@@ -11,8 +11,8 @@ export class Queries implements IDisposable {
     methodDefinitionsQuery() {
         if (!this.methodDefinitions) {
             this.methodDefinitions = this.createQuery(
-                `(function_definition name: (identifier) @name parameters: (parameters) @parameters) @function
-    (procedure_definition name: (identifier) @name parameters: (parameters) @parameters) @procedure`)
+                `[(function_definition name: (identifier) @name parameters: (parameters) @parameters (EXPORT_KEYWORD) @export) (function_definition name: (identifier) @name parameters: (parameters) @parameters)] @function
+[(procedure_definition name: (identifier) @name parameters: (parameters) @parameters (EXPORT_KEYWORD) @export) (procedure_definition name: (identifier) @name parameters: (parameters) @parameters )] @procedure`)
         }
         return this.methodDefinitions
     }
@@ -27,8 +27,9 @@ export class Queries implements IDisposable {
     methodVarsQuery() {
         if (!this.assignments) {
             this.assignments = this.createQuery(
-                `(assignment_statement left: (identifier) @name right: (expression)@expression) @assignment
-    (var_statement var_name: (identifier) @name) @var`)
+                `(assignment_statement left: (identifier) @name right: (expression)@expression)
+(var_statement var_name: (identifier) @name)
+(parameter name: (identifier) @name)`)
         }
         return this.assignments
     }

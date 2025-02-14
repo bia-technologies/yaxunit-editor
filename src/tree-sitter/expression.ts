@@ -5,7 +5,7 @@ export function expressionTokens(expression: Node) {
     if (!child) {
         return [];
     }
-    const tokens: (string | undefined)[] = []
+    let tokens: (string | undefined)[] = []
 
     if (child.type === 'member_access') {
         child.children.forEach(n => tokens.push(nodeToken(n)))
@@ -13,8 +13,7 @@ export function expressionTokens(expression: Node) {
     else if (child.type === 'call_expression' || child.type === 'member_access') {
         child.children.forEach(n => tokens.push(nodeToken(n)))
         if (tokens.length >= 3) {
-            tokens[tokens.length - 2] = tokens[tokens.length - 1]
-            tokens.length--
+            tokens = tokens.filter(t => t !== '.')
         }
     } else if (child.type === 'identifier' || child.type === 'methodCall') {
         tokens.push(nodeToken(child))
@@ -27,17 +26,12 @@ function nodeToken(node: Node | null) {
         return undefined
     }
     switch (node.type) {
-        case 'identifier':
+        case 'property':
             return node.text
-        case 'access':
-            return nodeToken(node.child(0))
-        case 'accessCall':
-            return nodeToken(node.child(1))
-        case 'accessProperty':
-        case 'methodCall':
+        case 'method_call':
             return node.childForFieldName('name')?.text
-        case 'accessIndex':
-            return node.childForFieldName('index')?.text
+        case 'index':
+            return node.text
         case '.':
             return '.'
         default:

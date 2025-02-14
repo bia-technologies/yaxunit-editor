@@ -1,8 +1,17 @@
 {
   "name": "yaxunit-editor",
-  "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "description": "Редактор тестов YAxUnit для 1C:Предприятие",
+  "repository": "https://github.com/bia-technologies/yaxunit-editor",
   "type": "module",
+  "license": "Apache-2.0",
+  "keywords": [
+    "yaxunit",
+    "monaco",
+    "tree-sitter",
+    "1C:Enterprise",
+    "bsl"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
