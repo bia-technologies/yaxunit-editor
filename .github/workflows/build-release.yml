@@ -27,12 +27,15 @@ jobs:
       - name: Сборка
         run: yarn build
 
+      - name: Создание архива
+        run: cd dist; zip -r -9 ../yaxunit-editor.zip ./
+
       - name: Создание черновика релиза
         uses: softprops/action-gh-release@v2
         if: ${{ success() }}
         with:
           draft: true
-          files: 'dist/*'
+          files: 'yaxunit-editor.zip'
           fail_on_unmatched_files: true
           generate_release_notes: true
           append_body: false
