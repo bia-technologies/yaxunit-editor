@@ -75,10 +75,10 @@ export class UnionScope implements Scope {
 export class GlobalScopeItem extends BaseScope implements TypeHolder {
     typesRegistry: { [key: string]: TypeDefinition } = {}
 
-    resolveType(typeId: string): TypeDefinition | undefined {
+    async resolveType(typeId: string): Promise<TypeDefinition | undefined> {
         return this.typesRegistry[typeId.toLocaleLowerCase()]
     }
-    
+
     constructor(members: Symbol[], types: TypeDefinition[]) {
         super(members)
         types.forEach(symbol => {

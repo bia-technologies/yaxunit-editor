@@ -6,7 +6,6 @@ export class PlatformScope extends GlobalScopeItem {
     resolveGenericTypes(typeId: string): TypeDefinition | undefined {
         return this.genericTypes[typeId.toLocaleLowerCase()]
     }
-
 }
 
 export async function loadScope(): Promise<Scope> {

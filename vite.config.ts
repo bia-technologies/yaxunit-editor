@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import { viteSingleFile } from "vite-plugin-singlefile"
-import wasm from "vite-plugin-wasm"
+import path from 'path'
 
 export default defineConfig({
   build: {
@@ -12,17 +12,12 @@ export default defineConfig({
     include: /\.(ts|jsx|tsx)$/,
   },
   plugins: [
-    wasm(),
-    // viteSingleFile()
-  ],  optimizeDeps: {
-    exclude: [
-      "web-tree-sitter"
-    ]
-  },
+    viteSingleFile()
+  ],
   assetsInclude: ['/assets/*.wasm'],
   resolve: {
     alias: {
-      '@': '/src',
+      '@': path.resolve(__dirname, "./src"),
     },
   },
 })

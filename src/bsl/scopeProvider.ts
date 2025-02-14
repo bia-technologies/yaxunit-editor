@@ -3,8 +3,11 @@ import tokensProvider, { TokensSequence } from './tokensProvider'
 import { Scope, Symbol, GlobalScope, EditorScope, } from '@/scope';
 import { Method } from './Symbols';
 
+type ResolvedSymbol = Promise<Symbol|undefined>
+type ResolvedScope= Promise<Scope|undefined>
+
 const scopeProvider = {
-    resolveScope(model: editor.ITextModel, position: Position): Scope | undefined {
+    async resolveScope(model: editor.ITextModel, position: Position): ResolvedScope {
         const tokensSequence = tokensProvider.resolve(model, position)
 
         console.debug('tokensSequence: ', tokensSequence)
@@ -42,7 +45,7 @@ const scopeProvider = {
 
     },
 
-    currentSymbol(model: editor.ITextModel, position: Position): Symbol | undefined {
+    async currentSymbol(model: editor.ITextModel, position: Position): ResolvedSymbol {
         console.debug('current symbol')
         const tokensSequence = tokensProvider.resolve(model, position)
 
@@ -57,7 +60,7 @@ const scopeProvider = {
         const word = model.getWordAtPosition(position)?.word
         return currentMember(tokensSequence, scope, word)
     },
-    currentMethod(model: editor.ITextModel, position: Position, tokensSequence?: TokensSequence): Symbol | undefined {
+    async currentMethod(model: editor.ITextModel, position: Position, tokensSequence?: TokensSequence): ResolvedSymbol {
         console.debug('Get current method')
         console.debug('current word', model.getWordUntilPosition(position)?.word)
 
@@ -72,7 +75,7 @@ const scopeProvider = {
 
         tokensSequence.closed = false
         const scope = EditorScope.getScope(model)
-        return currentMember(tokensSequence, scope)
+        return await currentMember(tokensSequence, scope)
     },
     getModelMethods(model: editor.ITextModel): Method[] | undefined {
         const scope = EditorScope.getScope(model)
@@ -84,24 +87,24 @@ const scopeProvider = {
     }
 }
 
-function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, word?: string): Symbol | undefined {
+async function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, word?: string): ResolvedSymbol {
     if (tokensSequence.tokens.length === 1) {
         return globalScopeMember(word ?? tokensSequence.tokens[0], editorScope)
     }
-    const scope = objectScope(tokensSequence, editorScope)
+    const scope = await objectScope(tokensSequence, editorScope)
     if (scope) {
         return scope.findMember(word ?? tokensSequence.lastSymbol)
     }
     return undefined
 }
 
-function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): Scope | undefined {
+async function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): ResolvedScope {
 
     console.debug('calculate objectScope');
 
     const tokens = tokensSequence.tokens
     const firstToken = tokens[tokens.length - 1];
-    let scope = resolveInEditorScope(firstToken, editorScope)
+    let scope = await resolveInEditorScope(firstToken, editorScope)
 
     if (!scope) {
         console.debug('don\'t found in global scope')
@@ -117,7 +120,7 @@ function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): 
         token = cleanToken(token)
         const member = scope.findMember(token)
         if (member !== undefined && member.type !== undefined) {
-            const tokenScope = GlobalScope.resolveType(member.type)
+            const tokenScope = await GlobalScope.resolveType(member.type)
             if (tokenScope !== undefined) {
                 scope = tokenScope
             } else {
@@ -137,12 +140,12 @@ function globalScopeMember(token: string, editorScope: EditorScope): Symbol | un
     return editorScope.findMember(token)
 }
 
-function resolveInEditorScope(token: string, editorScope: EditorScope): Scope | undefined {
+async function resolveInEditorScope(token: string, editorScope: EditorScope): ResolvedScope {
     const member = globalScopeMember(token, editorScope)
 
     if (member) {
         if (member.type) {
-            const tokenScope = GlobalScope.resolveType(member.type)
+            const tokenScope = await GlobalScope.resolveType(member.type)
             if (tokenScope) {
                 return tokenScope
             }
