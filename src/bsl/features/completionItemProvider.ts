@@ -5,26 +5,25 @@ import { scopeProvider } from '../scopeProvider';
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
-    provideCompletionItems(model: editor.ITextModel, position: Position): languages.ProviderResult<languages.CompletionList> {
-        return scopeProvider.resolveScope(model, position).then(scope=>{
-            console.debug('completion scope: ', scope)
+    async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
+        const scope = await scopeProvider.resolveScope(model, position)
+        
+        console.debug('completion scope: ', scope)
 
-            if (scope === undefined) {
-                return undefined
-            }
-    
-            const suggestions: languages.CompletionItem[] = []
-            const word = model.getWordAtPosition(position)
-            const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
-    
-            scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
-            console.debug('suggestions', suggestions)
-    
-            return {
-                suggestions: suggestions
-            }
-    
-        })
+        if (scope === undefined) {
+            return undefined
+        }
+
+        const suggestions: languages.CompletionItem[] = []
+        const word = model.getWordAtPosition(position)
+        const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
+
+        scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
+        console.debug('suggestions', suggestions)
+
+        return {
+            suggestions: suggestions
+        }
     },
 }
 

@@ -17,7 +17,7 @@ export class ConfigurationScope extends GlobalScopeItem {
 
         let registeredNewType = false
         let definition: ObjectDefinition | undefined = undefined
-        
+
         if (Types.isGlobalManagerType(typeId)) {
             definition = await this.definitionResolver.resolveObjectsList(Types.getGlobalManagerType(typeId))
             if (definition) {
@@ -33,10 +33,10 @@ export class ConfigurationScope extends GlobalScopeItem {
                     registeredNewType = await this.registerObjectType(typeId, definition)
                 }
             }
-        }else if (Types.isRefType(typeId)) {
+        } else if (Types.isRefType(typeId)) {
             const typeDetails = Types.getTypeDetails(typeId)
             if (typeDetails) {
-                    registeredNewType = await this.registerProxyType(typeId)
+                registeredNewType = await this.registerProxyType(typeId)
             }
         }
 
@@ -64,25 +64,12 @@ export class ConfigurationScope extends GlobalScopeItem {
     addType(type: TypeDefinition | undefined): boolean {
         if (type) {
             this.appendType(type)
-            console.log('append new configuration type', type)
+            console.debug('append new configuration type', type)
             return true
         } else {
             return false
         }
     }
-    // private importDefinition(type: string, name: string, object: ObjectDefinition): void {
-    //     const typeInfo = getTypeInfo(type)
-    //     this.appendType(createCollectionManagerType(typeInfo, [name]))
-    //     if (typeInfo.types.manager) {
-    //         this.appendType(createManagerType(typeInfo, name))
-    //     }
-    //     if (typeInfo.types.object) {
-    //         this.appendType(createObjectType(typeInfo, name, object))
-    //     }
-    //     if (typeInfo.types.ref) {
-    //         this.appendType(createRefType(typeInfo, name))
-    //     }
-    // }
 }
 
 const configurationScope = new ConfigurationScope([], []);

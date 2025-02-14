@@ -3,15 +3,6 @@ import { Types, getTypeInfo } from './configurationTypes'
 import { getItemManagerType } from "./genericTypes"
 
 export class DefinitionResolver {
-    async resolveTypeDefinition(typeId: string): Promise<ObjectDefinition | undefined> {
-        if (Types.isGlobalManagerType(typeId)) {
-            return this.resolveObjectsList(Types.getGlobalManagerType(typeId))
-        } else if (Types.isObjectType(typeId)) {
-            return resolveObjectDefinition(Types.getObjectName(typeId))
-        }
-        return undefined
-    }
-
     async resolveObjectsList(listId: string): Promise<ObjectDefinition | undefined> {
         const item = data[listId.toLocaleLowerCase()]
         if (!item) {
@@ -40,10 +31,6 @@ export class DefinitionResolver {
         }
         return object
     }
-}
-
-async function resolveObjectDefinition(objectId: string) {
-    return undefined
 }
 
 const data: {

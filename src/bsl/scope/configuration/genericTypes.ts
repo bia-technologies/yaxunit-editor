@@ -49,52 +49,6 @@ export async function createProxyType(typeId: string, definition: ObjectDefiniti
     return new PredefinedType(typeId, baseMembers.concat(members))
 }
 
-export async function createCollectionManagerType(type: TypeInfo, names: string[]) {
-    const collectionManagerType = getCollectionManagerType(type)
-    const baseType = await getPlatformScope().resolveType(collectionManagerType)
-
-    if (!baseType) {
-        throw 'Unknown type ' + collectionManagerType
-    }
-    const baseMembers = [...baseType.getMembers()]
-    const members = names.map(name => { return { kind: SymbolType.property, name, type: getItemManagerType(type, name) } })
-
-    return new PredefinedType(collectionManagerType, baseMembers.concat(members))
-}
-
-export function createManagerType(type: TypeInfo, name: string) {
-    const typeId = getItemManagerType(type, name)
-    const baseType = getPlatformType(getItemManagerType(type))
-
-    const members = getGenericTypeMembers(baseType, type, name)
-    return new PredefinedType(typeId, members)
-}
-
-export function createRefType(type: TypeInfo, name: string) {
-    const typeId = getRefType(type, name)
-    const baseType = getPlatformType(getRefType(type))
-
-    const members = getGenericTypeMembers(baseType, type, name)
-    return new PredefinedType(typeId, members)
-}
-
-export function createObjectType(type: TypeInfo, name: string, object: ObjectDefinition) {
-    const typeId = getObjectType(type, name)
-    const baseType = getPlatformType(getObjectType(type))
-
-    const members = getGenericTypeMembers(baseType, type, name)
-
-    object.properties.forEach(p => {
-        members.push({
-            name: p.name,
-            kind: SymbolType.property,
-            type: p.type,
-            description: p.description
-        } as Symbol)
-    })
-    return new PredefinedType(typeId, members)
-}
-
 function getGenericTypeMembers(genericType: TypeDefinition, typeInfo: TypeInfo, name: string) {
     const markers = new Set;
     if (typeInfo.types.manager) {
@@ -121,14 +75,6 @@ function getGenericTypeMembers(genericType: TypeDefinition, typeInfo: TypeInfo, 
     return members;
 }
 
-function getPlatformType(typeId: string): TypeDefinition {
-    const type = getPlatformScope().resolveGenericTypes(typeId)
-    if (!type) {
-        throw 'Unknown type ' + typeId
-    }
-    return type
-}
-
 function getPlatformScope(): PlatformScope {
     return GlobalScope.registeredScopes[PLATFORM_SCOPE_ID] as PlatformScope
 }
@@ -153,9 +99,3 @@ function getTypeId(typeInfo: TypeInfo, ext: string, name?: string): string {
         return `${typeInfo.name}${ext}.<?>`
     }
 }
-
-function getCollectionManagerType(type: TypeInfo): string {
-    const collectionName = type.collection
-    return collectionName + 'Менеджер'
-}
-

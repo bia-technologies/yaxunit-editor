@@ -8,33 +8,33 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
     signatureHelpRetriggerCharacters: [')'],
 
-    provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): languages.ProviderResult<languages.SignatureHelpResult> {
-        return currentMethodInfo(model, position).then(methodInfo => {
-            console.debug('Method info', methodInfo)
-            console.debug('Method context', context)
-            if (methodInfo) {
-                const symbol = methodInfo.symbol
-                const signatures = (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) ?
-                    methodSignature(symbol) :
-                    [{
-                        label: symbol.name,
-                        parameters: [],
-                        documentation: {
-                            value: symbol.description ?? ''
-                        }
-                    }]
+    async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
+        const methodInfo = await currentMethodInfo(model, position)
+        
+        console.debug('Method info', methodInfo)
+        console.debug('Method context', context)
+        if (methodInfo) {
+            const symbol = methodInfo.symbol
+            const signatures = (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) ?
+                methodSignature(symbol) :
+                [{
+                    label: symbol.name,
+                    parameters: [],
+                    documentation: {
+                        value: symbol.description ?? ''
+                    }
+                }]
 
-                return {
-                    value: {
-                        signatures: signatures,
-                        activeParameter: methodInfo.activeParameter,
-                        activeSignature: 0
-                    }, dispose: () => { }
-                }
-            } else {
-                return undefined
+            return {
+                value: {
+                    signatures: signatures,
+                    activeParameter: methodInfo.activeParameter,
+                    activeSignature: 0
+                }, dispose: () => { }
             }
-        })
+        } else {
+            return undefined
+        }
     },
 }
 

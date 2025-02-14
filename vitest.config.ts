@@ -14,7 +14,7 @@ export default defineConfig({
 					path.resolve(__dirname, "./node_modules/monaco-editor-core/esm/vs/editor/editor.api")
 			},{
 				find: '@',
-				replacement: '/src',
+				replacement: path.resolve(__dirname, "./src"),
 			  }
 		],
 
