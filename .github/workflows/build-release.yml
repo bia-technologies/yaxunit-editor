@@ -1,0 +1,39 @@
+name: Создание черновика релиза
+on:
+  push:
+    tags:
+      - '*'
+permissions:
+    contents: write
+jobs:
+  draft_release:
+    name: Сборка артефактов
+    runs-on: ubuntu-latest
+      
+    steps:
+      - name: Извлечение исходников
+        uses: actions/checkout@v4
+
+      - name: Установка NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: yarn
+          cache-dependency-path: 'yarn.lock'
+
+      - name: Установка зависимостей
+        run: yarn install --frozen-lockfile
+
+      - name: Сборка
+        run: yarn build
+
+      - name: Создание черновика релиза
+        uses: softprops/action-gh-release@v2
+        if: ${{ success() }}
+        with:
+          draft: true
+          files: 'dist/*'
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          append_body: false
+          token: ${{ secrets.GITHUB_TOKEN }}
