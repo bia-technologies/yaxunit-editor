@@ -17,7 +17,7 @@
     "terser": "^5.37.0",
     "tree-sitter-bsl": "^0.1.1",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7",
+    "vite": "^6.0.9",
     "vite-plugin-singlefile": "^2.1.0",
     "vitest": "^2.1.8"
   },
