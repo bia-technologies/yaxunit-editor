@@ -1,18 +1,27 @@
-const MANAGER_TYPE_PATTERN = /^([\wа-я]+)Менеджер$/i
-const BASE_TYPE_PATTERN = /^([\wа-я]+)(Менеджер|Объект|Выборка|Ссылка)$/i
+const GLOBAL_MANAGER_TYPE_PATTERN = /^([\wа-я]+)Менеджер$/i
+const MANAGER_TYPE_PATTERN = /^([\wа-я]+)Менеджер.([\wа-я_][\wа-я_\d]*)$/i
+const BASE_TYPE_PATTERN = /([\wа-я]+)(Менеджер|Объект|Выборка|Ссылка)(?:\.([\wа-я_][\wа-я_\d]*))?/i
 const OBJECT_TYPE_PATTERN = /^([\wа-я]+)Объект\.([\wа-я_][\wа-я_\d]*)$/i
+
+function isGlobalManagerType(typeId: string) {
+    return GLOBAL_MANAGER_TYPE_PATTERN.test(typeId)
+}
+
+function getGlobalManagerType(typeId: string) {
+    const match = GLOBAL_MANAGER_TYPE_PATTERN.exec(typeId)
+    return match ? match[1] : ''
+}
 
 function isManagerType(typeId: string) {
     return MANAGER_TYPE_PATTERN.test(typeId)
 }
 
-function getManagerName(typeId: string) {
-    const match = MANAGER_TYPE_PATTERN.exec(typeId)
-    return match ? match[1] : ''
-}
-
 function isObjectType(typeId: string) {
     return OBJECT_TYPE_PATTERN.test(typeId)
+}
+
+function isRefType(typeId: string) {
+    return getTypeDetails(typeId)?.kind === 'ссылка'
 }
 
 function getObjectName(typeId: string) {
@@ -20,17 +29,31 @@ function getObjectName(typeId: string) {
     return match ? match[1] + '.' + match[2] : ''
 }
 
-function getBaseTypeId(typeId: string) {
+function getTypeDetails(typeId: string) {
     const match = BASE_TYPE_PATTERN.exec(typeId)
     if (!match) {
         return undefined
     }
 
-    const typeInfo = getTypeInfo(match[1])
+    return {
+        type: match[1],
+        kind: match[2],
+        name: match[3]
+    }
+}
 
-    if (typeInfo.collection + match[2] === typeId) {
+function getBaseTypeId(typeId: string) {
+    const typeDetails = getTypeDetails(typeId)
+    if (!typeDetails) {
+        return undefined
+    }
+
+    const typeInfo = getTypeInfo(typeDetails.type)
+
+    if (!typeDetails.name && (typeInfo.collection + typeDetails.kind).toLocaleLowerCase() === typeId.toLocaleLowerCase()) {
         return typeId
     }
+    return `${typeDetails.type}${typeDetails.kind}.${typeInfo.typePattern}`
 }
 
 export interface TypeInfo { name: string, collection: string, typePattern: string, types: AvailableTypes }
@@ -55,8 +78,13 @@ appendType('Документ', 'Документы', '<Имя документа
 appendType('Обработка', 'Обработки', '<Имя обработки>', { object: true })
 
 export const Types = {
-    isManagerType,
-    getManagerName,
+    isGlobalManagerType,
+    getGlobalManagerType,
     isObjectType,
-    getObjectName
+    getObjectName,
+    getBaseTypeId,
+    isManagerType,
+    getTypeDetails,
+    getTypeInfo,
+    isRefType
 }

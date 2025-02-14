@@ -1,8 +1,9 @@
 import { GlobalScope } from "@/scope/globalScopeManager";
 import { ObjectDefinition } from "./objectDefinition";
 import { GlobalScopeItem, TypeDefinition } from "@/scope";
-import { createCollectionManagerType, createManagerType, createObjectType, createRefType } from "./genericTypes";
+import { createConfigurationType, createProxyType } from "./genericTypes";
 import { DefinitionResolver } from "./configurationDefinitionResolver";
+import { Types } from "./configurationTypes";
 
 export class ConfigurationScope extends GlobalScopeItem {
     objects: { [key: string]: ObjectDefinition[] } = {}
@@ -14,13 +15,61 @@ export class ConfigurationScope extends GlobalScopeItem {
             return type
         }
 
-        const definition = await this.definitionResolver.resolveTypeDefinition(typeId)
-        if (definition) {
-
+        let registeredNewType = false
+        let definition: ObjectDefinition | undefined = undefined
+        
+        if (Types.isGlobalManagerType(typeId)) {
+            definition = await this.definitionResolver.resolveObjectsList(Types.getGlobalManagerType(typeId))
+            if (definition) {
+                registeredNewType = await this.registerType(typeId, definition)
+            }
+        } else if (Types.isManagerType(typeId)) {
+            registeredNewType = await this.registerProxyType(typeId)
+        } else if (Types.isObjectType(typeId)) {
+            const typeDetails = Types.getTypeDetails(typeId)
+            if (typeDetails) {
+                definition = await this.definitionResolver.resolveObject(typeDetails.type, typeDetails.name)
+                if (definition) {
+                    registeredNewType = await this.registerObjectType(typeId, definition)
+                }
+            }
+        }else if (Types.isRefType(typeId)) {
+            const typeDetails = Types.getTypeDetails(typeId)
+            if (typeDetails) {
+                    registeredNewType = await this.registerProxyType(typeId)
+            }
         }
-        return super.resolveType(typeId)
+
+        if (registeredNewType) {
+            return super.resolveType(typeId)
+        }
+        return undefined
     }
 
+    async registerType(typeId: string, definition: ObjectDefinition): Promise<boolean> {
+        const type = await createConfigurationType(typeId, definition)
+        return this.addType(type)
+    }
+
+    async registerProxyType(typeId: string): Promise<boolean> {
+        const type = await createProxyType(typeId)
+        return this.addType(type)
+    }
+
+    async registerObjectType(typeId: string, definition: ObjectDefinition): Promise<boolean> {
+        const type = await createProxyType(typeId, definition)
+        return this.addType(type)
+    }
+
+    addType(type: TypeDefinition | undefined): boolean {
+        if (type) {
+            this.appendType(type)
+            console.log('append new configuration type', type)
+            return true
+        } else {
+            return false
+        }
+    }
     // private importDefinition(type: string, name: string, object: ObjectDefinition): void {
     //     const typeInfo = getTypeInfo(type)
     //     this.appendType(createCollectionManagerType(typeInfo, [name]))

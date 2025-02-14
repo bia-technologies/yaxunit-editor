@@ -2,10 +2,51 @@ import { GlobalScope, PredefinedType, Symbol, SymbolType, TypeDefinition } from 
 import { ObjectDefinition } from "./objectDefinition"
 import { PlatformScope } from "../platform/loader"
 import { PLATFORM_SCOPE_ID } from "../platform"
-import { TypeInfo } from "./configurationTypes"
+import { TypeInfo, Types } from "./configurationTypes"
 
-export async function createConfigurationType(typeId:string, definition: ObjectDefinition) {
-    
+export async function createConfigurationType(typeId: string, definition: ObjectDefinition): Promise<TypeDefinition | undefined> {
+    const baseTypeId = Types.getBaseTypeId(typeId)
+    if (!baseTypeId) {
+        return undefined
+    }
+    const baseType = await getPlatformScope().resolveType(baseTypeId)
+    if (!baseType) {
+        return undefined
+    }
+    const baseMembers = [...baseType.getMembers()]
+    const members: Symbol[] = definition.properties.map(p => {
+        return {
+            name: p.name,
+            type: p.type,
+            description: p.description,
+            kind: SymbolType.property
+        }
+    })
+    return new PredefinedType(typeId, baseMembers.concat(members))
+}
+
+export async function createProxyType(typeId: string, definition: ObjectDefinition | undefined = undefined): Promise<TypeDefinition | undefined> {
+    const baseTypeId = Types.getBaseTypeId(typeId)
+    const typeDetails = Types.getTypeDetails(typeId)
+    if (!baseTypeId || !typeDetails) {
+        return undefined
+    }
+    const baseType = await getPlatformScope().resolveType(baseTypeId)
+    if (!baseType) {
+        return undefined
+    }
+
+    const typeInfo = Types.getTypeInfo(typeDetails.type)
+    const baseMembers = getGenericTypeMembers(baseType, typeInfo, typeDetails.name)
+    const members: Symbol[] = definition ? definition.properties.map(p => {
+        return {
+            name: p.name,
+            type: p.type,
+            description: p.description,
+            kind: SymbolType.property
+        }
+    }) : []
+    return new PredefinedType(typeId, baseMembers.concat(members))
 }
 
 export async function createCollectionManagerType(type: TypeInfo, names: string[]) {
