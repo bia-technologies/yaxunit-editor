@@ -15,7 +15,7 @@ export interface Parameter extends Symbol {
 }
 
 export interface Variable extends Symbol {
-    type?: string
+    type?: string | Promise<string | undefined>
 }
 export interface ModuleVariable extends Variable {
     isExport: boolean

@@ -13,7 +13,8 @@ export default defineConfig({
   },
   plugins: [
     viteSingleFile()
-  ], optimizeDeps: {
+  ],
+  optimizeDeps: {
     exclude: [
       "web-tree-sitter"
     ]

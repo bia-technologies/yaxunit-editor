@@ -3,8 +3,8 @@ import tokensProvider, { TokensSequence } from './tokensProvider'
 import { Scope, Symbol, GlobalScope, EditorScope, } from '@/scope';
 import { Method } from './Symbols';
 
-type ResolvedSymbol = Promise<Symbol|undefined>
-type ResolvedScope= Promise<Scope|undefined>
+type ResolvedSymbol = Promise<Symbol | undefined>
+type ResolvedScope = Promise<Scope | undefined>
 
 const scopeProvider = {
     async resolveScope(model: editor.ITextModel, position: Position): ResolvedScope {
@@ -23,7 +23,7 @@ const scopeProvider = {
             return objectScope(tokensSequence, scope)
         }
     },
-    resolveExpressionType(model: editor.ITextModel, tokens: string[]) {
+    async resolveExpressionType(model: editor.ITextModel, tokens: string[]) {
         tokens = tokens.reverse()
         const tokensSequence: TokensSequence = {
             tokens,
@@ -33,15 +33,17 @@ const scopeProvider = {
         const scope = EditorScope.getScope(model)
         let resolvedScope: Scope | undefined
         if (tokens.length > 1) {
-            resolvedScope = objectScope(tokensSequence, scope)
+            resolvedScope = await objectScope(tokensSequence, scope)
         } else {
             resolvedScope = scope
         }
         if (resolvedScope) {
-            return resolvedScope.findMember(tokensSequence.lastSymbol)?.type
-        } else {
-            return undefined
+            const type = resolvedScope.findMember(tokensSequence.lastSymbol)?.type
+            if (type) {
+                return await getType(type)
+            }
         }
+        return undefined
 
     },
 
@@ -119,9 +121,9 @@ async function objectScope(tokensSequence: TokensSequence, editorScope: EditorSc
 
         token = cleanToken(token)
         const member = scope.findMember(token)
-        if (member !== undefined && member.type !== undefined) {
-            const tokenScope = await GlobalScope.resolveType(member.type)
-            if (tokenScope !== undefined) {
+        if (member && member.type) {
+            const tokenScope = await GlobalScope.resolveType(await getType(member.type))
+            if (tokenScope) {
                 scope = tokenScope
             } else {
                 scope = undefined
@@ -145,7 +147,7 @@ async function resolveInEditorScope(token: string, editorScope: EditorScope): Re
 
     if (member) {
         if (member.type) {
-            const tokenScope = await GlobalScope.resolveType(member.type)
+            const tokenScope = await GlobalScope.resolveType(await getType(member.type))
             if (tokenScope) {
                 return tokenScope
             }
@@ -154,6 +156,13 @@ async function resolveInEditorScope(token: string, editorScope: EditorScope): Re
     return undefined
 }
 
+async function getType(type: string | Promise<string | undefined>): Promise<string | undefined> {
+    if (type instanceof Promise) {
+        return await type
+    } else {
+        return type
+    }
+}
 function cleanToken(token: string): string {
     const pos1 = token.indexOf('(')
     const pos2 = token.indexOf('[')

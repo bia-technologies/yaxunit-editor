@@ -178,13 +178,13 @@ export class BslParser implements IDisposable {
         }
     }
 
-    calculateType(expression: Node) {
+    async calculateType(expression: Node) {
         if (!this.parser || !this.model) return;
         const tokens = expressionTokens(expression)
         if (tokens.length === 0 || tokens.filter(t => !t).length !== 0) {
             return undefined
         }
-        return scopeProvider.resolveExpressionType(this.model, tokens as string[])
+        return await scopeProvider.resolveExpressionType(this.model, tokens as string[])
     }
 
     logNodes(nodes: (Node | null)[]) {

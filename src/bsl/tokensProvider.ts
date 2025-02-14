@@ -1,4 +1,4 @@
-import { editor, Position, Token } from 'monaco-editor-core';
+import { editor, Position } from 'monaco-editor-core';
 import { EditorScope } from '@/scope';
 import { Node } from 'web-tree-sitter';
 
@@ -12,7 +12,6 @@ export interface TokensSequence {
 
 export default {
     resolve: collectTokens,
-    getParameterNumber,
     currentMethod
 }
 
@@ -54,6 +53,10 @@ function currentMethod(model: editor.ITextModel, startPosition: Position): Token
         node = node.nextSibling
     }
 
+    if(containsIndex){
+        // TODO support index access
+        return undefined
+    }
     return {
         tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0]
     }
@@ -105,6 +108,10 @@ function currentProperty(model: editor.ITextModel, startPosition: Position): Tok
         node = node.nextSibling
     }
 
+    if(containsIndex){
+        // TODO support index access
+        return undefined
+    }
     return {
         tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0]
     }
@@ -112,57 +119,4 @@ function currentProperty(model: editor.ITextModel, startPosition: Position): Tok
 
 function collectTokens(model: editor.ITextModel, startPosition: Position): TokensSequence | undefined {
     return currentProperty(model, startPosition)
-}
-
-function updateBaseState(state: BaseState, value: string): void {
-    if (value === ']') {
-        state.squareLevel++;
-    } else if (value === ')') {
-        state.parenthesisLevel++;
-    } else if (value === '[') {
-        state.squareLevel--;
-    } else if (value === '(') {
-        state.parenthesisLevel--;
-    }
-}
-
-interface BaseState {
-    squareLevel: number,
-    parenthesisLevel: number,
-    done: boolean,
-
-}
-
-function getTokens(line: string): Token[] {
-    const tokens = editor.tokenize(line, 'bsl');
-    return tokens[0];
-}
-function getParameterNumber(model: editor.ITextModel, start: Position, end: Position): number {
-
-    const text = model.getValueInRange({
-        startColumn: start.column + 1,
-        startLineNumber: start.lineNumber,
-        endColumn: end.column,
-        endLineNumber: end.lineNumber
-    }).split(model.getEOL()).join('')
-
-    const tokens = getTokens(text + ' ')
-
-    const state: BaseState = {
-        done: false,
-        parenthesisLevel: 0,
-        squareLevel: 0,
-    }
-    let lastTokenOffset = 0
-    let parameterNumber = 0
-    tokens.forEach(token => {
-        const value = text.substring(token.offset, lastTokenOffset);
-        lastTokenOffset = token.offset
-        updateBaseState(state, value)
-        if (value === ',' && state.parenthesisLevel === -1 && state.squareLevel === 0) {
-            parameterNumber++;
-        }
-    });
-
-    return parameterNumber
 }

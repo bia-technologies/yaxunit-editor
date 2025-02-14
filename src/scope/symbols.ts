@@ -8,7 +8,7 @@ export enum SymbolType {
 export interface Symbol {
     kind: SymbolType,
     name: string,
-    type?: string,
+    type?: string | Promise<string|undefined>,
     description?: string
 }
 
