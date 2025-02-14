@@ -10,7 +10,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
 
     async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
         const methodInfo = await currentMethodInfo(model, position)
-        
+
         console.debug('Method info', methodInfo)
         console.debug('Method context', context)
         if (methodInfo) {
@@ -39,7 +39,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
 }
 
 async function currentMethodInfo(model: editor.ITextModel, position: Position) {
-    const tokensSequence = tokensProvider.findMethod(model, position)
+    const tokensSequence = tokensProvider.currentMethod(model, position)
     if (!tokensSequence) {
         return undefined
     }
@@ -52,7 +52,7 @@ async function currentMethodInfo(model: editor.ITextModel, position: Position) {
     return {
         tokensSequence,
         symbol,
-        activeParameter: tokensSequence.end ? tokensProvider.getParameterNumber(model, tokensSequence.end, position) : 0
+        activeParameter: 0
     }
 }
 

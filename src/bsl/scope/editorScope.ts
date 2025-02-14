@@ -20,6 +20,7 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 export class EditorScope extends UnionScope {
     localScope: LocalModuleScope
     editor: editor.IStandaloneCodeEditor
+    modelVersionId: number = 0
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
         this.localScope = new LocalModuleScope(model)
@@ -29,6 +30,10 @@ export class EditorScope extends UnionScope {
         this.scopes.push(GlobalScope)
     }
 
+    getAst() {
+        return this.localScope.parser;
+    }
+    
     getScopesAtLine(line: number | undefined): Scope[] {
         if (!line) {
             return this.scopes;
@@ -50,7 +55,12 @@ export class EditorScope extends UnionScope {
     }
 
     update() {
-        this.localScope.updateMembers()
+        const currentVersionId = this.editor.getModel()?.getVersionId()
+        if (currentVersionId != this.modelVersionId) {
+            this.modelVersionId = currentVersionId ?? 0
+            this.localScope.updateMembers()
+        }
+
     }
 
     onDidChangeContent(_: editor.IModelContentChangedEvent): void {

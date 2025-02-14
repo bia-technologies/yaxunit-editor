@@ -44,7 +44,8 @@ export class YAxUnitEditor {
             acceptSuggestionOnCommitCharacter: true,
             // fontFamily: 'Courier New',
             // fontSize: 12,
-            fontLigatures: true
+            fontLigatures: true,
+            wordBasedSuggestions: false
         });
 
         tuneEditor(this.editor)

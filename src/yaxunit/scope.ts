@@ -3,8 +3,8 @@ import { SymbolType, PredefinedType, MethodSymbol, GlobalScope, GlobalScopeItem 
 class YAxUnitScope extends GlobalScopeItem { }
 
 async function loadScope() {
-    const scopeData = await import('@/assets/yaxunit-scope.json')
-    const types = scopeData.default.map((t: any) => {
+    const scopeData = await import('@assets/yaxunit-scope.json')
+    const types = scopeData.default.map(t => {
         return new PredefinedType(t.name, t.methods.map(handleMethod))
     })
     const members = types.filter(v => v.id.startsWith("ОбщийМодуль."))

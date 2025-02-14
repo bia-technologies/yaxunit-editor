@@ -68,7 +68,7 @@ function getGenericTypeMembers(genericType: TypeDefinition, typeInfo: TypeInfo, 
             return m
         }
         const copy = { ...m }
-        copy.type = m.type.replace(replacePattern, name)
+        copy.type = (m.type as string).replace(replacePattern, name)
         return copy
     })
 

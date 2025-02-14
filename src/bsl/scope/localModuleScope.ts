@@ -1,11 +1,15 @@
 import { BaseScope, Scope, SymbolType } from '@/scope'
-import { editor } from "monaco-editor-core"
-import { parse } from "../parser"
-import { Method, Module } from "../Symbols"
+import { editor, IDisposable } from "monaco-editor-core"
+import { Method, Module } from "@/bsl/Symbols"
+import { BslParser } from '@/tree-sitter/bslAst'
 import { createMethodScope } from './methodScope'
 
-export class LocalModuleScope extends BaseScope {
+export class LocalModuleScope extends BaseScope implements IDisposable {
     private readonly model: editor.ITextModel
+    parser: BslParser
+
+    modelVersionId: number = 0
+    disposable: IDisposable[] = []
     private module: Module = {
         vars: [], methods: []
     }
@@ -13,10 +17,18 @@ export class LocalModuleScope extends BaseScope {
     constructor(model: editor.ITextModel) {
         super([])
         this.model = model
+        this.disposable.push(this.parser = new BslParser())
+        this.init()
+    }
+
+    async init() {
+        await this.parser.init();
+        await this.parser.setModel(this.model)
+        this.disposable.push(this.model.onDidChangeContent(e => this.parser.onEditorContentChange(e)))
     }
 
     beforeGetMembers() {
-        if (this.needUpdateMembers()) {
+        if (this.model.getVersionId() != this.modelVersionId) {
             this.updateMembers()
         }
     }
@@ -30,35 +42,34 @@ export class LocalModuleScope extends BaseScope {
         if (method === undefined) {
             return undefined
         }
-        return createMethodScope(method)
-    }
-
-    private needUpdateMembers(): boolean {
-        return this.members.length === 0
+        return createMethodScope(method, this.parser)
     }
 
     updateMembers() {
-        const source = this.model?.getValue()
-        if (source !== undefined) {
-            this.members.length = 0
+        this.modelVersionId = this.model.getVersionId()
+        this.module.methods = this.parser.methods()
+        this.module.vars = this.parser.vars()
+        this.members.length = 0
 
-            this.module = parse(source)
-            for (let i = 0; i < this.module.methods.length; i++) {
-                this.members.push({
-                    kind: SymbolType.function,
-                    name: this.module.methods[i].name
-                })
-            }
-            for (let i = 0; i < this.module.vars.length; i++) {
-                this.members.push({
-                    kind: SymbolType.function,
-                    name: this.module.vars[i].name
-                })
-            }
+        for (let i = 0; i < this.module.methods.length; i++) {
+            this.members.push({
+                kind: SymbolType.function,
+                name: this.module.methods[i].name
+            })
+        }
+        for (let i = 0; i < this.module.vars.length; i++) {
+            this.members.push({
+                kind: SymbolType.property,
+                name: this.module.vars[i].name
+            })
         }
     }
 
     getMethods(): Method[] {
         return this.module.methods;
+    }
+
+    dispose(): void {
+        this.disposable.forEach(d => d.dispose())
     }
 }
