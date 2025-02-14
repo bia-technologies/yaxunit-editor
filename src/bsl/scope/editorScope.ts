@@ -30,6 +30,10 @@ export class EditorScope extends UnionScope {
         this.scopes.push(GlobalScope)
     }
 
+    getAst() {
+        return this.localScope.parser;
+    }
+    
     getScopesAtLine(line: number | undefined): Scope[] {
         if (!line) {
             return this.scopes;

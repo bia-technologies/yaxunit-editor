@@ -19,7 +19,7 @@ export class Queries implements IDisposable {
     varDefinitionsQuery() {
         if (!this.varDefinitions) {
             this.varDefinitions = this.createQuery(
-                '(var_definition var_name: (identifier) @name export: (export_modifier) @export) @var')
+                '(var_definition var_name: (identifier) @name) @var')
         }
         return this.varDefinitions
     }
@@ -27,7 +27,7 @@ export class Queries implements IDisposable {
     methodVarsQuery() {
         if (!this.assignments) {
             this.assignments = this.createQuery(
-                `(assignment_statement left: (leftValue) @name right: (expression)@expression) @assignment
+                `(assignment_statement left: (identifier) @name right: (expression)@expression) @assignment
     (var_statement var_name: (identifier) @name) @var`)
         }
         return this.assignments

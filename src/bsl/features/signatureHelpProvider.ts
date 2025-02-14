@@ -5,7 +5,7 @@ import { parameterDocumentation, signatureDocumentation, signatureLabel } from '
 import tokensProvider from '../tokensProvider'
 
 function currentMethodInfo(model: editor.ITextModel, position: Position) {
-    const tokensSequence = tokensProvider.findMethod(model, position)
+    const tokensSequence = tokensProvider.currentMethod(model, position)
     if (!tokensSequence) {
         return undefined
     }

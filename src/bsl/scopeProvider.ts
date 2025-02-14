@@ -41,6 +41,7 @@ const scopeProvider = {
         }
 
     },
+
     currentSymbol(model: editor.ITextModel, position: Position): Symbol | undefined {
         console.debug('current symbol')
         const tokensSequence = tokensProvider.resolve(model, position)
@@ -61,7 +62,7 @@ const scopeProvider = {
         console.debug('current word', model.getWordUntilPosition(position)?.word)
 
         if (!tokensSequence) {
-            tokensSequence = tokensProvider.findMethod(model, position)
+            tokensSequence = tokensProvider.currentMethod(model, position)
         }
         console.debug('tokensSequence: ', tokensSequence)
 

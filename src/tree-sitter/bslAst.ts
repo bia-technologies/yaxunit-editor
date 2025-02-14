@@ -1,4 +1,4 @@
-import { Parser, Language, Tree, Point, Node, Query } from 'web-tree-sitter';
+import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, IDisposable, Position } from 'monaco-editor-core';
 import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
@@ -38,6 +38,43 @@ export class BslParser implements IDisposable {
             throw 'Dont parsed'
         }
         return this.tree.rootNode
+    }
+
+    getCurrentNode(position: number) {
+        if (!this.tree) {
+            throw 'Dont parsed'
+        }
+
+        const cursor = this.tree.walk()
+        let currentNode
+        try {
+            let success = true
+            while (success) {
+                if (cursor.startIndex <= position && position <= cursor.endIndex) {
+                    currentNode = cursor.currentNode
+                    success = cursor.gotoFirstChild()
+                } else {
+                    success = cursor.gotoNextSibling()
+                }
+                if (!success) {
+                    break
+                }
+            }
+        } finally {
+            cursor.delete()
+        }
+        return currentNode
+    }
+
+    findParenNode(node: Node, predicate: (node: Node) => boolean) {
+        let currentNode: Node | null = node
+
+        while (currentNode !== null && (currentNode = currentNode.parent) !== null) {
+            if (predicate(currentNode)) {
+                return currentNode
+            }
+        }
+        return undefined
     }
 
     async init() {
@@ -162,7 +199,6 @@ export class BslParser implements IDisposable {
         }
     }
 
-
     onEditorContentChange(e: editor.IModelContentChangedEvent) {
         if (!this.parser || !this.model) return;
         if (e.changes.length == 0) return;
@@ -176,9 +212,9 @@ export class BslParser implements IDisposable {
             const startIndex = change.rangeOffset;
             const oldEndIndex = change.rangeOffset + change.rangeLength;
             const newEndIndex = change.rangeOffset + change.text.length;
-            const startPosition = monacoPositionToParserPoint(this.model.getPositionAt(startIndex));
-            const oldEndPosition = monacoPositionToParserPoint(this.model.getPositionAt(oldEndIndex));
-            const newEndPosition = monacoPositionToParserPoint(this.model.getPositionAt(newEndIndex));
+            const startPosition = monacoOffsetToPoint(this.model, startIndex);
+            const oldEndPosition = monacoOffsetToPoint(this.model, oldEndIndex);
+            const newEndPosition = monacoOffsetToPoint(this.model, newEndIndex);
             this.tree.edit({ startIndex, oldEndIndex, newEndIndex, startPosition, oldEndPosition, newEndPosition });
         }
         this.tree = this.parser.parse(this.model.getValue(), this.tree); // TODO: Don't use getText, use Parser.Input
@@ -200,7 +236,11 @@ export function createQuery(queryText: string) {
     return new Query(bslLanguage, queryText)
 }
 
-function monacoPositionToParserPoint(position: Position): Point {
+function monacoOffsetToPoint(model: editor.ITextModel, offset: number): Point {
+    return monacoPositionToPoint(model.getPositionAt(offset))
+}
+
+function monacoPositionToPoint(position: Position): Point {
     return { row: position.lineNumber, column: position.column };
 }
 
