@@ -41,7 +41,6 @@ function nodeToken(node: Node | null) {
         case '.':
             return '.'
         default:
-            undefined
-
+            return undefined
     }
 }

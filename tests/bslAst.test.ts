@@ -1,5 +1,6 @@
 import { BslParser } from '../src/tree-sitter/bslAst'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { Queries } from '../src/tree-sitter/queries'
 
 beforeAll(async () => {
     const parser = new BslParser()
@@ -9,6 +10,7 @@ beforeAll(async () => {
 
 describe('expressionTokens', () => {
     const parser = new BslParser()
+    const queries = new Queries()
 
     beforeAll(async () => {
         await parser.init()
@@ -16,17 +18,19 @@ describe('expressionTokens', () => {
 
     afterAll(() => {
         parser.dispose()
+        queries.dispose()
     })
 
     test('primitive', () => {
         parser.setContent('А = 1 + 1;')
         const expression = getExpression(parser)
-        
+
         expect(parser.expressionTokens(expression)).toStrictEqual(['1', '1'])
     })
+    function getExpression(parser: BslParser) {
+        const q = queries.createQuery('(expression) @expression')
+        return q.matches(parser.getRootNode())[0]
+    }
 })
 
-function getExpression(parser:BslParser){
-    const q = parser.createQuery('')
-    return q.matches(parser.getRootNode())[0]
-}
+

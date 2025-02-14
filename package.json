@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "npx vitest",
-    "postinstall": "cp node_modules/web-tree-sitter/tree-sitter.wasm assets;cp node_modules/tree-sitter-bsl/tree-sitter-bsl.wasm assets"
+    "postinstall": "cp node_modules/web-tree-sitter/tree-sitter.wasm assets;cp node_modules/tree-sitter-bsl/tree-sitter-bsl.wasm assets;sed -i -e 's/0n/0/g' node_modules/web-tree-sitter/tree-sitter.js"
   },
   "devDependencies": {
     "jsdom": "^25.0.1",

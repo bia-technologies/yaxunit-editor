@@ -34,8 +34,8 @@
 * [bsl_console](https://github.com/salexdv/bsl_console)
 * [VAEditor](https://github.com/Pr-Mex/VAEditor)
 * [vsc-language-1c-bsl](https://github.com/1c-syntax/vsc-language-1c-bsl)
-* [onec-syntaxparser](https://github.com/xDrivenDevelopment/onec-syntaxparser)
 * [react-1cv8-web-app](https://github.com/IngvarConsulting/react-1cv8-web-app)
+* [tree-sitter-bsl](https://github.com/alkoleft/tree-sitter-bsl)
 
 Хочу выразить благодарность авторам этих продуктов
 
