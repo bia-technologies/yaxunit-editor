@@ -13,11 +13,16 @@ export default defineConfig({
   },
   plugins: [
     viteSingleFile()
-  ],
+  ], optimizeDeps: {
+    exclude: [
+      "web-tree-sitter"
+    ]
+  },
   assetsInclude: ['/assets/*.wasm'],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, "./src"),
+      '@assets': path.resolve(__dirname, "./assets"),
     },
   },
 })
