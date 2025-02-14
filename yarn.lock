@@ -906,10 +906,10 @@ tr46@^5.0.0:
   dependencies:
     punycode "^2.3.1"
 
-tree-sitter-bsl@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/tree-sitter-bsl/-/tree-sitter-bsl-0.1.1.tgz#001fc2a10711957f0b25bda94c3cab3182baff2f"
-  integrity sha512-8oo65atDb8bK2pZC/XpyVk/9OFDMEY8l32AL3aWrfikLg7QAXX55T/nNyjOooJWAu8aX1cKbSuP3nJAzSlvCZA==
+tree-sitter-bsl@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/tree-sitter-bsl/-/tree-sitter-bsl-0.1.2.tgz#0971853bcfa4e412360400a6f2c4d093f00433c0"
+  integrity sha512-WjyFyXTih7zWs93XnKimHjCQVyEhq1J42RMQ+UhO6Z0ocIqfJMzQHHT60cKh48ltkBolKgYrfhEXumTotZjI4A==
   dependencies:
     node-addon-api "^8.2.1"
     node-gyp-build "^4.8.2"
