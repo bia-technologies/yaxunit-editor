@@ -1,8 +1,8 @@
 export enum SymbolType {
-    function,
-    procedure,
-    property,
-    enum
+    property = 0,
+    function = 1,
+    procedure = 2,
+    enum = 3
 }
 
 export interface Symbol {

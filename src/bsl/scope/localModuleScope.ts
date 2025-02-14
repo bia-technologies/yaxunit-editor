@@ -1,27 +1,24 @@
-import { BaseScope, Scope, TypeDefinition } from './scope'
-import { Symbol, SymbolType } from './symbols'
+import { BaseScope, Scope, SymbolType } from '@/scope'
 import { editor } from "monaco-editor-core"
-import { parse } from "../bsl/parser"
-import { Method, Module } from "../bsl/Symbols"
+import { parse } from "../parser"
+import { Method, Module } from "../Symbols"
+import { createMethodScope } from './methodScope'
 
-export class LocalScope extends BaseScope implements TypeDefinition {
+export class LocalModuleScope extends BaseScope {
     private readonly model: editor.ITextModel
     private module: Module = {
         vars: [], methods: []
     }
-
-    id: string = 'local-module'
 
     constructor(model: editor.ITextModel) {
         super([])
         this.model = model
     }
 
-    getMembers() {
+    beforeGetMembers() {
         if (this.needUpdateMembers()) {
             this.updateMembers()
         }
-        return this.members
     }
 
     getMethodAtLine(line: number): Method | undefined {
@@ -33,22 +30,7 @@ export class LocalScope extends BaseScope implements TypeDefinition {
         if (method === undefined) {
             return undefined
         }
-
-        const members: Symbol[] = []
-        method.autoVars.forEach(v => members.push({
-            name: v.name,
-            kind: SymbolType.property,
-        }))
-        method.vars.forEach(v => members.push({
-            name: v.name,
-            kind: SymbolType.property,
-        }))
-        method.params.forEach(v => members.push({
-            name: v.name,
-            kind: SymbolType.property,
-        }))
-
-        return new BaseScope(members)
+        return createMethodScope(method)
     }
 
     private needUpdateMembers(): boolean {

@@ -4,31 +4,13 @@ import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod } f
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
 import tokensProvider from '../tokensProvider'
 
-function currentMethodInfo(model: editor.ITextModel, position: Position) {
-    const tokensSequence = tokensProvider.findMethod(model, position)
-    if (!tokensSequence) {
-        return undefined
-    }
-
-    const symbol = scopeProvider.currentMethod(model, position, tokensSequence)
-    if (!symbol) {
-        return undefined
-    }
-
-    return {
-        tokensSequence,
-        symbol,
-        activeParameter: tokensSequence.end ? tokensProvider.getParameterNumber(model, tokensSequence.end, position) : 0
-    }
-}
-
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
     signatureHelpRetriggerCharacters: [')'],
 
-    provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): languages.ProviderResult<languages.SignatureHelpResult> {
-
-        const methodInfo = currentMethodInfo(model, position)
+    async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
+        const methodInfo = await currentMethodInfo(model, position)
+        
         console.debug('Method info', methodInfo)
         console.debug('Method context', context)
         if (methodInfo) {
@@ -56,16 +38,34 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     },
 }
 
+async function currentMethodInfo(model: editor.ITextModel, position: Position) {
+    const tokensSequence = tokensProvider.findMethod(model, position)
+    if (!tokensSequence) {
+        return undefined
+    }
+
+    const symbol = await scopeProvider.currentMethod(model, position, tokensSequence)
+    if (!symbol) {
+        return undefined
+    }
+
+    return {
+        tokensSequence,
+        symbol,
+        activeParameter: tokensSequence.end ? tokensProvider.getParameterNumber(model, tokensSequence.end, position) : 0
+    }
+}
+
 function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
     if (isPlatformMethod(symbol)) {
         return symbol.signatures.map(s => createSignature(symbol, s))
-    }else {
-        const methodSymbol  = symbol as MethodSymbol;
+    } else {
+        const methodSymbol = symbol as MethodSymbol;
         return [createSignature(methodSymbol, methodSymbol)]
     }
 }
 
-function  createSignature(method: Symbol, sign: MethodSignature): languages.SignatureInformation{
+function createSignature(method: Symbol, sign: MethodSignature): languages.SignatureInformation {
     return {
         label: signatureLabel(method, sign),
         documentation: signatureDocumentation(method, sign),

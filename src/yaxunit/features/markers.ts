@@ -1,6 +1,6 @@
 import { TestsModel } from '../test-model'
 import { editor, MarkerSeverity } from 'monaco-editor-core'
-import { TestModelRender } from './interfaces'
+import { TestModelRender } from '../interfaces'
 import { Error } from '../test-model/report'
 
 
