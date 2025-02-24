@@ -2,8 +2,15 @@ import { editor, Position } from 'monaco-editor-core';
 import { EditorScope } from '@/scope';
 import { Node } from 'web-tree-sitter';
 
+export enum TokensSequenceType {
+    expression,
+    new,
+    nothing
+}
+
 export interface TokensSequence {
     tokens: string[],
+    type: TokensSequenceType,
     lastSymbol: string,
     closed: boolean,
     start?: Position,
@@ -20,6 +27,7 @@ function currentMethod(model: editor.ITextModel, startPosition: Position): Token
     const pos = model.getOffsetAt(startPosition)
 
     const currentNode = tree.getCurrentNode(pos)
+
     if (!currentNode) {
         return undefined
     }
@@ -27,8 +35,9 @@ function currentMethod(model: editor.ITextModel, startPosition: Position): Token
     const currentExpression = tree.findParenNode(currentNode, (n) => {
         return n.type === 'call_expression'
     });
+
     if (!currentExpression) {
-        return
+        return undefined
     }
 
     const tokens: string[] = []
@@ -53,14 +62,18 @@ function currentMethod(model: editor.ITextModel, startPosition: Position): Token
         node = node.nextSibling
     }
 
-    if(containsIndex){
+    if (containsIndex) {
         console.debug('Unsupport index access')
         // TODO support index access
         return undefined
     }
     console.debug('Expression tokens', tokens)
+
     return {
-        tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0]
+        tokens: tokens.reverse(),
+        closed: true,
+        lastSymbol: tokens[0],
+        type: tokens.length === 0 ? TokensSequenceType.nothing : TokensSequenceType.expression
     }
 }
 
@@ -77,14 +90,25 @@ function currentProperty(model: editor.ITextModel, startPosition: Position): Tok
         return {
             closed: false,
             tokens: [],
-            lastSymbol: ''
+            lastSymbol: '',
+            type: TokensSequenceType.nothing
         }
     }
     const currentExpression = tree.findParenNode(currentNode, (n) => {
-        return n.type === 'call_expression' || n.type === 'property_access' || n.type === 'expression' || n.type === 'arguments' || n.type === 'const_expression' || n.type === 'ERROR'
+        return n.type === 'call_expression' || n.type === 'property_access' || n.type === 'expression' || n.type === 'arguments' || n.type === 'const_expression' || n.type === 'ERROR' || n.type === 'new_expression'
     });
     if (!currentExpression || currentExpression.type === 'const_expression') {
         return
+    }
+
+
+    if (currentNode.type === 'new_expression' || currentExpression.type === 'new_expression') {
+        return {
+            type: TokensSequenceType.new,
+            tokens: [],
+            closed: false,
+            lastSymbol: ''
+        }
     }
 
     const tokens: string[] = []
@@ -110,14 +134,14 @@ function currentProperty(model: editor.ITextModel, startPosition: Position): Tok
         node = node.nextSibling
     }
 
-    if(containsIndex){
+    if (containsIndex) {
         console.debug('Unsupport index access')
         // TODO support index access
         return undefined
     }
     console.debug('Expression tokens', tokens)
     return {
-        tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0]
+        tokens: tokens.reverse(), closed: true, lastSymbol: tokens[0], type: TokensSequenceType.expression
     }
 }
 

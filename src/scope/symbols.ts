@@ -8,7 +8,7 @@ export enum SymbolType {
 export interface Symbol {
     kind: SymbolType,
     name: string,
-    type?: string | Promise<string|undefined>,
+    type?: string | Promise<string | undefined>,
     description?: string
 }
 
@@ -16,6 +16,12 @@ export interface MethodSymbol extends Symbol, MethodSignature {
 }
 
 export interface PlatformMethodSymbol extends Symbol {
+    signatures: MethodSignature[],
+}
+
+export interface Constructor {
+    name: string,
+    type: string,
     signatures: MethodSignature[],
 }
 

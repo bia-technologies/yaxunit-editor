@@ -12,6 +12,7 @@ export class BslParser implements IDisposable {
     private parser: Parser
     private tree: Tree | null = null
     private model: editor.IReadOnlyModel
+    disposable: IDisposable[] = []
 
     private queries: Queries = new Queries()
 
@@ -23,6 +24,7 @@ export class BslParser implements IDisposable {
         this.parser = new Parser()
         this.parser.setLanguage(bslLanguage)
         this.setModel(this.model = model)
+        this.disposable.push(this.model.onDidChangeContent(e => this.onEditorContentChange(e)))
         console.log('parser init', performance.now() - start, 'ms')
     }
 
@@ -193,7 +195,7 @@ export class BslParser implements IDisposable {
         }
     }
 
-    onEditorContentChange(e: editor.IModelContentChangedEvent) {
+    private onEditorContentChange(e: editor.IModelContentChangedEvent) {
         if (!this.parser || !this.model) return;
         if (e.changes.length == 0) return;
 
@@ -217,6 +219,7 @@ export class BslParser implements IDisposable {
     }
 
     dispose(): void {
+        this.disposable.forEach(d => d.dispose())
         this.parser?.delete()
         this.tree?.delete()
         this.queries.dispose()

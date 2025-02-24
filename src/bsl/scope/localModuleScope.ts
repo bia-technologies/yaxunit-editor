@@ -18,7 +18,6 @@ export class LocalModuleScope extends BaseScope implements IDisposable {
         super([])
         this.model = model
         this.disposable.push(this.parser = new BslParser(model))
-        this.disposable.push(this.model.onDidChangeContent(e => this.parser.onEditorContentChange(e)))
     }
 
     beforeGetMembers() {

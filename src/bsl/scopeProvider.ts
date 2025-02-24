@@ -1,5 +1,5 @@
 import { editor, Position } from 'monaco-editor-core';
-import tokensProvider, { TokensSequence } from './tokensProvider'
+import tokensProvider, { TokensSequence, TokensSequenceType } from './tokensProvider'
 import { Scope, Symbol, GlobalScope, EditorScope, } from '@/scope';
 import { Method } from './Symbols';
 
@@ -7,14 +7,7 @@ type ResolvedSymbol = Promise<Symbol | undefined>
 type ResolvedScope = Promise<Scope | undefined>
 
 const scopeProvider = {
-    async resolveScope(model: editor.ITextModel, position: Position): ResolvedScope {
-        const tokensSequence = tokensProvider.resolve(model, position)
-
-        console.debug('tokensSequence: ', tokensSequence)
-        if (tokensSequence === undefined || tokensSequence.lastSymbol === ')') {
-            return undefined
-        }
-
+    async resolveScope(model: editor.ITextModel, tokensSequence: TokensSequence): ResolvedScope {
         const scope = EditorScope.getScope(model)
 
         if (tokensSequence.tokens.length === 0 || tokensSequence.tokens.length === 1 && !tokensSequence.closed) {
@@ -28,6 +21,7 @@ const scopeProvider = {
         const tokensSequence: TokensSequence = {
             tokens,
             lastSymbol: tokens[0],
+            type: TokensSequenceType.expression,
             closed: false
         }
         const scope = EditorScope.getScope(model)

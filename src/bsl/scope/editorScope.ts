@@ -33,7 +33,7 @@ export class EditorScope extends UnionScope {
     getAst() {
         return this.localScope.parser;
     }
-    
+
     getScopesAtLine(line: number | undefined): Scope[] {
         if (!line) {
             return this.scopes;

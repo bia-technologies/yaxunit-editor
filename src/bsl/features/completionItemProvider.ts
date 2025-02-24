@@ -1,13 +1,36 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
-import { isMethod, isPlatformMethod, Symbol, SymbolType } from '../../scope';
+import { GlobalScope, isMethod, isPlatformMethod, Symbol, SymbolType } from '../../scope';
 import { scopeProvider } from '../scopeProvider';
+import tokensProvider, { TokensSequenceType } from '../tokensProvider';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
     async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
-        const scope = await scopeProvider.resolveScope(model, position)
-        
+        const tokensSequence = tokensProvider.resolve(model, position)
+        console.debug('tokensSequence: ', tokensSequence)
+
+        if (tokensSequence === undefined) {
+            return undefined
+        }
+
+        const word = model.getWordAtPosition(position)
+        const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
+
+        if (tokensSequence.type === TokensSequenceType.new) {
+            return {
+                suggestions: GlobalScope.getConstructors().map(c => {
+                    return {
+                        kind: languages.CompletionItemKind.Constructor,
+                        label: c.name,
+                        insertText: c.name,
+                        range
+                    }
+                })
+            }
+        }
+
+        const scope = await scopeProvider.resolveScope(model, tokensSequence)
         console.debug('completion scope: ', scope)
 
         if (scope === undefined) {
@@ -15,8 +38,6 @@ const completionItemProvider: languages.CompletionItemProvider = {
         }
 
         const suggestions: languages.CompletionItem[] = []
-        const word = model.getWordAtPosition(position)
-        const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
 
         scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
         console.debug('suggestions', suggestions)
