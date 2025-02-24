@@ -37,6 +37,10 @@ export class GlobalScopeManager extends UnionScope implements TypeHolder {
     getConstructors(): Constructor[] {
         return this.constructorHolders.length ? this.constructorHolders[0].getConstructors() : []
     }
+
+    getConstructor(name: string) {
+        return this.getConstructors().find(c => c.name === name)
+    }
 }
 
 export const GlobalScope = new GlobalScopeManager()

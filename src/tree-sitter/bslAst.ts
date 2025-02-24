@@ -5,26 +5,32 @@ import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
 import { expressionTokens } from './expression';
 import { scopeProvider } from '../bsl/scopeProvider';
 import { Queries } from './queries';
+import { isModel } from '@/monaco/utils';
 
 let bslLanguage: Language | undefined = undefined
 
 export class BslParser implements IDisposable {
     private parser: Parser
     private tree: Tree | null = null
-    private model: editor.IReadOnlyModel
+    private model?: editor.IReadOnlyModel
     disposable: IDisposable[] = []
 
     private queries: Queries = new Queries()
 
-    constructor(model: editor.IReadOnlyModel) {
+    constructor(model: editor.IReadOnlyModel | string) {
         if (!bslLanguage) {
-            throw 'Not init'
+            throw 'Constructor: bsl language not loaded'
         }
         const start = performance.now()
         this.parser = new Parser()
         this.parser.setLanguage(bslLanguage)
-        this.setModel(this.model = model)
-        this.disposable.push(this.model.onDidChangeContent(e => this.onEditorContentChange(e)))
+
+        if (isModel(model)) {
+            this.setModel(this.model = model)
+            this.disposable.push(this.model.onDidChangeContent(e => this.onEditorContentChange(e)))
+        } else {
+            this.setContent(model)
+        }
         console.log('parser init', performance.now() - start, 'ms')
     }
 
@@ -257,7 +263,4 @@ export async function useTreeSitterBsl(): Promise<void> {
     }
     await Parser.init()
     bslLanguage = await Language.load(bslURL)
-}
-
-if (!bslLanguage) {
 }

@@ -1,14 +1,48 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor-core'
 import { scopeProvider } from '../scopeProvider'
-import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod } from '../../scope'
+import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '../../scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
 import tokensProvider from '../tokensProvider'
+import { ExpressionType, createMethodSymbol } from '@/tree-sitter/symbols'
+import { getTreeSitterPosition } from '@/monaco/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
     signatureHelpRetriggerCharacters: [')'],
 
     async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
+        const scope = EditorScope.getScope(model)
+        const node = scope.getAst().getCurrentNode(getTreeSitterPosition(model, position))
+        if (node) {
+            const symbol = createMethodSymbol(node)
+            if (symbol.type === ExpressionType.constructor) {
+                const typeId = await symbol.getResultTypeId()
+                if (typeId) {
+                    const constructor = GlobalScope.getConstructor(typeId)
+                    if (constructor) {
+                        return {
+                            value: {
+                                signatures: constructor.signatures.map(sign => {
+                                    return {
+                                        label: signatureLabel(constructor.name, sign),
+                                        documentation: sign.description ?? constructor.name,
+                                        parameters: sign.params.map(p => {
+                                            return {
+                                                label: p.name,
+                                                documentation: parameterDocumentation(p)
+                                            }
+                                        })
+                                    }
+                                }),
+                                activeParameter: 0,
+                                activeSignature: 0,
+                            }, dispose: () => { }
+                        }
+                    }
+                }
+                return undefined
+            }
+        }
         const methodInfo = await currentMethodInfo(model, position)
 
         console.debug('Method info', methodInfo)

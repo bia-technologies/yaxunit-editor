@@ -1,20 +1,14 @@
-import { BslParser } from '../src/tree-sitter/bslAst'
+import { BslParser, useTreeSitterBsl } from '../src/tree-sitter/bslAst'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Queries } from '../src/tree-sitter/queries'
 
 beforeAll(async () => {
-    const parser = new BslParser()
-    await parser.init()
-    parser.dispose()
+    await useTreeSitterBsl()
 })
 
 describe('expressionTokens', () => {
-    const parser = new BslParser()
+    const parser = new BslParser('')
     const queries = new Queries()
-
-    beforeAll(async () => {
-        await parser.init()
-    })
 
     afterAll(() => {
         parser.dispose()

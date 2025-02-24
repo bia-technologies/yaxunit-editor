@@ -2,12 +2,9 @@ import { Scope, UnionScope, GlobalScope } from '@/scope'
 import { LocalModuleScope } from '@/bsl/scope/localModuleScope'
 import { editor } from 'monaco-editor-core'
 import { Method } from '@/bsl/Symbols'
+import { isModel } from '@/monaco/utils'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
-
-function isModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): value is editor.ITextModel {
-    return (<editor.ITextModel>value).getValue !== undefined;
-}
 
 function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): editor.ITextModel | null {
     if (isModel(value)) {

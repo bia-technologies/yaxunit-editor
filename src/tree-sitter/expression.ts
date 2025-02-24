@@ -1,4 +1,4 @@
-import { Node } from "web-tree-sitter";
+import { Node } from "web-tree-sitter"
 
 export function expressionTokens(expression: Node) {
     const child = expression.firstChild

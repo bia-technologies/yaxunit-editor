@@ -2,6 +2,7 @@ import { languages } from 'monaco-editor-core';
 import { completionItemProvider } from '../../bsl/features/completionItemProvider'
 import { signatureHelpProvider } from '../../bsl/features/signatureHelpProvider'
 import { documentSymbolProvider } from '../../bsl/features/documentSymbolProvider';
+import { hoverProvider } from '@/bsl/features/hoverProvider';
 
 interface ILangImpl {
   conf: languages.LanguageConfiguration;
@@ -22,5 +23,6 @@ languages.onLanguage(language.id, () => {
     languages.registerCompletionItemProvider(language.id, completionItemProvider);
     languages.registerSignatureHelpProvider(language.id, signatureHelpProvider)
     languages.registerDocumentSymbolProvider(language.id, documentSymbolProvider)
+    languages.registerHoverProvider(language.id, hoverProvider)
   });
 });
