@@ -1,9 +1,9 @@
 import { Node } from "web-tree-sitter"
-import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None } from "./expressions";
+import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "./expressions";
 
 export function resolveSymbol(currentNode: Node): Expression {
     return createSymbolForSuitableNode(currentNode, (n) => {
-        return n.type === 'call_expression' || n.type === 'method_call' || n.type === 'property_access' || n.type === 'expression' || n.type === 'const_expression' || n.type === 'ERROR' || n.type === 'new_expression' || n.type === 'access'
+        return n.type === 'call_expression' || n.type === 'method_call' || n.type === 'property_access' || n.type === 'expression' || n.type === 'const_expression' || n.type === 'ERROR' || n.type === 'new_expression' || n.type === 'access' || n.type === 'arguments'
     })
 }
 
@@ -37,8 +37,10 @@ function createSymbolForSuitableNode(node: Node, predicate: (node: Node) => bool
     return symbol
 }
 
-function createSymbolForNode(node: Node): Expression | undefined {
+export function createSymbolForNode(node: Node): Expression | undefined {
     switch (node.type) {
+        case 'expression':
+            return node.firstNamedChild ? createSymbolForNode(node.firstNamedChild) : undefined
         case 'new_expression':
             return createConstructorExpression(node)
         case 'const_expression':
@@ -49,6 +51,10 @@ function createSymbolForNode(node: Node): Expression | undefined {
         case 'expression':
         case 'property_access':
             return createFiledAccessExpression(node)
+        case 'ERROR':
+            return createUnknownExpression(node)
+        case 'arguments':
+            return new None(node)
         default:
             return undefined
     }
@@ -57,7 +63,8 @@ function createSymbolForNode(node: Node): Expression | undefined {
 function createConstantExpression(node: Node): Expression {
     let type: string | undefined
     if (node.firstNamedChild) {
-        type = {'number': 'Число',
+        type = {
+            'number': 'Число',
             'date': 'Дата',
             'string': 'Строка',
             'boolean': 'Булево',
@@ -86,16 +93,48 @@ function createFiledAccessExpression(node: Node): Expression {
     return new FieldAccess(node, tokens.pop() ?? '', tokens)
 }
 
+function createUnknownExpression(node: Node): Expression {
+
+    let tokens: string[]
+    const child = node.firstNamedChild
+    if (child && child.type === 'identifier') {
+        tokens = [child.text]
+    } else if (child && child.type === 'access') {
+        tokens = collectAccessTokens(node)
+        tokens.push('')
+    } else {
+        tokens = collectAccessTokens(node)
+    }
+
+    return new Unknown(node, tokens.pop() ?? '', tokens)
+}
+
 function collectArguments(node: Node): ArgumentInfo[] {
     const argumentsNode = node.childForFieldName("arguments")
-    const args: ArgumentInfo[] = argumentsNode?.namedChildren
-        .filter(n => n != null)
-        .map(n => {
-            return {
-                startIndex: n.previousSibling?.endIndex ?? n.startIndex,
-                endIndex: n.endIndex
-            }
-        }) ?? []
+    if (!argumentsNode) {
+        return []
+    }
+    const args: ArgumentInfo[] = []
+    let start = argumentsNode.startIndex + 1
+    for (const child of argumentsNode.children) {
+        if (!child || (child.text !== ',' && child.text !== ')')) { // Считаем запятые, потому что могут быть пропущены значения параметров метода
+            continue
+        }
+        args.push({
+            startIndex: start,
+            endIndex: child.startIndex
+        })
+        if (child.text === ')') {
+            return args
+        }
+        start = child.endIndex
+    }
+    if (args.length) { // Незакрытые аргументы
+        args.push({
+            startIndex: start,
+            endIndex: argumentsNode.endIndex
+        })
+    }
     return args
 }
 

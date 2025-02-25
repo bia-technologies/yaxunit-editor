@@ -11,14 +11,14 @@ const scopeProvider = {
         const lastSymbol = tokens.pop()
 
         const scope = EditorScope.getScope(model)
-        
+
         let resolvedScope: Scope | undefined
         if (tokens.length > 1) {
             resolvedScope = await objectScope(tokens, scope)
         } else {
             resolvedScope = scope
         }
-        
+
         if (resolvedScope && lastSymbol) {
             const type = resolvedScope.findMember(lastSymbol)?.type
             if (type) {
@@ -38,12 +38,17 @@ const scopeProvider = {
         let scope: Scope | undefined
         if (method.path && method.path.length) {
             scope = await this.resolveExpressionType(model, method.path)
-        }else{
+        } else {
             scope = EditorScope.getScope(model)
         }
-        
+
         return scope?.findMember(method.name)
     },
+
+    resolveType(typeId: string) {
+        return GlobalScope.resolveType(typeId)
+    },
+
     getModelMethods(model: editor.ITextModel): Method[] | undefined {
         const scope = EditorScope.getScope(model)
         if (scope) {

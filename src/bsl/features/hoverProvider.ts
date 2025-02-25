@@ -1,12 +1,12 @@
 import { resolveSymbol } from "@/tree-sitter/symbols";
 import { IMarkdownString, languages } from "monaco-editor-core";
 import { EditorScope } from "../scope/editorScope";
-import { getTreeSitterPosition } from "@/monaco/utils";
+import { getPositionOffset } from "@/monaco/utils";
 
 export const hoverProvider: languages.HoverProvider = {
     async provideHover(model, position): Promise<languages.Hover | undefined> {
         const scope = EditorScope.getScope(model)
-        const node = scope.getAst().getCurrentNode(getTreeSitterPosition(model, position))
+        const node = scope.getAst().getCurrentNode(getPositionOffset(model, position))
         
         if (node) {
             const symbol = resolveSymbol(node)
