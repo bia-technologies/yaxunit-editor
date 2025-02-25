@@ -21,7 +21,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
             scope = EditorScope.getScope(model)
         } else if (isAccessible(symbol)) {
             scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
-        } else if (symbol.type === ExpressionType.constructor) {
+        } else if (symbol.type === ExpressionType.ctor) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
                     return {

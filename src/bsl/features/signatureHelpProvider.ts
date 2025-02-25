@@ -2,7 +2,7 @@ import { editor, languages, Position, CancellationToken } from 'monaco-editor-co
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '@/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import { ArgumentInfo, Constructor, ExpressionType, MethodCall, resolveMethodSymbol } from '@/tree-sitter/symbols'
+import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/tree-sitter/symbols'
 import { getTreeSitterPosition } from '@/monaco/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
@@ -16,8 +16,8 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         const symbol = currentSymbol(model, positionOffset)
 
         if (context.isRetrigger && context.activeSignatureHelp) {
-            if (symbol) {
-                setActiveParameter(context.activeSignatureHelp, (symbol as Constructor).arguments, positionOffset)
+            if (symbol && isArgumentsOwner(symbol)) {
+                setActiveParameter(context.activeSignatureHelp, (symbol as ArgumentsOwner).arguments, positionOffset)
             }
             return {
                 value: context.activeSignatureHelp,
@@ -29,7 +29,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
             return undefined
         }
         let signatures: languages.SignatureHelp | undefined
-        if (symbol.type === ExpressionType.constructor) {
+        if (symbol.type === ExpressionType.ctor) {
             signatures = await createConstructorSignatures(symbol as Constructor)
         } else if (symbol.type === ExpressionType.methodCall) {
             signatures = await createMethodSignatures(model, symbol as MethodCall)
@@ -58,14 +58,14 @@ function currentSymbol(model: editor.ITextModel, position: number): Constructor 
 async function createConstructorSignatures(symbol: Constructor): Promise<languages.SignatureHelp | undefined> {
     const typeId = await symbol.getResultTypeId()
     if (typeId) {
-        const constructor = GlobalScope.getConstructor(typeId)
+        const ctor = GlobalScope.getConstructor(typeId)
 
-        if (constructor) {
+        if (ctor) {
             const sign = {
-                signatures: constructor.signatures.map(sign => {
+                signatures: ctor.signatures.map(sign => {
                     return {
-                        label: signatureLabel(constructor.name, sign),
-                        documentation: sign.description ?? constructor.name,
+                        label: signatureLabel(ctor.name, sign),
+                        documentation: sign.description ?? ctor.name,
                         parameters: sign.params.map(p => {
                             return {
                                 label: p.name,

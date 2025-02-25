@@ -1,9 +1,9 @@
 import { Node } from "web-tree-sitter"
 
 export enum ExpressionType {
-    constructor,
+    ctor,
     methodCall,
-    filedAccess,
+    fieldAccess,
     constant,
     none
 }
@@ -19,8 +19,16 @@ export interface Accessible {
     readonly path: string[]
 }
 
+export interface ArgumentsOwner {
+    readonly arguments: ArgumentInfo[]
+}
+
 export function isAccessible(expression: any): expression is Accessible {
     return (<Accessible>expression).path !== undefined
+}
+
+export function isArgumentsOwner(expression: any): expression is ArgumentsOwner {
+    return (<ArgumentsOwner>expression).arguments !== undefined
 }
 
 abstract class BaseExpression implements Expression {
@@ -60,12 +68,12 @@ export class None extends BaseExpression {
     }
 }
 
-export class Constructor extends BaseExpression {
+export class Constructor extends BaseExpression implements ArgumentsOwner {
     readonly name: string
     readonly arguments: ArgumentInfo[]
 
     constructor(node: Node, name: string, args: ArgumentInfo[]) {
-        super(node, ExpressionType.constructor)
+        super(node, ExpressionType.ctor)
         this.name = name
         this.arguments = args
     }
@@ -82,11 +90,11 @@ export interface ArgumentInfo {
     endIndex: number
 }
 
-export class FiledAccess extends BaseExpression implements Accessible {
+export class FieldAccess extends BaseExpression implements Accessible {
     readonly name: string
     readonly path: string[]
     constructor(node: Node, name: string, path: string[]) {
-        super(node, ExpressionType.filedAccess)
+        super(node, ExpressionType.fieldAccess)
         this.name = name
         this.path = path
     }
@@ -98,7 +106,7 @@ export class FiledAccess extends BaseExpression implements Accessible {
     }
 }
 
-export class MethodCall extends BaseExpression implements Accessible {
+export class MethodCall extends BaseExpression implements Accessible, ArgumentsOwner {
     readonly name: string
     readonly path: string[]
     readonly arguments: ArgumentInfo[]

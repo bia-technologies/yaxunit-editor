@@ -1,5 +1,5 @@
 import { Node } from "web-tree-sitter"
-import { ArgumentInfo, Constant, Constructor, Expression, FiledAccess, MethodCall, None } from "./expressions";
+import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None } from "./expressions";
 
 export function resolveSymbol(currentNode: Node): Expression {
     return createSymbolForSuitableNode(currentNode, (n) => {
@@ -83,7 +83,7 @@ function createMethodCallExpression(node: Node): Expression {
 
 function createFiledAccessExpression(node: Node): Expression {
     const tokens = collectAccessTokens(node)
-    return new FiledAccess(node, tokens.pop() ?? '', tokens)
+    return new FieldAccess(node, tokens.pop() ?? '', tokens)
 }
 
 function collectArguments(node: Node): ArgumentInfo[] {
