@@ -21,6 +21,15 @@ export function expressionTokens(expression: Node) {
     return tokens
 }
 
+export function symbolPosition(node: Node) {
+    return {
+        startLine: node.startPosition.row + 1,
+        startColumn: node.startPosition.column + 1,
+        endLine: node.endPosition.row + 1,
+        endColumn: node.endPosition.column + 1,
+    }
+}
+
 function nodeToken(node: Node | null) {
     if (!node) {
         return undefined

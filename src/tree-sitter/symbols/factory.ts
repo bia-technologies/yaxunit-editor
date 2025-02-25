@@ -1,24 +1,37 @@
 import { Node } from "web-tree-sitter"
-import { Constant, Constructor, Expression, MethodCall, None } from "./expressions";
+import { ArgumentInfo, Constant, Constructor, Expression, FiledAccess, MethodCall, None } from "./expressions";
 
-export function createSymbol(currentNode: Node): Expression {
+export function resolveSymbol(currentNode: Node): Expression {
+    return createSymbolForSuitableNode(currentNode, (n) => {
+        return n.type === 'call_expression' || n.type === 'method_call' || n.type === 'property_access' || n.type === 'expression' || n.type === 'const_expression' || n.type === 'ERROR' || n.type === 'new_expression' || n.type === 'access'
+    })
+}
+
+export function resolveMethodSymbol(currentNode: Node): Constructor | MethodCall | undefined {
+    const expression = createSymbolForSuitableNode(currentNode, (n) => {
+        return n.type === 'method_call' || n.type === 'new_expression'
+    })
+
+    return (expression as Constructor | MethodCall)
+}
+
+function createSymbolForSuitableNode(node: Node, predicate: (node: Node) => boolean) {
     let symbol: Expression | undefined = undefined
-    if (currentNode.type === 'source_file' || currentNode.type === 'procedure_definition' || currentNode.type === 'function_definition') {
-        symbol = new None(currentNode)
-    } else {
-        symbol = createSymbolForNode(currentNode)
+    if (node.type === 'source_file' || node.type === 'procedure_definition' || node.type === 'function_definition') {
+        symbol = new None(node)
+    } else if (predicate(node)) {
+        symbol = createSymbolForNode(node)
     }
     if (!symbol) {
-        const currentExpression = findParenNode(currentNode, (n) => {
-            return n.type === 'call_expression' || n.type === 'property_access' || n.type === 'expression' || n.type === 'arguments' || n.type === 'const_expression' || n.type === 'ERROR' || n.type === 'new_expression'
-        });
+        const currentExpression = findParenNode(node, predicate);
         if (currentExpression) {
-            symbol = createSymbolForNode(currentExpression)
+            node = currentExpression
+            symbol = createSymbolForNode(node)
         }
     }
 
     if (!symbol) {
-        symbol = new None(currentNode)
+        symbol = new None(node)
     }
 
     return symbol
@@ -29,57 +42,85 @@ function createSymbolForNode(node: Node): Expression | undefined {
         case 'new_expression':
             return createConstructorExpression(node)
         case 'const_expression':
-            return new Constant(node)
-        case 'call_expression':
+            return createConstantExpression(node)
+        case 'method_call':
             return createMethodCallExpression(node)
+        case 'access':
+        case 'expression':
+        case 'property_access':
+            return createFiledAccessExpression(node)
         default:
             return undefined
     }
-
 }
 
-export function createMethodSymbol(currentNode: Node): Expression {
-    if (currentNode.type === 'source_file' || currentNode.type === 'procedure_definition' || currentNode.type === 'function_definition') {
-        return new None(currentNode)
-    } else if (currentNode.type === 'new_expression') {
-        return createConstructorExpression(currentNode)
+function createConstantExpression(node: Node): Expression {
+    let type: string | undefined
+    if (node.firstNamedChild) {
+        type = {'number': 'Число',
+            'date': 'Дата',
+            'string': 'Строка',
+            'boolean': 'Булево',
+            'UNDEFINED_KEYWORD': 'Неопределено',
+            'NULL_KEYWORD': 'NULL',
+        }[node.firstNamedChild.type]
     }
-    const currentExpression = findParenNode(currentNode, (n) => {
-        return n.type === 'call_expression' || n.type === 'ERROR' || n.type === 'new_expression'
-    });
-    if (!currentExpression) {
-        return new None(currentNode)
-    }
-
-    switch (currentExpression.type) {
-        case 'new_expression':
-            return createConstructorExpression(currentExpression)
-        case 'const_expression':
-            return new Constant(currentExpression)
-        case 'call_expression':
-            return createMethodCallExpression(currentExpression)
-        default:
-            return new None(currentExpression)
-    }
+    return new Constant(node, type)
 }
 
 function createConstructorExpression(node: Node): Expression {
-    return new Constructor(node, node.namedChild(1)?.text ?? '')
+    const typeNode = node.childForFieldName("type")
+    const args = collectArguments(node)
+    return new Constructor(node, typeNode?.text ?? '', args)
 }
 
 function createMethodCallExpression(node: Node): Expression {
-    const tokens = collectTokens(node)
-    return new MethodCall(node, tokens.pop() ?? '', tokens)
+    const nameNode = node.childForFieldName("name")
+    const tokens = node.parent ? collectPathTokens(node) : []
+    const args = collectArguments(node)
+    return new MethodCall(node, nameNode?.text ?? '', tokens, args)
 }
 
-function collectTokens(currentExpression: Node) {
+function createFiledAccessExpression(node: Node): Expression {
+    const tokens = collectAccessTokens(node)
+    return new FiledAccess(node, tokens.pop() ?? '', tokens)
+}
+
+function collectArguments(node: Node): ArgumentInfo[] {
+    const argumentsNode = node.childForFieldName("arguments")
+    const args: ArgumentInfo[] = argumentsNode?.namedChildren
+        .filter(n => n != null)
+        .map(n => {
+            return {
+                startIndex: n.previousSibling?.endIndex ?? n.startIndex,
+                endIndex: n.endIndex
+            }
+        }) ?? []
+    return args
+}
+
+function collectPathTokens(currentNode: Node) {
+    if (!currentNode.parent) {
+        return []
+    }
+    const accessNode = currentNode.parent.firstNamedChild
+    if (!accessNode || accessNode.type !== 'access') {
+        return []
+    }
+    return collectAccessTokens(accessNode)
+}
+
+function collectAccessTokens(accessNode: Node) {
     const tokens: string[] = []
-    let node: Node | null = currentExpression.firstChild;
+    let node: Node | null = accessNode.firstChild;
     let containsIndex = false
     while (node) {
         switch (node.type) {
             case 'method_call':
                 tokens.push(node.childForFieldName('name')?.text || '')
+                break
+            case 'access':
+                tokens.push(...collectAccessTokens(node))
                 break
             case 'identifier':
             case 'property':
@@ -92,12 +133,6 @@ function collectTokens(currentExpression: Node) {
         }
         node = node.nextSibling
     }
-
-    // if (containsIndex) {
-    //     console.debug('Unsupport index access')
-    //     // TODO support index access
-    //     return undefined
-    // }
     return tokens
 }
 
@@ -111,4 +146,3 @@ function findParenNode(node: Node, predicate: (node: Node) => boolean) {
     }
     return undefined
 }
-

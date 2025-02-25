@@ -1,9 +1,8 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor-core'
 import { scopeProvider } from '../scopeProvider'
-import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '../../scope'
+import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '@/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import tokensProvider from '../tokensProvider'
-import { ExpressionType, createMethodSymbol } from '@/tree-sitter/symbols'
+import { ArgumentInfo, Constructor, ExpressionType, MethodCall, resolveMethodSymbol } from '@/tree-sitter/symbols'
 import { getTreeSitterPosition } from '@/monaco/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
@@ -11,82 +10,123 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpRetriggerCharacters: [')'],
 
     async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
-        const scope = EditorScope.getScope(model)
-        const node = scope.getAst().getCurrentNode(getTreeSitterPosition(model, position))
-        if (node) {
-            const symbol = createMethodSymbol(node)
-            if (symbol.type === ExpressionType.constructor) {
-                const typeId = await symbol.getResultTypeId()
-                if (typeId) {
-                    const constructor = GlobalScope.getConstructor(typeId)
-                    if (constructor) {
-                        return {
-                            value: {
-                                signatures: constructor.signatures.map(sign => {
-                                    return {
-                                        label: signatureLabel(constructor.name, sign),
-                                        documentation: sign.description ?? constructor.name,
-                                        parameters: sign.params.map(p => {
-                                            return {
-                                                label: p.name,
-                                                documentation: parameterDocumentation(p)
-                                            }
-                                        })
-                                    }
-                                }),
-                                activeParameter: 0,
-                                activeSignature: 0,
-                            }, dispose: () => { }
-                        }
-                    }
-                }
-                return undefined
+        console.debug('Method context', context)
+        
+        const positionOffset = getTreeSitterPosition(model, position)
+        const symbol = currentSymbol(model, positionOffset)
+
+        if (context.isRetrigger && context.activeSignatureHelp) {
+            if (symbol) {
+                setActiveParameter(context.activeSignatureHelp, (symbol as Constructor).arguments, positionOffset)
+            }
+            return {
+                value: context.activeSignatureHelp,
+                dispose: () => { }
             }
         }
-        const methodInfo = await currentMethodInfo(model, position)
 
-        console.debug('Method info', methodInfo)
-        console.debug('Method context', context)
-        if (methodInfo) {
-            const symbol = methodInfo.symbol
-            const signatures = (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) ?
-                methodSignature(symbol) :
-                [{
-                    label: symbol.name,
-                    parameters: [],
-                    documentation: {
-                        value: symbol.description ?? ''
-                    }
-                }]
-
-            return {
-                value: {
-                    signatures: signatures,
-                    activeParameter: methodInfo.activeParameter,
-                    activeSignature: 0
-                }, dispose: () => { }
-            }
-        } else {
+        if (!symbol) {
             return undefined
         }
+        let signatures: languages.SignatureHelp | undefined
+        if (symbol.type === ExpressionType.constructor) {
+            signatures = await createConstructorSignatures(symbol as Constructor)
+        } else if (symbol.type === ExpressionType.methodCall) {
+            signatures = await createMethodSignatures(model, symbol as MethodCall)
+        }
+
+        if (signatures) {
+            setActiveSignature(signatures, symbol.arguments)
+            setActiveParameter(signatures, symbol.arguments, positionOffset)
+            return {
+                value: signatures,
+                dispose: () => { }
+            }
+        }
+        return undefined
     },
 }
 
-async function currentMethodInfo(model: editor.ITextModel, position: Position) {
-    const tokensSequence = tokensProvider.currentMethod(model, position)
-    if (!tokensSequence) {
+function currentSymbol(model: editor.ITextModel, position: number): Constructor | MethodCall | undefined {
+    const scope = EditorScope.getScope(model)
+    const node = scope.getAst().getCurrentNode(position)
+    if (node) {
+        return resolveMethodSymbol(node)
+    }
+}
+
+async function createConstructorSignatures(symbol: Constructor): Promise<languages.SignatureHelp | undefined> {
+    const typeId = await symbol.getResultTypeId()
+    if (typeId) {
+        const constructor = GlobalScope.getConstructor(typeId)
+
+        if (constructor) {
+            const sign = {
+                signatures: constructor.signatures.map(sign => {
+                    return {
+                        label: signatureLabel(constructor.name, sign),
+                        documentation: sign.description ?? constructor.name,
+                        parameters: sign.params.map(p => {
+                            return {
+                                label: p.name,
+                                documentation: parameterDocumentation(p)
+                            }
+                        })
+                    }
+                }),
+                activeParameter: 0,
+                activeSignature: 0,
+            }
+            return sign
+        }
+    }
+    return undefined
+}
+
+async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCall): Promise<languages.SignatureHelp | undefined> {
+    const method = await scopeProvider.currentMethod(model, symbol as MethodCall)
+    if (!method) {
         return undefined
     }
 
-    const symbol = await scopeProvider.currentMethod(model, position, tokensSequence)
-    if (!symbol) {
-        return undefined
+    const isMethod = method.kind === SymbolType.function || method.kind === SymbolType.procedure
+    const sign = {
+        signatures: isMethod ? methodSignature(method) : [],
+        activeParameter: 0,
+        activeSignature: 0,
+    }
+    return sign
+}
+
+function setActiveSignature(signature: languages.SignatureHelp, args: ArgumentInfo[]) {
+    if (signature.signatures.length <= 1) {
+        return
     }
 
-    return {
-        tokensSequence,
-        symbol,
-        activeParameter: 0
+    for (let index = 0; index < signature.signatures.length; index++) {
+        const sign = signature.signatures[index];
+        if (sign.parameters.length >= args.length) {
+            signature.activeSignature = index
+            return
+        }
+    }
+
+    // Если нет подходящей сигнатуры, то возьмем самую длинную
+    for (let index = 0; index < signature.signatures.length; index++) {
+        const sign = signature.signatures[index];
+        if (sign.parameters.length > signature.signatures[signature.activeSignature].parameters.length) {
+            signature.activeSignature = index
+        }
+    }
+}
+
+function setActiveParameter(signature: languages.SignatureHelp, args: ArgumentInfo[], position: number) {
+    for (let index = args.length - 1; index >= 0; index--) {
+        const arg = args[index];
+        if (arg.startIndex <= position) {
+            signature.activeParameter = index
+            return
+        }
     }
 }
 

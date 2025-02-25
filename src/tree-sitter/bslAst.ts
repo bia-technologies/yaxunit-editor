@@ -2,7 +2,7 @@ import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, IDisposable, Position } from 'monaco-editor-core';
 import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
-import { expressionTokens } from './expression';
+import { expressionTokens, symbolPosition } from './expression';
 import { scopeProvider } from '../bsl/scopeProvider';
 import { Queries } from './queries';
 import { isModel } from '@/monaco/utils';
@@ -64,25 +64,7 @@ export class BslParser implements IDisposable {
             throw 'Dont parsed'
         }
 
-        const cursor = this.tree.walk()
-        let currentNode
-        try {
-            let success = true
-            while (success) {
-                if (cursor.startIndex <= position && position <= cursor.endIndex) {
-                    currentNode = cursor.currentNode
-                    success = cursor.gotoFirstChild()
-                } else {
-                    success = cursor.gotoNextSibling()
-                }
-                if (!success) {
-                    break
-                }
-            }
-        } finally {
-            cursor.delete()
-        }
-        return currentNode
+        return this.getRootNode().namedDescendantForIndex(position, position)
     }
 
     findParenNode(node: Node, predicate: (node: Node) => boolean) {
@@ -186,7 +168,7 @@ export class BslParser implements IDisposable {
         if (tokens.length === 0 || tokens.filter(t => !t).length !== 0) {
             return undefined
         }
-        return await scopeProvider.resolveExpressionType(this.model, tokens as string[])
+        return await scopeProvider.resolveExpressionTypeId(this.model, tokens as string[])
     }
 
     logNodes(nodes: (Node | null)[]) {
@@ -246,15 +228,6 @@ function monacoOffsetToPoint(model: editor.ITextModel, offset: number): Point {
 
 function monacoPositionToPoint(position: Position): Point {
     return { row: position.lineNumber - 1, column: position.column - 1 };
-}
-
-function symbolPosition(node: Node) {
-    return {
-        startLine: node.startPosition.row + 1,
-        startColumn: node.startPosition.column + 1,
-        endLine: node.endPosition.row + 1,
-        endColumn: node.endPosition.column + 1,
-    }
 }
 
 export async function useTreeSitterBsl(): Promise<void> {

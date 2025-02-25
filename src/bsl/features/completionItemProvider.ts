@@ -1,23 +1,27 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
-import { GlobalScope, isMethod, isPlatformMethod, Symbol, SymbolType } from '../../scope';
+import { EditorScope, GlobalScope, isMethod, isPlatformMethod, Scope, Symbol, SymbolType } from '@/scope';
 import { scopeProvider } from '../scopeProvider';
-import tokensProvider, { TokensSequenceType } from '../tokensProvider';
+import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/tree-sitter/symbols';
+import { getTreeSitterPosition } from '@/monaco/utils';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
     async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
-        const tokensSequence = tokensProvider.resolve(model, position)
-        console.debug('tokensSequence: ', tokensSequence)
-
-        if (tokensSequence === undefined) {
-            return undefined
-        }
+        const positionOffset = getTreeSitterPosition(model, position)
+        const symbol = currentSymbol(model, positionOffset)
+        console.debug('symbol: ', symbol)
+        
+        let scope: Scope | undefined
 
         const word = model.getWordAtPosition(position)
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
 
-        if (tokensSequence.type === TokensSequenceType.new) {
+        if (!symbol) {
+            scope = EditorScope.getScope(model)
+        } else if (isAccessible(symbol)) {
+            scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
+        } else if (symbol.type === ExpressionType.constructor) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
                     return {
@@ -30,7 +34,6 @@ const completionItemProvider: languages.CompletionItemProvider = {
             }
         }
 
-        const scope = await scopeProvider.resolveScope(model, tokensSequence)
         console.debug('completion scope: ', scope)
 
         if (scope === undefined) {
@@ -46,6 +49,14 @@ const completionItemProvider: languages.CompletionItemProvider = {
             suggestions: suggestions
         }
     },
+}
+
+function currentSymbol(model: editor.ITextModel, position: number): Expression | undefined {
+    const scope = EditorScope.getScope(model)
+    const node = scope.getAst().getCurrentNode(position)
+    if (node) {
+        return resolveSymbol(node)
+    }
 }
 
 function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionItem {

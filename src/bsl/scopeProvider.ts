@@ -1,22 +1,14 @@
-import { editor, Position } from 'monaco-editor-core';
-import tokensProvider, { TokensSequence, TokensSequenceType } from './tokensProvider'
-import { Scope, Symbol, GlobalScope, EditorScope, } from '@/scope';
+import { editor } from 'monaco-editor-core';
+import { TokensSequence, TokensSequenceType } from './tokensProvider'
+import { Scope, Symbol, GlobalScope, EditorScope, TypeDefinition, } from '@/scope';
 import { Method } from './Symbols';
+import { MethodCall } from '@/tree-sitter/symbols';
 
 type ResolvedSymbol = Promise<Symbol | undefined>
 type ResolvedScope = Promise<Scope | undefined>
 
 const scopeProvider = {
-    async resolveScope(model: editor.ITextModel, tokensSequence: TokensSequence): ResolvedScope {
-        const scope = EditorScope.getScope(model)
-
-        if (tokensSequence.tokens.length === 0 || tokensSequence.tokens.length === 1 && !tokensSequence.closed) {
-            return scope
-        } else {
-            return objectScope(tokensSequence, scope)
-        }
-    },
-    async resolveExpressionType(model: editor.ITextModel, tokens: string[]) {
+    async resolveExpressionTypeId(model: editor.ITextModel, tokens: string[]) {
         tokens = tokens.reverse()
         const tokensSequence: TokensSequence = {
             tokens,
@@ -38,40 +30,23 @@ const scopeProvider = {
             }
         }
         return undefined
-
     },
 
-    async currentSymbol(model: editor.ITextModel, position: Position): ResolvedSymbol {
-        console.debug('current symbol')
-        const tokensSequence = tokensProvider.resolve(model, position)
-
-        console.debug('tokensSequence: ', tokensSequence)
-        if (tokensSequence === undefined || tokensSequence.lastSymbol === ')') {
-            return undefined
-        }
-
-        tokensSequence.closed = false
-
-        const scope = EditorScope.getScope(model)
-        const word = model.getWordAtPosition(position)?.word
-        return currentMember(tokensSequence, scope, word)
+    async resolveExpressionType(model: editor.ITextModel, tokens: string[]): Promise<TypeDefinition | undefined> {
+        const typeId = await this.resolveExpressionTypeId(model, tokens)
+        return GlobalScope.resolveType(typeId)
     },
-    async currentMethod(model: editor.ITextModel, position: Position, tokensSequence?: TokensSequence): ResolvedSymbol {
+
+    async currentMethod(model: editor.ITextModel, method: MethodCall): ResolvedSymbol {
         console.debug('Get current method')
-        console.debug('current word', model.getWordUntilPosition(position)?.word)
-
-        if (!tokensSequence) {
-            tokensSequence = tokensProvider.currentMethod(model, position)
+        let scope: Scope | undefined
+        if (method.path && method.path.length) {
+            scope = await this.resolveExpressionType(model, method.path)
+        }else{
+            scope = EditorScope.getScope(model)
         }
-        console.debug('tokensSequence: ', tokensSequence)
-
-        if (tokensSequence === undefined) {
-            return undefined
-        }
-
-        tokensSequence.closed = false
-        const scope = EditorScope.getScope(model)
-        return await currentMember(tokensSequence, scope)
+        
+        return scope?.findMember(method.name)
     },
     getModelMethods(model: editor.ITextModel): Method[] | undefined {
         const scope = EditorScope.getScope(model)
@@ -81,17 +56,6 @@ const scopeProvider = {
             return undefined
         }
     }
-}
-
-async function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, word?: string): ResolvedSymbol {
-    if (tokensSequence.tokens.length === 1) {
-        return globalScopeMember(word ?? tokensSequence.tokens[0], editorScope)
-    }
-    const scope = await objectScope(tokensSequence, editorScope)
-    if (scope) {
-        return scope.findMember(word ?? tokensSequence.lastSymbol)
-    }
-    return undefined
 }
 
 async function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): ResolvedScope {
@@ -170,6 +134,7 @@ function cleanToken(token: string): string {
     }
     return token;
 }
+
 export {
     scopeProvider
 }

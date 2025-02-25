@@ -1,4 +1,4 @@
-import { createSymbol } from "@/tree-sitter/symbols";
+import { resolveSymbol } from "@/tree-sitter/symbols";
 import { IMarkdownString, languages } from "monaco-editor-core";
 import { EditorScope } from "../scope/editorScope";
 import { getTreeSitterPosition } from "@/monaco/utils";
@@ -9,7 +9,7 @@ export const hoverProvider: languages.HoverProvider = {
         const node = scope.getAst().getCurrentNode(getTreeSitterPosition(model, position))
         
         if (node) {
-            const symbol = createSymbol(node)
+            const symbol = resolveSymbol(node)
             const content: IMarkdownString[] = [{ value: symbol.toString() }]
 
             let typeId = symbol.getResultTypeId()
