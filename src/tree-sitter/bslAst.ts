@@ -64,7 +64,7 @@ export class BslParser implements IDisposable {
             throw 'Dont parsed'
         }
 
-        return this.getRootNode().namedDescendantForIndex(position, position)
+        return this.getRootNode().namedDescendantForIndex(position - 1, position)
     }
 
     findParenNode(node: Node, predicate: (node: Node) => boolean) {
