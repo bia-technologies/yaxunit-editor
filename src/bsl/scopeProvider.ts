@@ -1,83 +1,48 @@
-import { editor, Position } from 'monaco-editor-core';
-import tokensProvider, { TokensSequence } from './tokensProvider'
-import { Scope, Symbol, GlobalScope, EditorScope, } from '@/scope';
+import { editor } from 'monaco-editor-core';
+import { Scope, Symbol, GlobalScope, EditorScope, TypeDefinition, } from '@/scope';
 import { Method } from './Symbols';
+import { MethodCall } from '@/tree-sitter/symbols';
 
 type ResolvedSymbol = Promise<Symbol | undefined>
 type ResolvedScope = Promise<Scope | undefined>
 
 const scopeProvider = {
-    async resolveScope(model: editor.ITextModel, position: Position): ResolvedScope {
-        const tokensSequence = tokensProvider.resolve(model, position)
-
-        console.debug('tokensSequence: ', tokensSequence)
-        if (tokensSequence === undefined || tokensSequence.lastSymbol === ')') {
-            return undefined
-        }
+    async resolveExpressionTypeId(model: editor.ITextModel, tokens: string[]) {
+        const lastSymbol = tokens.pop()
 
         const scope = EditorScope.getScope(model)
-
-        if (tokensSequence.tokens.length === 0 || tokensSequence.tokens.length === 1 && !tokensSequence.closed) {
-            return scope
-        } else {
-            return objectScope(tokensSequence, scope)
-        }
-    },
-    async resolveExpressionType(model: editor.ITextModel, tokens: string[]) {
-        tokens = tokens.reverse()
-        const tokensSequence: TokensSequence = {
-            tokens,
-            lastSymbol: tokens[0],
-            closed: false
-        }
-        const scope = EditorScope.getScope(model)
+        
         let resolvedScope: Scope | undefined
         if (tokens.length > 1) {
-            resolvedScope = await objectScope(tokensSequence, scope)
+            resolvedScope = await objectScope(tokens, scope)
         } else {
             resolvedScope = scope
         }
-        if (resolvedScope) {
-            const type = resolvedScope.findMember(tokensSequence.lastSymbol)?.type
+        
+        if (resolvedScope && lastSymbol) {
+            const type = resolvedScope.findMember(lastSymbol)?.type
             if (type) {
                 return await getType(type)
             }
         }
         return undefined
-
     },
 
-    async currentSymbol(model: editor.ITextModel, position: Position): ResolvedSymbol {
-        console.debug('current symbol')
-        const tokensSequence = tokensProvider.resolve(model, position)
-
-        console.debug('tokensSequence: ', tokensSequence)
-        if (tokensSequence === undefined || tokensSequence.lastSymbol === ')') {
-            return undefined
-        }
-
-        tokensSequence.closed = false
-
-        const scope = EditorScope.getScope(model)
-        const word = model.getWordAtPosition(position)?.word
-        return currentMember(tokensSequence, scope, word)
+    async resolveExpressionType(model: editor.ITextModel, tokens: string[]): Promise<TypeDefinition | undefined> {
+        const typeId = await this.resolveExpressionTypeId(model, tokens)
+        return GlobalScope.resolveType(typeId)
     },
-    async currentMethod(model: editor.ITextModel, position: Position, tokensSequence?: TokensSequence): ResolvedSymbol {
+
+    async currentMethod(model: editor.ITextModel, method: MethodCall): ResolvedSymbol {
         console.debug('Get current method')
-        console.debug('current word', model.getWordUntilPosition(position)?.word)
-
-        if (!tokensSequence) {
-            tokensSequence = tokensProvider.currentMethod(model, position)
+        let scope: Scope | undefined
+        if (method.path && method.path.length) {
+            scope = await this.resolveExpressionType(model, method.path)
+        }else{
+            scope = EditorScope.getScope(model)
         }
-        console.debug('tokensSequence: ', tokensSequence)
-
-        if (tokensSequence === undefined) {
-            return undefined
-        }
-
-        tokensSequence.closed = false
-        const scope = EditorScope.getScope(model)
-        return await currentMember(tokensSequence, scope)
+        
+        return scope?.findMember(method.name)
     },
     getModelMethods(model: editor.ITextModel): Method[] | undefined {
         const scope = EditorScope.getScope(model)
@@ -89,23 +54,11 @@ const scopeProvider = {
     }
 }
 
-async function currentMember(tokensSequence: TokensSequence, editorScope: EditorScope, word?: string): ResolvedSymbol {
-    if (tokensSequence.tokens.length === 1) {
-        return globalScopeMember(word ?? tokensSequence.tokens[0], editorScope)
-    }
-    const scope = await objectScope(tokensSequence, editorScope)
-    if (scope) {
-        return scope.findMember(word ?? tokensSequence.lastSymbol)
-    }
-    return undefined
-}
-
-async function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): ResolvedScope {
+async function objectScope(tokens: string[], editorScope: EditorScope): ResolvedScope {
 
     console.debug('calculate objectScope');
 
-    const tokens = tokensSequence.tokens
-    const firstToken = tokens[tokens.length - 1];
+    const firstToken = tokens[0];
     let scope = await resolveInEditorScope(firstToken, editorScope)
 
     if (!scope) {
@@ -113,8 +66,7 @@ async function objectScope(tokensSequence: TokensSequence, editorScope: EditorSc
         return undefined
     }
 
-    const minIndex = tokensSequence.closed ? 1 : 0
-    for (let index = tokens.length - 2; index > - minIndex; index--) {
+    for (let index = 1; index < tokens.length; index++) {
         let token = tokens[index];
 
         console.debug('analyze token ' + token)
@@ -176,6 +128,7 @@ function cleanToken(token: string): string {
     }
     return token;
 }
+
 export {
     scopeProvider
 }

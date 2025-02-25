@@ -1,4 +1,4 @@
-import { Node } from "web-tree-sitter";
+import { Node } from "web-tree-sitter"
 
 export function expressionTokens(expression: Node) {
     const child = expression.firstChild
@@ -19,6 +19,15 @@ export function expressionTokens(expression: Node) {
         tokens.push(nodeToken(child))
     }
     return tokens
+}
+
+export function symbolPosition(node: Node) {
+    return {
+        startLine: node.startPosition.row + 1,
+        startColumn: node.startPosition.column + 1,
+        endLine: node.endPosition.row + 1,
+        endColumn: node.endPosition.column + 1,
+    }
 }
 
 function nodeToken(node: Node | null) {

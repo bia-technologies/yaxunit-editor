@@ -1,5 +1,5 @@
 import { BaseScope, Symbol, SymbolType } from "@/scope"
-import { Method } from "../Symbols"
+import { Method, Variable } from "../Symbols"
 import { BslParser } from "@/tree-sitter/bslAst"
 
 export class MethodScope extends BaseScope {
@@ -11,8 +11,13 @@ export function createMethodScope(method: Method, parser: BslParser) {
 
     if (!method.vars) {
         method.vars = []
-        parser.getMethodVars(method).forEach(v => method.vars?.push(v))
+        const iter = parser.getMethodVars(method)
+        let variable: IteratorResult<Variable>
+        while (!(variable = iter.next()).done) {
+            method.vars.push(variable.value)
+        }
     }
+    
     method.vars.forEach(v => members.push({
         name: v.name,
         kind: SymbolType.property,

@@ -1,8 +1,10 @@
 import { Scope, UnionScope } from './scope'
-import { TypeDefinition, TypeHolder, isTypeHolder } from './types'
+import { Constructor } from './symbols'
+import { ConstructorsHolder, TypeDefinition, TypeHolder, isConstructorsHolder, isTypeHolder } from './types'
 
 export class GlobalScopeManager extends UnionScope implements TypeHolder {
     readonly typeHolders: TypeHolder[] = []
+    readonly constructorHolders: ConstructorsHolder[] = []
     readonly registeredScopes: { [key: string]: Scope } = {}
 
     registerScope(scopeId: string, scope: Scope) {
@@ -12,6 +14,9 @@ export class GlobalScopeManager extends UnionScope implements TypeHolder {
 
         if (isTypeHolder(scope)) {
             this.typeHolders.push(scope)
+        }
+        if (isConstructorsHolder(scope)) {
+            this.constructorHolders.push(scope)
         }
     }
 
@@ -27,6 +32,14 @@ export class GlobalScopeManager extends UnionScope implements TypeHolder {
             }
         }
         return undefined
+    }
+
+    getConstructors(): Constructor[] {
+        return this.constructorHolders.length ? this.constructorHolders[0].getConstructors() : []
+    }
+
+    getConstructor(name: string) {
+        return this.getConstructors().find(c => c.name === name)
     }
 }
 

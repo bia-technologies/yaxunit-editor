@@ -2,27 +2,35 @@ import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, IDisposable, Position } from 'monaco-editor-core';
 import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
-import { expressionTokens } from './expression';
+import { expressionTokens, symbolPosition } from './expression';
 import { scopeProvider } from '../bsl/scopeProvider';
 import { Queries } from './queries';
+import { isModel } from '@/monaco/utils';
 
 let bslLanguage: Language | undefined = undefined
 
 export class BslParser implements IDisposable {
     private parser: Parser
     private tree: Tree | null = null
-    private model: editor.IReadOnlyModel
+    private model?: editor.IReadOnlyModel
+    disposable: IDisposable[] = []
 
     private queries: Queries = new Queries()
 
-    constructor(model: editor.IReadOnlyModel) {
+    constructor(model: editor.IReadOnlyModel | string) {
         if (!bslLanguage) {
-            throw 'Not init'
+            throw 'Constructor: bsl language not loaded'
         }
         const start = performance.now()
         this.parser = new Parser()
         this.parser.setLanguage(bslLanguage)
-        this.setModel(this.model = model)
+
+        if (isModel(model)) {
+            this.setModel(this.model = model)
+            this.disposable.push(this.model.onDidChangeContent(e => this.onEditorContentChange(e)))
+        } else {
+            this.setContent(model)
+        }
         console.log('parser init', performance.now() - start, 'ms')
     }
 
@@ -56,25 +64,7 @@ export class BslParser implements IDisposable {
             throw 'Dont parsed'
         }
 
-        const cursor = this.tree.walk()
-        let currentNode
-        try {
-            let success = true
-            while (success) {
-                if (cursor.startIndex <= position && position <= cursor.endIndex) {
-                    currentNode = cursor.currentNode
-                    success = cursor.gotoFirstChild()
-                } else {
-                    success = cursor.gotoNextSibling()
-                }
-                if (!success) {
-                    break
-                }
-            }
-        } finally {
-            cursor.delete()
-        }
-        return currentNode
+        return this.getRootNode().namedDescendantForIndex(position - 1, position)
     }
 
     findParenNode(node: Node, predicate: (node: Node) => boolean) {
@@ -178,7 +168,7 @@ export class BslParser implements IDisposable {
         if (tokens.length === 0 || tokens.filter(t => !t).length !== 0) {
             return undefined
         }
-        return await scopeProvider.resolveExpressionType(this.model, tokens as string[])
+        return await scopeProvider.resolveExpressionTypeId(this.model, tokens as string[])
     }
 
     logNodes(nodes: (Node | null)[]) {
@@ -193,7 +183,7 @@ export class BslParser implements IDisposable {
         }
     }
 
-    onEditorContentChange(e: editor.IModelContentChangedEvent) {
+    private onEditorContentChange(e: editor.IModelContentChangedEvent) {
         if (!this.parser || !this.model) return;
         if (e.changes.length == 0) return;
 
@@ -217,6 +207,7 @@ export class BslParser implements IDisposable {
     }
 
     dispose(): void {
+        this.disposable.forEach(d => d.dispose())
         this.parser?.delete()
         this.tree?.delete()
         this.queries.dispose()
@@ -239,22 +230,10 @@ function monacoPositionToPoint(position: Position): Point {
     return { row: position.lineNumber - 1, column: position.column - 1 };
 }
 
-function symbolPosition(node: Node) {
-    return {
-        startLine: node.startPosition.row + 1,
-        startColumn: node.startPosition.column + 1,
-        endLine: node.endPosition.row + 1,
-        endColumn: node.endPosition.column + 1,
-    }
-}
-
 export async function useTreeSitterBsl(): Promise<void> {
     if (bslLanguage) {
         return
     }
     await Parser.init()
     bslLanguage = await Language.load(bslURL)
-}
-
-if (!bslLanguage) {
 }

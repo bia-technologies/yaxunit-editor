@@ -1,13 +1,39 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
-import { isMethod, isPlatformMethod, Symbol, SymbolType } from '../../scope';
+import { EditorScope, GlobalScope, isMethod, isPlatformMethod, Scope, Symbol, SymbolType } from '@/scope';
 import { scopeProvider } from '../scopeProvider';
+import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/tree-sitter/symbols';
+import { getTreeSitterPosition } from '@/monaco/utils';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
     async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
-        const scope = await scopeProvider.resolveScope(model, position)
+        const positionOffset = getTreeSitterPosition(model, position)
+        const symbol = currentSymbol(model, positionOffset)
+        console.debug('symbol: ', symbol)
         
+        let scope: Scope | undefined
+
+        const word = model.getWordAtPosition(position)
+        const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
+
+        if (!symbol) {
+            scope = EditorScope.getScope(model)
+        } else if (isAccessible(symbol)) {
+            scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
+        } else if (symbol.type === ExpressionType.ctor) {
+            return {
+                suggestions: GlobalScope.getConstructors().map(c => {
+                    return {
+                        kind: languages.CompletionItemKind.Constructor,
+                        label: c.name,
+                        insertText: c.name,
+                        range
+                    }
+                })
+            }
+        }
+
         console.debug('completion scope: ', scope)
 
         if (scope === undefined) {
@@ -15,8 +41,6 @@ const completionItemProvider: languages.CompletionItemProvider = {
         }
 
         const suggestions: languages.CompletionItem[] = []
-        const word = model.getWordAtPosition(position)
-        const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
 
         scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
         console.debug('suggestions', suggestions)
@@ -25,6 +49,14 @@ const completionItemProvider: languages.CompletionItemProvider = {
             suggestions: suggestions
         }
     },
+}
+
+function currentSymbol(model: editor.ITextModel, position: number): Expression | undefined {
+    const scope = EditorScope.getScope(model)
+    const node = scope.getAst().getCurrentNode(position)
+    if (node) {
+        return resolveSymbol(node)
+    }
 }
 
 function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionItem {

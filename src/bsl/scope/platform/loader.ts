@@ -1,10 +1,20 @@
-import { GlobalScopeItem, PlatformMethodSymbol, PredefinedType, Scope, Symbol, SymbolType, TypeDefinition } from '@/scope'
+import { Constructor, ConstructorsHolder, GlobalScopeItem, PlatformMethodSymbol, PredefinedType, Scope, Symbol, SymbolType, TypeDefinition } from '@/scope'
 
-export class PlatformScope extends GlobalScopeItem {
+export class PlatformScope extends GlobalScopeItem implements ConstructorsHolder {
     genericTypes: { [key: string]: TypeDefinition } = {}
-    
+    private readonly constructors: Constructor[]
+
+    constructor(members: Symbol[], types: TypeDefinition[], constructors: Constructor[]) {
+        super(members, types)
+        this.constructors = constructors
+    }
+
     resolveGenericTypes(typeId: string): TypeDefinition | undefined {
         return this.genericTypes[typeId.toLocaleLowerCase()]
+    }
+
+    getConstructors(): Constructor[] {
+        return this.constructors
     }
 }
 
@@ -22,14 +32,16 @@ export async function loadScope(): Promise<Scope> {
 
     const enumTypes = enumsData.default.map(createEnumType)
     const types = (<any[]>typesData.default).map(createType)
+    const constructors = (<any[]>typesData.default).filter(t => t.constructors).map(createConstructor)
 
     const filterPattern = /^.+\.<[\w\s\-а-яА-Я]+>/
     const replacePattern = /<[\w\s\-а-яА-Я]+?>/gi
-    
+
     const genericTypes = types.filter(t => t.id.match(filterPattern))
 
-    const scope = new PlatformScope(members, types.concat(enumTypes))
+    const scope = new PlatformScope(members, types.concat(enumTypes), constructors)
     genericTypes.forEach(t => scope.genericTypes[t.id.toLocaleLowerCase().replaceAll(replacePattern, '<?>')] = t)
+
     return scope
 }
 
@@ -48,8 +60,8 @@ function executeMethodDescription() {
 }
 
 function createType(t: any): TypeDefinition {
-    const methods = t.methods.map((m: any) => createMethodSymbol(m))
-    const properties = t.properties.map((p: any) => createPropertySymbol(p))
+    const methods = t.methods ? t.methods.map((m: any) => createMethodSymbol(m)) : []
+    const properties = t.properties ? t.properties.map((p: any) => createPropertySymbol(p)) : []
 
     return new PredefinedType(t.name, methods.concat(properties))
 }
@@ -81,6 +93,19 @@ function createMethodSymbol(d: any): PlatformMethodSymbol {
         type: d.return,
         description: d.description,
         signatures: d.signature.map((s: any) => {
+            return {
+                description: s.description,
+                params: s.params
+            }
+        })
+    }
+}
+
+function createConstructor(d: any): Constructor {
+    return {
+        name: d.name,
+        type: d.name,
+        signatures: d.constructors.map((s: any) => {
             return {
                 description: s.description,
                 params: s.params
