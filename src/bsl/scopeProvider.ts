@@ -1,5 +1,4 @@
 import { editor } from 'monaco-editor-core';
-import { TokensSequence, TokensSequenceType } from './tokensProvider'
 import { Scope, Symbol, GlobalScope, EditorScope, TypeDefinition, } from '@/scope';
 import { Method } from './Symbols';
 import { MethodCall } from '@/tree-sitter/symbols';
@@ -9,22 +8,19 @@ type ResolvedScope = Promise<Scope | undefined>
 
 const scopeProvider = {
     async resolveExpressionTypeId(model: editor.ITextModel, tokens: string[]) {
-        tokens = tokens.reverse()
-        const tokensSequence: TokensSequence = {
-            tokens,
-            lastSymbol: tokens[0],
-            type: TokensSequenceType.expression,
-            closed: false
-        }
+        const lastSymbol = tokens.pop()
+
         const scope = EditorScope.getScope(model)
+        
         let resolvedScope: Scope | undefined
         if (tokens.length > 1) {
-            resolvedScope = await objectScope(tokensSequence, scope)
+            resolvedScope = await objectScope(tokens, scope)
         } else {
             resolvedScope = scope
         }
-        if (resolvedScope) {
-            const type = resolvedScope.findMember(tokensSequence.lastSymbol)?.type
+        
+        if (resolvedScope && lastSymbol) {
+            const type = resolvedScope.findMember(lastSymbol)?.type
             if (type) {
                 return await getType(type)
             }
@@ -58,12 +54,11 @@ const scopeProvider = {
     }
 }
 
-async function objectScope(tokensSequence: TokensSequence, editorScope: EditorScope): ResolvedScope {
+async function objectScope(tokens: string[], editorScope: EditorScope): ResolvedScope {
 
     console.debug('calculate objectScope');
 
-    const tokens = tokensSequence.tokens
-    const firstToken = tokens[tokens.length - 1];
+    const firstToken = tokens[0];
     let scope = await resolveInEditorScope(firstToken, editorScope)
 
     if (!scope) {
@@ -71,8 +66,7 @@ async function objectScope(tokensSequence: TokensSequence, editorScope: EditorSc
         return undefined
     }
 
-    const minIndex = tokensSequence.closed ? 1 : 0
-    for (let index = tokens.length - 2; index > - minIndex; index--) {
+    for (let index = 1; index < tokens.length; index++) {
         let token = tokens[index];
 
         console.debug('analyze token ' + token)

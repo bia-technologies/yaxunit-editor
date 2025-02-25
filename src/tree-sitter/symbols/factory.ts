@@ -113,7 +113,7 @@ function collectPathTokens(currentNode: Node) {
 function collectAccessTokens(accessNode: Node) {
     const tokens: string[] = []
     let node: Node | null = accessNode.firstChild;
-    let containsIndex = false
+    // let containsIndex = false
     while (node) {
         switch (node.type) {
             case 'method_call':
@@ -128,7 +128,7 @@ function collectAccessTokens(accessNode: Node) {
                 break
             case 'index':
                 tokens.push(node.text)
-                containsIndex = true
+                // containsIndex = true
                 break
         }
         node = node.nextSibling
