@@ -1,3 +1,6 @@
+[![Demo](https://github.com/bia-technologies/yaxunit-editor/actions/workflows/build-demo.yml/badge.svg?label=Demo&style=flat)](https://bia-technologies.github.io/yaxunit-editor/)
+[![Latest release](https://img.shields.io/github/release/bia-technologies/yaxunit-editor.svg?label=Latest&style=flat)](https://github.com/bia-technologies/yaxunit-editor/releases/latest)
+
 # Редактор тестов YAxUnit
 
 ![Screen](/docs/images/screencast.gif)
@@ -11,9 +14,9 @@
 * [x] Контекстная подсказка по YAxUnit, с поддержкой fluent.
 * [ ] Подсказка по методам платформы.
   * [x] Глобальный контекст (свойства, методы, перечисления)
-  * [ ] Конструкторы
+  * [x] Конструкторы
   * [x] Свойства/методы платформенных типов
-* [х] Подсказка по методам конфигурации.
+* [x] Подсказка по методам конфигурации.
 * [x] Интеграция с 1с(встраивание в приложение 1с).
 * [ ] Подключение к отладчику 1с.
 
