@@ -67,7 +67,7 @@ export class None extends BaseExpression {
     toString() {
         return 'Неизвестный'
     }
-    getResultTypeId(scope: Scope | undefined) {
+    getResultTypeId(_: Scope | undefined) {
         return undefined
     }
 }
@@ -84,7 +84,7 @@ export class Constructor extends BaseExpression implements ArgumentsOwner {
     toString() {
         return 'Конструктор ' + this.name
     }
-    getResultTypeId(scope: Scope | undefined) {
+    getResultTypeId(_: Scope | undefined) {
         return this.name
     }
 }
@@ -145,7 +145,7 @@ export class MethodCall extends BaseExpression implements Accessible, ArgumentsO
     toString() {
         return 'Call ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
     }
-    
+
     async getResultTypeId(scope: Scope | undefined) {
         return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
     }
