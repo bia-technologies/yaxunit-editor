@@ -30,7 +30,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         }
         let signatures: languages.SignatureHelp | undefined
         if (symbol.type === ExpressionType.ctor) {
-            signatures = await createConstructorSignatures(symbol as Constructor)
+            signatures = await createConstructorSignatures(symbol as Constructor, model)
         } else if (symbol.type === ExpressionType.methodCall) {
             signatures = await createMethodSignatures(model, symbol as MethodCall)
         }
@@ -55,8 +55,8 @@ function currentSymbol(model: editor.ITextModel, position: number): Constructor 
     }
 }
 
-async function createConstructorSignatures(symbol: Constructor): Promise<languages.SignatureHelp | undefined> {
-    const typeId = await symbol.getResultTypeId()
+async function createConstructorSignatures(symbol: Constructor, model: editor.ITextModel): Promise<languages.SignatureHelp | undefined> {
+    const typeId = await symbol.getResultTypeId(EditorScope.getScope(model))
     if (typeId) {
         const ctor = GlobalScope.getConstructor(typeId)
 
@@ -84,7 +84,7 @@ async function createConstructorSignatures(symbol: Constructor): Promise<languag
 }
 
 async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCall): Promise<languages.SignatureHelp | undefined> {
-    const method = await scopeProvider.currentMethod(model, symbol as MethodCall)
+    const method = await scopeProvider.resolveSymbolMember(model, symbol as MethodCall)
     if (!method) {
         return undefined
     }

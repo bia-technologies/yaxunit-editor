@@ -1,3 +1,5 @@
+import { scopeProvider } from "@/bsl/scopeProvider"
+import { Scope } from "@/scope"
 import { Node } from "web-tree-sitter"
 
 export enum ExpressionType {
@@ -13,7 +15,7 @@ export interface Expression {
     readonly node: Node
     readonly type: ExpressionType
     toString(): string
-    getResultTypeId(): Promise<string | undefined> | string | undefined
+    getResultTypeId(scope: Scope | undefined): Promise<string | undefined> | string | undefined
 }
 
 export interface Accessible {
@@ -40,20 +42,20 @@ abstract class BaseExpression implements Expression {
         this.type = type
         this.node = node
     }
-    abstract getResultTypeId(): Promise<string | undefined> | string | undefined
+    abstract getResultTypeId(scope: Scope | undefined): Promise<string | undefined> | string | undefined
 }
 
 export class Constant extends BaseExpression {
-    valueType: string|undefined
-    constructor(node: Node, type: string|undefined) {
+    valueType: string | undefined
+    constructor(node: Node, type: string | undefined) {
         super(node, ExpressionType.constant)
         this.valueType = type
     }
     toString() {
-        return 'Constant'
+        return 'Константное значение ' + this.node.text
     }
 
-    getResultTypeId() {
+    getResultTypeId(_: Scope | undefined) {
         return this.valueType
     }
 }
@@ -63,9 +65,9 @@ export class None extends BaseExpression {
         super(node, ExpressionType.none)
     }
     toString() {
-        return 'None'
+        return 'Неизвестный'
     }
-    getResultTypeId() {
+    getResultTypeId(scope: Scope | undefined) {
         return undefined
     }
 }
@@ -80,9 +82,9 @@ export class Constructor extends BaseExpression implements ArgumentsOwner {
         this.arguments = args
     }
     toString() {
-        return 'NEW ' + this.name
+        return 'Конструктор ' + this.name
     }
-    getResultTypeId() {
+    getResultTypeId(scope: Scope | undefined) {
         return this.name
     }
 }
@@ -100,11 +102,13 @@ export class FieldAccess extends BaseExpression implements Accessible {
         this.name = name
         this.path = path
     }
+
     toString() {
         return 'Filed ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
     }
-    getResultTypeId() {
-        return undefined
+
+    async getResultTypeId(scope: Scope | undefined) {
+        return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
     }
 }
 
@@ -116,11 +120,13 @@ export class Unknown extends BaseExpression implements Accessible {
         this.name = name
         this.path = path
     }
+
     toString() {
         return 'Unknown ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
     }
-    getResultTypeId() {
-        return undefined
+
+    async getResultTypeId(scope: Scope | undefined) {
+        return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
     }
 }
 
@@ -139,7 +145,8 @@ export class MethodCall extends BaseExpression implements Accessible, ArgumentsO
     toString() {
         return 'Call ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
     }
-    getResultTypeId() {
-        return undefined
+    
+    async getResultTypeId(scope: Scope | undefined) {
+        return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
     }
 }

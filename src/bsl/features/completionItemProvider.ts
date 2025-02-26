@@ -15,11 +15,12 @@ const completionItemProvider: languages.CompletionItemProvider = {
 
         const word = model.getWordAtPosition(position)
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
+        const editorScope = EditorScope.getScope(model)
 
         if (!symbol || symbol.type === ExpressionType.none) {
-            scope = EditorScope.getScope(model)
+            scope = editorScope
         } else if (isAccessible(symbol)) {
-            scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
+            scope = symbol.path.length ? await scopeProvider.resolveExpressionType(editorScope, symbol.path) : editorScope
         } else if (symbol.type === ExpressionType.ctor) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
@@ -104,6 +105,8 @@ function completionItemKind(type: SymbolType): languages.CompletionItemKind {
             return languages.CompletionItemKind.Method
         case SymbolType.property:
             return languages.CompletionItemKind.Field
+        case SymbolType.variable:
+            return languages.CompletionItemKind.Variable
         default:
             return languages.CompletionItemKind.Class
     }

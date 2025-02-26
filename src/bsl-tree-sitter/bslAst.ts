@@ -2,10 +2,10 @@ import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, IDisposable, Position } from 'monaco-editor-core';
 import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
-import { symbolPosition } from './expression';
 import { Queries } from './queries';
 import { isModel } from '@/monaco/utils';
 import { createSymbolForNode } from './symbols';
+import { EditorScope, Scope } from '@/scope';
 
 let bslLanguage: Language | undefined = undefined
 
@@ -37,6 +37,10 @@ export class BslParser implements IDisposable {
     setModel(model: editor.IReadOnlyModel) {
         this.model = model
         this.setContent(model.getValue())
+    }
+
+    get scope(): Scope | undefined {
+        return this.model ? EditorScope.getScope(this.model) : undefined
     }
 
     setContent(content: string) {
@@ -80,7 +84,7 @@ export class BslParser implements IDisposable {
         console.log('get missings', performance.now() - start, 'ms')
         return nodes
     }
-    
+
     getErrors() {
         const start = performance.now()
         const captures = this.queries.errorQuery().captures(this.getRootNode())
@@ -202,7 +206,7 @@ export class BslParser implements IDisposable {
         if (!this.parser || !this.model) return;
         const symbol = createSymbolForNode(expression)
         if (symbol) {
-            return await symbol.getResultTypeId()
+            return await symbol.getResultTypeId(this.scope)
         }
     }
 
@@ -240,12 +244,12 @@ export class BslParser implements IDisposable {
         this.tree = this.parser.parse(this.model.getValue(), this.tree); // TODO: Don't use getText, use Parser.Input
         console.log('update ast', performance.now() - start, 'ms')
         const missings = this.getMissings()
-        if(missings.length){
-            console.log(missings.map(n=>`Missing ${n?.type} at ${n.startIndex}`))
+        if (missings.length) {
+            console.log(missings.map(n => `Missing ${n?.type} at ${n.startIndex}`))
         }
         const errors = this.getErrors()
-        if(errors.length){
-            console.log(errors.map(n=>`Error at ${n.startIndex}`))
+        if (errors.length) {
+            console.log(errors.map(n => `Error at ${n.startIndex}`))
         }
     }
 
@@ -279,4 +283,13 @@ export async function useTreeSitterBsl(): Promise<void> {
     }
     await Parser.init()
     bslLanguage = await Language.load(bslURL)
+}
+
+function symbolPosition(node: Node) {
+    return {
+        startLine: node.startPosition.row + 1,
+        startColumn: node.startPosition.column + 1,
+        endLine: node.endPosition.row + 1,
+        endColumn: node.endPosition.column + 1,
+    }
 }

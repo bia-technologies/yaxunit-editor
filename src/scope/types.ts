@@ -7,10 +7,12 @@ export interface TypeDefinition extends Scope {
 
 export class PredefinedType extends BaseScope implements TypeDefinition {
     id: string
+    description?: string
 
-    constructor(id: string, members: Symbol[]) {
+    constructor(id: string, members: Symbol[], description?: string) {
         super(members)
         this.id = id
+        this.description = description
     }
 }
 
