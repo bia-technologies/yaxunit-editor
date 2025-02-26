@@ -1,6 +1,6 @@
 import { BaseScope, Symbol, SymbolType } from "@/scope"
 import { Method, Variable } from "../Symbols"
-import { BslParser } from "@/tree-sitter/bslAst"
+import { BslParser } from "@/bsl-tree-sitter"
 
 export class MethodScope extends BaseScope {
 

@@ -3,9 +3,11 @@ import { Query } from "web-tree-sitter";
 import { createQuery } from "./bslAst";
 
 export class Queries implements IDisposable {
-    methodDefinitions?: Query
-    assignments?: Query
-    varDefinitions?: Query
+    private methodDefinitions?: Query
+    private assignments?: Query
+    private varDefinitions?: Query
+    private missing?: Query
+    private error?: Query
     private createdQueries: Query[] = []
 
     methodDefinitionsQuery() {
@@ -34,6 +36,20 @@ export class Queries implements IDisposable {
         return this.assignments
     }
 
+    missingQuery() {
+        if (!this.missing) {
+            this.missing = this.createQuery('(MISSING) @missing')
+        }
+        return this.missing
+    } 
+    
+    errorQuery() {
+        if (!this.error) {
+            this.error = this.createQuery('(ERROR) @error')
+        }
+        return this.error
+    } 
+    
     createQuery(queryText: string) {
         const query = createQuery(queryText)
         this.createdQueries.push(query)

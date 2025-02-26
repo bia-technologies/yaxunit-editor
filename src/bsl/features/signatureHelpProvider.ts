@@ -2,8 +2,8 @@ import { editor, languages, Position, CancellationToken } from 'monaco-editor-co
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '@/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/tree-sitter/symbols'
-import { getTreeSitterPosition } from '@/monaco/utils'
+import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/bsl-tree-sitter'
+import { getEditedPositionOffset } from '@/monaco/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
@@ -12,7 +12,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
         console.debug('Method context', context)
         
-        const positionOffset = getTreeSitterPosition(model, position)
+        const positionOffset = getEditedPositionOffset(model, position)
         const symbol = currentSymbol(model, positionOffset)
 
         if (context.isRetrigger && context.activeSignatureHelp) {
@@ -49,7 +49,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
 
 function currentSymbol(model: editor.ITextModel, position: number): Constructor | MethodCall | undefined {
     const scope = EditorScope.getScope(model)
-    const node = scope.getAst().getCurrentNode(position)
+    const node = scope.getAst().getCurrentEditingNode(position)
     if (node) {
         return resolveMethodSymbol(node)
     }

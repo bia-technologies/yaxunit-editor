@@ -1,6 +1,6 @@
-import { BslParser, useTreeSitterBsl } from '../src/tree-sitter/bslAst'
+import { BslParser, useTreeSitterBsl } from '../src/bsl-tree-sitter/bslAst'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { Queries } from '../src/tree-sitter/queries'
+import { Queries } from '../src/bsl-tree-sitter/queries'
 
 beforeAll(async () => {
     await useTreeSitterBsl()

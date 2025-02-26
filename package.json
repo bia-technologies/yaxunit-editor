@@ -17,14 +17,14 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "npx vitest",
-    "postinstall": "cp node_modules/web-tree-sitter/tree-sitter.wasm assets;cp node_modules/tree-sitter-bsl/tree-sitter-bsl.wasm assets;sed -i -e 's/0n/0/g' node_modules/web-tree-sitter/tree-sitter.js"
+    "postinstall": "node ./scripts/postinstall.js"
   },
   "devDependencies": {
     "jsdom": "^26.0.0",
     "path": "^0.12.7",
     "resize-observer-polyfill": "^1.5.1",
     "terser": "^5.37.0",
-    "tree-sitter-bsl": "^0.1.3",
+    "tree-sitter-bsl": "^0.1.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.9",
     "vite-plugin-singlefile": "^2.1.0",

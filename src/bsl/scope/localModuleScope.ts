@@ -1,7 +1,7 @@
 import { BaseScope, Scope, SymbolType } from '@/scope'
 import { editor, IDisposable } from "monaco-editor-core"
 import { Method, Module } from "@/bsl/Symbols"
-import { BslParser } from '@/tree-sitter/bslAst'
+import { BslParser } from '@/bsl-tree-sitter'
 import { createMethodScope } from './methodScope'
 
 export class LocalModuleScope extends BaseScope implements IDisposable {

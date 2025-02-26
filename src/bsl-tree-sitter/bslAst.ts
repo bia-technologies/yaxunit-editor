@@ -2,10 +2,10 @@ import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, IDisposable, Position } from 'monaco-editor-core';
 import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
-import { expressionTokens, symbolPosition } from './expression';
-import { scopeProvider } from '../bsl/scopeProvider';
+import { symbolPosition } from './expression';
 import { Queries } from './queries';
 import { isModel } from '@/monaco/utils';
+import { createSymbolForNode } from './symbols';
 
 let bslLanguage: Language | undefined = undefined
 
@@ -60,11 +60,47 @@ export class BslParser implements IDisposable {
     }
 
     getCurrentNode(position: number) {
+        return this.getNodeAtPosition(position, position)
+    }
+
+    getCurrentEditingNode(position: number) {
+        return this.getNodeAtPosition(position - 1, position)
+    }
+
+    getMissings() {
+        const start = performance.now()
+        const captures = this.queries.missingQuery().captures(this.getRootNode())
+
+        const nodes: Node[] = []
+
+        for (const { node } of captures) {
+            nodes.push(node)
+        }
+
+        console.log('get missings', performance.now() - start, 'ms')
+        return nodes
+    }
+    
+    getErrors() {
+        const start = performance.now()
+        const captures = this.queries.errorQuery().captures(this.getRootNode())
+
+        const nodes: Node[] = []
+
+        for (const { node } of captures) {
+            nodes.push(node)
+        }
+
+        console.log('get errors', performance.now() - start, 'ms')
+        return nodes
+    }
+
+    private getNodeAtPosition(startPosition: number, endPosition: number) {
         if (!this.tree) {
             throw 'Dont parsed'
         }
 
-        return this.getRootNode().namedDescendantForIndex(position - 1, position)
+        return this.getRootNode().namedDescendantForIndex(startPosition, endPosition)
     }
 
     findParenNode(node: Node, predicate: (node: Node) => boolean) {
@@ -164,11 +200,10 @@ export class BslParser implements IDisposable {
 
     async calculateType(expression: Node) {
         if (!this.parser || !this.model) return;
-        const tokens = expressionTokens(expression)
-        if (tokens.length === 0 || tokens.filter(t => !t).length !== 0) {
-            return undefined
+        const symbol = createSymbolForNode(expression)
+        if (symbol) {
+            return await symbol.getResultTypeId()
         }
-        return await scopeProvider.resolveExpressionTypeId(this.model, tokens as string[])
     }
 
     logNodes(nodes: (Node | null)[]) {
@@ -204,6 +239,14 @@ export class BslParser implements IDisposable {
         }
         this.tree = this.parser.parse(this.model.getValue(), this.tree); // TODO: Don't use getText, use Parser.Input
         console.log('update ast', performance.now() - start, 'ms')
+        const missings = this.getMissings()
+        if(missings.length){
+            console.log(missings.map(n=>`Missing ${n?.type} at ${n.startIndex}`))
+        }
+        const errors = this.getErrors()
+        if(errors.length){
+            console.log(errors.map(n=>`Error at ${n.startIndex}`))
+        }
     }
 
     dispose(): void {
