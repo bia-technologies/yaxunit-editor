@@ -1,19 +1,20 @@
 import { editor } from 'monaco-editor-core';
 import { Scope, Symbol, GlobalScope, EditorScope, TypeDefinition, } from '@/scope';
 import { Method } from './Symbols';
-import { MethodCall } from '@/tree-sitter/symbols';
+import { MethodCall } from '@/bsl-tree-sitter';
 
 type ResolvedSymbol = Promise<Symbol | undefined>
 type ResolvedScope = Promise<Scope | undefined>
 
 const scopeProvider = {
     async resolveExpressionTypeId(model: editor.ITextModel, tokens: string[]) {
+        tokens = [...tokens]
         const lastSymbol = tokens.pop()
 
         const scope = EditorScope.getScope(model)
 
         let resolvedScope: Scope | undefined
-        if (tokens.length > 1) {
+        if (tokens.length > 0) {
             resolvedScope = await objectScope(tokens, scope)
         } else {
             resolvedScope = scope

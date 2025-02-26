@@ -80,6 +80,7 @@ export class BslParser implements IDisposable {
         console.log('get missings', performance.now() - start, 'ms')
         return nodes
     }
+    
     getErrors() {
         const start = performance.now()
         const captures = this.queries.errorQuery().captures(this.getRootNode())

@@ -5,8 +5,8 @@ import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 import '@/languages/bsl/contribution'
 import '@/yaxunit'
 import '@/bsl/scope'
-import { YAxUnitEditor } from './yaxunit'
-import { useTreeSitterBsl } from './tree-sitter/bslAst.js';
+import { YAxUnitEditor } from '@/yaxunit'
+import { useTreeSitterBsl } from '@/bsl-tree-sitter';
 
 (self as any).MonacoEnvironment = {
   getWorker(): Worker {

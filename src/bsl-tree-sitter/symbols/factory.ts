@@ -1,23 +1,35 @@
 import { Node } from "web-tree-sitter"
 import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "./expressions";
+import { BslTokenTypes } from "../bslTokenTypes";
 
-export function resolveSymbol(currentNode: Node): Expression {
-    return createSymbolForSuitableNode(currentNode, (n) => {
-        return n.type === 'call_expression' || n.type === 'method_call' || n.type === 'property_access' || n.type === 'expression' || n.type === 'const_expression' || n.type === 'ERROR' || n.type === 'new_expression' || n.type === 'access' || n.type === 'arguments'
+export function resolveSymbol(currentNode: Node, position: number | undefined = undefined): Expression {
+    return createSymbolForSuitableNode(currentNode, position, (n) => {
+        return n.type === BslTokenTypes.call_expression
+            || n.type === BslTokenTypes.method_call
+            || n.type === BslTokenTypes.property_access
+            || n.type === BslTokenTypes.expression
+            || n.type === BslTokenTypes.const_expression
+            || n.type === BslTokenTypes.ERROR
+            || n.type === BslTokenTypes.new_expression
+            || n.type === BslTokenTypes.access
+            || n.type === BslTokenTypes.arguments
     })
 }
 
 export function resolveMethodSymbol(currentNode: Node): Constructor | MethodCall | undefined {
-    const expression = createSymbolForSuitableNode(currentNode, (n) => {
-        return n.type === 'method_call' || n.type === 'new_expression'
+    const expression = createSymbolForSuitableNode(currentNode, undefined, (n) => {
+        return n.type === BslTokenTypes.method_call
+            || n.type === BslTokenTypes.new_expression
     })
 
     return (expression as Constructor | MethodCall)
 }
 
-function createSymbolForSuitableNode(node: Node, predicate: (node: Node) => boolean) {
+function createSymbolForSuitableNode(node: Node, position: number | undefined, predicate: (node: Node) => boolean) {
     let symbol: Expression | undefined = undefined
-    if (node.type === 'source_file' || node.type === 'procedure_definition' || node.type === 'function_definition') {
+    if (node.type === BslTokenTypes.source_file
+        || node.type === BslTokenTypes.procedure_definition
+        || node.type === BslTokenTypes.function_definition) {
         symbol = new None(node)
     } else if (predicate(node)) {
         symbol = createSymbolForNode(node)
@@ -26,7 +38,7 @@ function createSymbolForSuitableNode(node: Node, predicate: (node: Node) => bool
         const currentExpression = findParenNode(node, predicate);
         if (currentExpression) {
             node = currentExpression
-            symbol = createSymbolForNode(node)
+            symbol = createSymbolForNode(node, position)
         }
     }
 
@@ -37,23 +49,22 @@ function createSymbolForSuitableNode(node: Node, predicate: (node: Node) => bool
     return symbol
 }
 
-export function createSymbolForNode(node: Node): Expression | undefined {
+export function createSymbolForNode(node: Node, position: number | undefined = undefined): Expression | undefined {
     switch (node.type) {
-        case 'expression':
-            return node.firstNamedChild ? createSymbolForNode(node.firstNamedChild) : undefined
-        case 'new_expression':
+        case BslTokenTypes.expression:
+            return node.firstNamedChild ? createSymbolForNode(node.firstNamedChild, position) : undefined
+        case BslTokenTypes.new_expression:
             return createConstructorExpression(node)
-        case 'const_expression':
+        case BslTokenTypes.const_expression:
             return createConstantExpression(node)
-        case 'method_call':
-            return createMethodCallExpression(node)
-        case 'access':
-        case 'expression':
-        case 'property_access':
-            return createFiledAccessExpression(node)
-        case 'ERROR':
-            return createUnknownExpression(node)
-        case 'arguments':
+        case BslTokenTypes.method_call:
+            return createMethodCallExpression(node, position)
+        case BslTokenTypes.access:
+        case BslTokenTypes.property_access:
+            return createFiledAccessExpression(node, position)
+        case BslTokenTypes.ERROR:
+            return createUnknownExpression(node, position)
+        case BslTokenTypes.arguments:
             return new None(node)
         default:
             return undefined
@@ -63,16 +74,21 @@ export function createSymbolForNode(node: Node): Expression | undefined {
 function createConstantExpression(node: Node): Expression {
     let type: string | undefined
     if (node.firstNamedChild) {
-        type = {
-            'number': 'Число',
-            'date': 'Дата',
-            'string': 'Строка',
-            'boolean': 'Булево',
-            'UNDEFINED_KEYWORD': 'Неопределено',
-            'NULL_KEYWORD': 'NULL',
-        }[node.firstNamedChild.type]
+        type = constValues()[node.firstNamedChild.type]
     }
     return new Constant(node, type)
+}
+
+function constValues() {
+    const res: { [key: string]: string } = {}
+    res[BslTokenTypes.number] = 'Число'
+    res[BslTokenTypes.date] = 'Дата'
+    res[BslTokenTypes.string] = 'Строка'
+    res[BslTokenTypes.boolean] = 'Булево'
+    res[BslTokenTypes.undefined_keyword] = 'Неопределено'
+    res[BslTokenTypes.null_keyword] = 'NULL'
+
+    return res
 }
 
 function createConstructorExpression(node: Node): Expression {
@@ -81,36 +97,36 @@ function createConstructorExpression(node: Node): Expression {
     return new Constructor(node, typeNode?.text ?? '', args)
 }
 
-function createMethodCallExpression(node: Node): Expression {
+function createMethodCallExpression(node: Node, _: number | undefined): Expression {
     const nameNode = node.childForFieldName("name")
     const tokens = node.parent ? collectPathTokens(node) : []
     const args = collectArguments(node)
     return new MethodCall(node, nameNode?.text ?? '', tokens, args)
 }
 
-function createFiledAccessExpression(node: Node): Expression {
-    const tokens = collectAccessTokens(node)
+function createFiledAccessExpression(node: Node, position: number | undefined): Expression {
+    const tokens = collectAccessTokens(node, position)
     return new FieldAccess(node, tokens.pop() ?? '', tokens)
 }
 
-function createUnknownExpression(node: Node): Expression {
+function createUnknownExpression(node: Node, position: number | undefined): Expression {
 
     let tokens: string[]
     const child = node.firstNamedChild
-    if (child && child.type === 'identifier') {
+    if (child && child.type === BslTokenTypes.identifier) {
         tokens = [child.text]
     } else if (child && child.type === 'access') {
-        tokens = collectAccessTokens(node)
+        tokens = collectAccessTokens(node, position)
         tokens.push('')
     } else {
-        tokens = collectAccessTokens(node)
+        tokens = collectAccessTokens(node, position)
     }
 
     return new Unknown(node, tokens.pop() ?? '', tokens)
 }
 
 function collectArguments(node: Node): ArgumentInfo[] {
-    const argumentsNode = node.childForFieldName("arguments")
+    const argumentsNode = node.childForFieldName(BslTokenTypes.arguments)
     if (!argumentsNode) {
         return []
     }
@@ -143,34 +159,40 @@ function collectPathTokens(currentNode: Node) {
         return []
     }
     const accessNode = currentNode.parent.firstNamedChild
-    if (!accessNode || accessNode.type !== 'access') {
+    if (!accessNode || accessNode.type !== BslTokenTypes.access) {
         return []
     }
-    return collectAccessTokens(accessNode)
+    return collectAccessTokens(accessNode, undefined)
 }
 
-function collectAccessTokens(accessNode: Node) {
+function collectAccessTokens(accessNode: Node, position: number | undefined) {
     const tokens: string[] = []
     let node: Node | null = accessNode.firstChild;
     // let containsIndex = false
     while (node) {
+        if (position && node.startIndex > position) {
+            break
+        }
         switch (node.type) {
-            case 'method_call':
-                tokens.push(node.childForFieldName('name')?.text || '')
+            case BslTokenTypes.method_call:
+                tokens.push(node.childForFieldName('name')?.text ?? '')
                 break
-            case 'access':
-                tokens.push(...collectAccessTokens(node))
+            case BslTokenTypes.access:
+                tokens.push(...collectAccessTokens(node, position))
                 break
-            case 'identifier':
-            case 'property':
+            case BslTokenTypes.identifier:
+            case BslTokenTypes.property:
                 tokens.push(node.text)
                 break
-            case 'index':
+            case BslTokenTypes.index:
                 tokens.push(node.text)
                 // containsIndex = true
                 break
         }
         node = node.nextSibling
+    }
+    if (accessNode.lastChild?.text === '.') {
+        tokens.push('')
     }
     return tokens
 }

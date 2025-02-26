@@ -1,4 +1,4 @@
-import { resolveSymbol } from "@/tree-sitter/symbols";
+import { resolveSymbol } from "@/bsl-tree-sitter";
 import { IMarkdownString, languages } from "monaco-editor-core";
 import { EditorScope } from "../scope/editorScope";
 import { getPositionOffset } from "@/monaco/utils";

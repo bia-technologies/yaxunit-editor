@@ -1,7 +1,7 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
 import { EditorScope, GlobalScope, isMethod, isPlatformMethod, Scope, Symbol, SymbolType } from '@/scope';
 import { scopeProvider } from '../scopeProvider';
-import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/tree-sitter/symbols';
+import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/bsl-tree-sitter';
 import { getEditedPositionOffset } from '@/monaco/utils';
 
 const completionItemProvider: languages.CompletionItemProvider = {
@@ -20,10 +20,6 @@ const completionItemProvider: languages.CompletionItemProvider = {
             scope = EditorScope.getScope(model)
         } else if (isAccessible(symbol)) {
             scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
-            if (symbol.name && scope) {
-                const member = scope.findMember(symbol.name)
-                scope = member ? await GlobalScope.resolveType(await member.type) : undefined
-            }
         } else if (symbol.type === ExpressionType.ctor) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
@@ -60,7 +56,7 @@ function currentSymbol(model: editor.ITextModel, position: Position): Expression
     const scope = EditorScope.getScope(model)
     const node = scope.getAst().getCurrentEditingNode(positionOffset)
     if (node) {
-        return resolveSymbol(node)
+        return resolveSymbol(node, positionOffset)
     }
 }
 

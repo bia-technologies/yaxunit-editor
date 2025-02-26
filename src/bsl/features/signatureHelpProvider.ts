@@ -2,7 +2,7 @@ import { editor, languages, Position, CancellationToken } from 'monaco-editor-co
 import { scopeProvider } from '../scopeProvider'
 import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '@/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/tree-sitter/symbols'
+import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/bsl-tree-sitter'
 import { getEditedPositionOffset } from '@/monaco/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
