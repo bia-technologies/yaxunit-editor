@@ -112,7 +112,7 @@ export class Unknown extends BaseExpression implements Accessible {
     readonly name: string
     readonly path: string[]
     constructor(node: Node, name: string, path: string[]) {
-        super(node, ExpressionType.fieldAccess)
+        super(node, ExpressionType.unknown)
         this.name = name
         this.path = path
     }
