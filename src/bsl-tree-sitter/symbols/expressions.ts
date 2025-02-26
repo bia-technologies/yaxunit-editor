@@ -5,6 +5,7 @@ export enum ExpressionType {
     methodCall,
     fieldAccess,
     constant,
+    unknown,
     none
 }
 
@@ -16,6 +17,7 @@ export interface Expression {
 }
 
 export interface Accessible {
+    readonly name: string
     readonly path: string[]
 }
 
@@ -100,6 +102,22 @@ export class FieldAccess extends BaseExpression implements Accessible {
     }
     toString() {
         return 'Filed ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
+    }
+    getResultTypeId() {
+        return undefined
+    }
+}
+
+export class Unknown extends BaseExpression implements Accessible {
+    readonly name: string
+    readonly path: string[]
+    constructor(node: Node, name: string, path: string[]) {
+        super(node, ExpressionType.unknown)
+        this.name = name
+        this.path = path
+    }
+    toString() {
+        return 'Unknown ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
     }
     getResultTypeId() {
         return undefined

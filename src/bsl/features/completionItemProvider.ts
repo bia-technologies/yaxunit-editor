@@ -1,23 +1,22 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
 import { EditorScope, GlobalScope, isMethod, isPlatformMethod, Scope, Symbol, SymbolType } from '@/scope';
 import { scopeProvider } from '../scopeProvider';
-import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/tree-sitter/symbols';
-import { getTreeSitterPosition } from '@/monaco/utils';
+import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/bsl-tree-sitter';
+import { getEditedPositionOffset } from '@/monaco/utils';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
     async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
-        const positionOffset = getTreeSitterPosition(model, position)
-        const symbol = currentSymbol(model, positionOffset)
+        const symbol = currentSymbol(model, position)
         console.debug('symbol: ', symbol)
-        
+
         let scope: Scope | undefined
 
         const word = model.getWordAtPosition(position)
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
 
-        if (!symbol) {
+        if (!symbol || symbol.type === ExpressionType.none) {
             scope = EditorScope.getScope(model)
         } else if (isAccessible(symbol)) {
             scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
@@ -51,11 +50,13 @@ const completionItemProvider: languages.CompletionItemProvider = {
     },
 }
 
-function currentSymbol(model: editor.ITextModel, position: number): Expression | undefined {
+function currentSymbol(model: editor.ITextModel, position: Position): Expression | undefined {
+    const positionOffset = getEditedPositionOffset(model, position)
+
     const scope = EditorScope.getScope(model)
-    const node = scope.getAst().getCurrentNode(position)
+    const node = scope.getAst().getCurrentEditingNode(positionOffset)
     if (node) {
-        return resolveSymbol(node)
+        return resolveSymbol(node, positionOffset)
     }
 }
 
