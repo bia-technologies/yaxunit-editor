@@ -1,49 +1,28 @@
 import { editor } from 'monaco-editor-core';
 import { Scope, Symbol, GlobalScope, EditorScope, TypeDefinition, } from '@/scope';
 import { Method } from './Symbols';
-import { MethodCall } from '@/bsl-tree-sitter';
+import { Accessible } from '@/bsl-tree-sitter';
+import { isModel } from '@/monaco/utils';
 
 type ResolvedSymbol = Promise<Symbol | undefined>
 type ResolvedScope = Promise<Scope | undefined>
+type ModelOrScope = editor.ITextModel | Scope
 
 const scopeProvider = {
-    async resolveExpressionTypeId(model: editor.ITextModel, tokens: string[]) {
-        tokens = [...tokens]
-        const lastSymbol = tokens.pop()
-
-        const scope = EditorScope.getScope(model)
-
-        let resolvedScope: Scope | undefined
-        if (tokens.length > 0) {
-            resolvedScope = await objectScope(tokens, scope)
-        } else {
-            resolvedScope = scope
-        }
-
-        if (resolvedScope && lastSymbol) {
-            const type = resolvedScope.findMember(lastSymbol)?.type
-            if (type) {
-                return await getType(type)
-            }
-        }
-        return undefined
-    },
-
-    async resolveExpressionType(model: editor.ITextModel, tokens: string[]): Promise<TypeDefinition | undefined> {
-        const typeId = await this.resolveExpressionTypeId(model, tokens)
+    async resolveExpressionType(scope: Scope, tokens: string[]): Promise<TypeDefinition | undefined> {
+        const typeId = await resolveExpressionTypeId(scope, tokens)
         return GlobalScope.resolveType(typeId)
     },
 
-    async currentMethod(model: editor.ITextModel, method: MethodCall): ResolvedSymbol {
-        console.debug('Get current method')
-        let scope: Scope | undefined
-        if (method.path && method.path.length) {
-            scope = await this.resolveExpressionType(model, method.path)
-        } else {
-            scope = EditorScope.getScope(model)
+    async resolveSymbolMember(model: ModelOrScope, symbol: Accessible): ResolvedSymbol {
+        console.debug('resolve symbol member for', symbol)
+        let scope: Scope | undefined = isModel(model) ? EditorScope.getScope(model) : model
+
+        if (symbol.path && symbol.path.length) {
+            scope = await this.resolveExpressionType(scope, symbol.path)
         }
 
-        return scope?.findMember(method.name)
+        return scope?.findMember(symbol.name)
     },
 
     resolveType(typeId: string) {
@@ -60,12 +39,30 @@ const scopeProvider = {
     }
 }
 
-async function objectScope(tokens: string[], editorScope: EditorScope): ResolvedScope {
+async function resolveExpressionTypeId(scope: Scope, tokens: string[]) {
+    tokens = [...tokens]
+    const lastSymbol = tokens.pop()
+
+    let resolvedScope: Scope | undefined
+    if (tokens.length > 0) {
+        resolvedScope = await objectScope(tokens, scope)
+    } else {
+        resolvedScope = scope
+    }
+
+    if (resolvedScope && lastSymbol) {
+        const member = resolvedScope.findMember(lastSymbol)
+        return await member?.type
+    }
+    return undefined
+}
+
+async function objectScope(tokens: string[], editorScope: Scope): ResolvedScope {
 
     console.debug('calculate objectScope');
 
     const firstToken = tokens[0];
-    let scope = await resolveInEditorScope(firstToken, editorScope)
+    let scope = await globalScopeMember(firstToken, editorScope)
 
     if (!scope) {
         console.debug('don\'t found in global scope')
@@ -80,7 +77,7 @@ async function objectScope(tokens: string[], editorScope: EditorScope): Resolved
         token = cleanToken(token)
         const member = scope.findMember(token)
         if (member && member.type) {
-            const tokenScope = await GlobalScope.resolveType(await getType(member.type))
+            const tokenScope = await GlobalScope.resolveType(await member.type)
             if (tokenScope) {
                 scope = tokenScope
             } else {
@@ -95,17 +92,12 @@ async function objectScope(tokens: string[], editorScope: EditorScope): Resolved
     return scope
 }
 
-function globalScopeMember(token: string, editorScope: EditorScope): Symbol | undefined {
-    token = cleanToken(token)
-    return editorScope.findMember(token)
-}
-
-async function resolveInEditorScope(token: string, editorScope: EditorScope): ResolvedScope {
-    const member = globalScopeMember(token, editorScope)
+async function globalScopeMember(token: string, scope: Scope): ResolvedScope {
+    const member = scope.findMember(token)
 
     if (member) {
         if (member.type) {
-            const tokenScope = await GlobalScope.resolveType(await getType(member.type))
+            const tokenScope = await GlobalScope.resolveType(await member.type)
             if (tokenScope) {
                 return tokenScope
             }
@@ -114,13 +106,6 @@ async function resolveInEditorScope(token: string, editorScope: EditorScope): Re
     return undefined
 }
 
-async function getType(type: string | Promise<string | undefined>): Promise<string | undefined> {
-    if (type instanceof Promise) {
-        return await type
-    } else {
-        return type
-    }
-}
 function cleanToken(token: string): string {
     const pos1 = token.indexOf('(')
     const pos2 = token.indexOf('[')

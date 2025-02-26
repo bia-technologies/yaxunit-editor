@@ -63,7 +63,7 @@ function createType(t: any): TypeDefinition {
     const methods = t.methods ? t.methods.map((m: any) => createMethodSymbol(m)) : []
     const properties = t.properties ? t.properties.map((p: any) => createPropertySymbol(p)) : []
 
-    return new PredefinedType(t.name, methods.concat(properties))
+    return new PredefinedType(t.name, methods.concat(properties), t.description)
 }
 
 function createEnumSymbol(d: any) {
@@ -107,6 +107,7 @@ function createConstructor(d: any): Constructor {
         type: d.name,
         signatures: d.constructors.map((s: any) => {
             return {
+                name: s.name,
                 description: s.description,
                 params: s.params
             }

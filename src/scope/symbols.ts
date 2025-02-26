@@ -2,7 +2,8 @@ export enum SymbolType {
     property = 0,
     function = 1,
     procedure = 2,
-    enum = 3
+    enum = 3,
+    variable = 4,
 }
 
 export interface Symbol {
@@ -26,6 +27,7 @@ export interface Constructor {
 }
 
 export interface MethodSignature {
+    name: string,
     description?: string,
     params: Parameter[],
 }

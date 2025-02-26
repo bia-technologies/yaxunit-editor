@@ -20,12 +20,12 @@ export function createMethodScope(method: Method, parser: BslParser) {
     
     method.vars.forEach(v => members.push({
         name: v.name,
-        kind: SymbolType.property,
+        kind: SymbolType.variable,
         type: v.type
     }))
     method.params.forEach(v => members.push({
         name: v.name,
-        kind: SymbolType.property,
+        kind: SymbolType.variable,
     }))
 
     return new MethodScope(members)

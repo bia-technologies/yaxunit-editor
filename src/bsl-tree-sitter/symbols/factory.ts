@@ -13,6 +13,7 @@ export function resolveSymbol(currentNode: Node, position: number | undefined = 
             || n.type === BslTokenTypes.new_expression
             || n.type === BslTokenTypes.access
             || n.type === BslTokenTypes.arguments
+            || n.type === BslTokenTypes.assignment_statement
     })
 }
 
@@ -32,13 +33,17 @@ function createSymbolForSuitableNode(node: Node, position: number | undefined, p
         || node.type === BslTokenTypes.function_definition) {
         symbol = new None(node)
     } else if (predicate(node)) {
-        symbol = createSymbolForNode(node)
+        symbol = createSymbolForNode(node, position)
     }
     if (!symbol) {
-        const currentExpression = findParenNode(node, predicate);
+        const currentExpression = findParenNode(node, predicate)
         if (currentExpression) {
-            node = currentExpression
-            symbol = createSymbolForNode(node, position)
+            if (node.type === BslTokenTypes.identifier && currentExpression.type === BslTokenTypes.assignment_statement) {
+                symbol = createSymbolForNode(node, position)
+            } else {
+                symbol = createSymbolForNode(currentExpression, position)
+                node = currentExpression
+            }
         }
     }
 
@@ -60,6 +65,7 @@ export function createSymbolForNode(node: Node, position: number | undefined = u
         case BslTokenTypes.method_call:
             return createMethodCallExpression(node, position)
         case BslTokenTypes.access:
+        case BslTokenTypes.identifier:
         case BslTokenTypes.property_access:
             return createFiledAccessExpression(node, position)
         case BslTokenTypes.ERROR:
@@ -167,12 +173,14 @@ function collectPathTokens(currentNode: Node) {
 
 function collectAccessTokens(accessNode: Node, position: number | undefined) {
     const tokens: string[] = []
-    let node: Node | null = accessNode.firstChild;
+    let node: Node | null = accessNode.type !== BslTokenTypes.identifier ? accessNode.firstChild : accessNode;
     // let containsIndex = false
+    let lastNode: Node | undefined = undefined
     while (node) {
         if (position && node.startIndex > position) {
             break
         }
+        lastNode = node
         switch (node.type) {
             case BslTokenTypes.method_call:
                 tokens.push(node.childForFieldName('name')?.text ?? '')
@@ -191,7 +199,7 @@ function collectAccessTokens(accessNode: Node, position: number | undefined) {
         }
         node = node.nextSibling
     }
-    if (accessNode.lastChild?.text === '.') {
+    if (lastNode?.text === '.') {
         tokens.push('')
     }
     return tokens
