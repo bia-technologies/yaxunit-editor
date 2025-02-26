@@ -17,6 +17,7 @@ export interface Expression {
 }
 
 export interface Accessible {
+    readonly name: string
     readonly path: string[]
 }
 

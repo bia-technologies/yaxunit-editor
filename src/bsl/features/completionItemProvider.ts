@@ -20,6 +20,10 @@ const completionItemProvider: languages.CompletionItemProvider = {
             scope = EditorScope.getScope(model)
         } else if (isAccessible(symbol)) {
             scope = symbol.path.length ? await scopeProvider.resolveExpressionType(model, symbol.path) : EditorScope.getScope(model)
+            if (symbol.name && scope) {
+                const member = scope.findMember(symbol.name)
+                scope = member ? await GlobalScope.resolveType(await member.type) : undefined
+            }
         } else if (symbol.type === ExpressionType.ctor) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
@@ -52,7 +56,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
 
 function currentSymbol(model: editor.ITextModel, position: Position): Expression | undefined {
     const positionOffset = getEditedPositionOffset(model, position)
-    
+
     const scope = EditorScope.getScope(model)
     const node = scope.getAst().getCurrentEditingNode(positionOffset)
     if (node) {

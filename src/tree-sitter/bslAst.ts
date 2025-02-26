@@ -67,6 +67,33 @@ export class BslParser implements IDisposable {
         return this.getNodeAtPosition(position - 1, position)
     }
 
+    getMissings() {
+        const start = performance.now()
+        const captures = this.queries.missingQuery().captures(this.getRootNode())
+
+        const nodes: Node[] = []
+
+        for (const { node } of captures) {
+            nodes.push(node)
+        }
+
+        console.log('get missings', performance.now() - start, 'ms')
+        return nodes
+    }
+    getErrors() {
+        const start = performance.now()
+        const captures = this.queries.errorQuery().captures(this.getRootNode())
+
+        const nodes: Node[] = []
+
+        for (const { node } of captures) {
+            nodes.push(node)
+        }
+
+        console.log('get errors', performance.now() - start, 'ms')
+        return nodes
+    }
+
     private getNodeAtPosition(startPosition: number, endPosition: number) {
         if (!this.tree) {
             throw 'Dont parsed'
@@ -211,6 +238,14 @@ export class BslParser implements IDisposable {
         }
         this.tree = this.parser.parse(this.model.getValue(), this.tree); // TODO: Don't use getText, use Parser.Input
         console.log('update ast', performance.now() - start, 'ms')
+        const missings = this.getMissings()
+        if(missings.length){
+            console.log(missings.map(n=>`Missing ${n?.type} at ${n.startIndex}`))
+        }
+        const errors = this.getErrors()
+        if(errors.length){
+            console.log(errors.map(n=>`Error at ${n.startIndex}`))
+        }
     }
 
     dispose(): void {
