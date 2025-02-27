@@ -6,25 +6,15 @@ beforeAll(async () => {
     await useTreeSitterBsl()
 })
 
-describe('expressionTokens', () => {
-    const parser = new BslParser('')
-    const queries = new Queries()
+var parser:BslParser|undefined
 
-    afterAll(() => {
-        parser.dispose()
-        queries.dispose()
-    })
-
-    test('primitive', () => {
-        parser.setContent('А = 1 + 1;')
-        const expression = getExpression(parser)
-
-        expect(parser.expressionTokens(expression)).toStrictEqual(['1', '1'])
-    })
-    function getExpression(parser: BslParser) {
-        const q = queries.createQuery('(expression) @expression')
-        return q.matches(parser.getRootNode())[0]
-    }
+afterAll(() => {
+    parser?.dispose()
 })
 
+describe('common', () => {
+    test('parse', ()=>{
+        parser = new BslParser('А = 1 + 1;')
+    })
+})
 

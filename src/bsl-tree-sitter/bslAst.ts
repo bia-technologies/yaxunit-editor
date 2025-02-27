@@ -282,7 +282,14 @@ export async function useTreeSitterBsl(): Promise<void> {
         return
     }
     await Parser.init()
-    bslLanguage = await Language.load(bslURL)
+
+    if ((self as any).process?.versions.node) { // Run in node js env
+        // Fix error: Error: Dynamic require of "fs/promises" is not supported
+        const bytes = await readOnNode(bslURL)
+        bslLanguage = await Language.load(bytes)
+    } else {
+        bslLanguage = await Language.load(bslURL)
+    }
 }
 
 function symbolPosition(node: Node) {
@@ -292,4 +299,12 @@ function symbolPosition(node: Node) {
         endLine: node.endPosition.row + 1,
         endColumn: node.endPosition.column + 1,
     }
+}
+
+async function readOnNode(resolvedUrl: string) {
+    const fs_promises_name = 'node:fs/promises'
+    const fs = await import(/* @vite-ignore */fs_promises_name)
+
+    const buffer = await fs.readFile('.' + resolvedUrl)
+    return new Uint8Array(buffer);
 }
