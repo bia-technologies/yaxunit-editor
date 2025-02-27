@@ -63,6 +63,7 @@ export function createSymbolForNode(node: Node, position: number | undefined = u
         case BslTokenTypes.const_expression:
             return createConstantExpression(node)
         case BslTokenTypes.method_call:
+        case BslTokenTypes.call_expression:
             return createMethodCallExpression(node, position)
         case BslTokenTypes.access:
         case BslTokenTypes.identifier:
@@ -104,10 +105,16 @@ function createConstructorExpression(node: Node): Expression {
 }
 
 function createMethodCallExpression(node: Node, _: number | undefined): Expression {
-    const nameNode = node.childForFieldName("name")
-    const tokens = node.parent ? collectPathTokens(node) : []
-    const args = collectArguments(node)
-    return new MethodCall(node, nameNode?.text ?? '', tokens, args)
+    if (node.type === BslTokenTypes.call_expression) {
+        const tokens = collectAccessTokens(node, undefined)
+        const args = collectArguments(node.lastNamedChild as Node)
+        return new MethodCall(node, tokens.pop() ?? '', tokens, args)
+    } else {
+        const nameNode = node.childForFieldName("name")
+        const tokens = node.parent ? collectPathTokens(node) : []
+        const args = collectArguments(node)
+        return new MethodCall(node, nameNode?.text ?? '', tokens, args)
+    }
 }
 
 function createFiledAccessExpression(node: Node, position: number | undefined): Expression {

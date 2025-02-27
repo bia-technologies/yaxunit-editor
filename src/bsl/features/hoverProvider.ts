@@ -1,8 +1,8 @@
-import { Constructor, Expression, FieldAccess, MethodCall, resolveSymbol } from "@/bsl-tree-sitter";
+import { ArgumentInfo, Constructor, Expression, FieldAccess, MethodCall, resolveSymbol } from "@/bsl-tree-sitter";
 import { IMarkdownString, languages, editor } from "monaco-editor-core";
 import { EditorScope } from "../scope/editorScope";
 import { getPositionOffset } from "@/monaco/utils";
-import { GlobalScope, SymbolType } from "@/scope";
+import { GlobalScope, MethodSignature, SymbolType } from "@/scope";
 import { scopeProvider } from "../scopeProvider";
 
 export const hoverProvider: languages.HoverProvider = {
@@ -28,7 +28,7 @@ async function symbolDescription(symbol: Expression, model: editor.ITextModel) {
     const typeId = await symbol.getResultTypeId(EditorScope.getScope(model))
 
     if (symbol instanceof Constructor && typeId) {
-        content.push(... (await constructorDescription(typeId)))
+        content.push(... (await constructorDescription(symbol, typeId)))
     } else if (symbol instanceof MethodCall) {
         content.push(... (await methodDescription(symbol, model)))
     } else if (symbol instanceof FieldAccess) {
@@ -43,18 +43,44 @@ async function symbolDescription(symbol: Expression, model: editor.ITextModel) {
     return content
 }
 
-async function constructorDescription(typeId: string) {
+async function constructorDescription(symbol: Constructor, typeId: string) {
     const content: IMarkdownString[] = []
     const ctor = await GlobalScope.getConstructor(typeId)
     if (ctor && ctor.signatures.length) {
-        content.push({ value: ctor.signatures[0].name })
-        if (ctor.signatures[0].description) {
-            content.push({ value: ctor.signatures[0].description })
+        const index = getSignatureIndex(ctor.signatures, symbol.arguments)
+        const signature = ctor.signatures[index]
+        content.push({ value: 'Конструктор. ' + signature.name })
+        if (signature.description) {
+            content.push({ value: signature.description })
         }
     } else {
         content.push({ value: `Конструктор \`${typeId}\`` })
     }
     return content
+}
+
+function getSignatureIndex(signatures: MethodSignature[], args: ArgumentInfo[]) {
+    if (signatures.length <= 1) {
+        return 0
+    }
+
+    for (let index = 0; index < signatures.length; index++) {
+        const sign = signatures[index];
+        if (sign.params.length >= args.length) {
+            return index
+        }
+    }
+
+    let signatureIndex = 0
+    // Если нет подходящей сигнатуры, то возьмем самую длинную
+    for (let index = 0; index < signatures.length; index++) {
+        const sign = signatures[index];
+        if (sign.params.length > signatures[signatureIndex].params.length) {
+            signatureIndex = index
+        }
+    }
+
+    return signatureIndex
 }
 
 async function methodDescription(symbol: MethodCall, model: editor.ITextModel) {

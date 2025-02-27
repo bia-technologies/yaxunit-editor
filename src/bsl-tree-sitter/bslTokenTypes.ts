@@ -1,5 +1,4 @@
 export enum BslTokenTypes {
-    statement = 'statement',
     access = 'access',
     add_handler_statement = 'add_handler_statement',
     arguments = 'arguments',
@@ -58,7 +57,6 @@ export enum BslTokenTypes {
     endprocedure_keyword = 'ENDPROCEDURE_KEYWORD',
     endtry_keyword = 'ENDTRY_KEYWORD',
     except_keyword = 'EXCEPT_KEYWORD',
-    execute_keyword = 'EXECUTE_KEYWORD',
     export_keyword = 'EXPORT_KEYWORD',
     false_keyword = 'FALSE_KEYWORD',
     for_keyword = 'FOR_KEYWORD',
