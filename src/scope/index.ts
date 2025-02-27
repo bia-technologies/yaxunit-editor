@@ -1,6 +1,0 @@
-export * from './symbols'
-export * from './scope'
-export * from './types'
-export * from './globalScopeManager'
-export * from '../bsl/scope/editorScope'
-export * from '../bsl/scope/localModuleScope'

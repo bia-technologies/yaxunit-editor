@@ -1,13 +1,14 @@
-import { MethodSignature, Parameter, Symbol } from "@/scope";
+import { Member, Parameter, Signature } from "@/common/scope"
 
-export function signatureLabel(method: Symbol | string, signature: MethodSignature) {
-    const name = (method as Symbol).name ?? method
+export function signatureLabel(method: Member | string, signature: Signature) {
+    const name = (method as Member).name ?? method
     return name + '(' + signature.params.map(p => p.name + ':' + p.type).join(', ') + ')'
 }
 
-export function signatureDocumentation(method: Symbol, signature: MethodSignature) {
+export function signatureDocumentation(method: Member, signature: Signature) {
     return signature.description === '' ? method.description : signature.description
 }
+
 export function parameterDocumentation(p: Parameter) {
     if (p.description) {
         return {

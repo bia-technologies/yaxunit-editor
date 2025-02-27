@@ -1,3 +1,3 @@
-export * from './bslAst'
+export * from './bslParser'
 export * from './bslTokenTypes'
 export * from './symbols'

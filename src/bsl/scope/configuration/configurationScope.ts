@@ -1,6 +1,5 @@
-import { GlobalScope } from "@/scope/globalScopeManager";
 import { ObjectDefinition } from "./objectDefinition";
-import { GlobalScopeItem, TypeDefinition } from "@/scope";
+import { GlobalScope, GlobalScopeItem, TypeDefinition } from "@/common/scope";
 import { createConfigurationType, createProxyType } from "./genericTypes";
 import { DefinitionResolver } from "./configurationDefinitionResolver";
 import { Types } from "./configurationTypes";

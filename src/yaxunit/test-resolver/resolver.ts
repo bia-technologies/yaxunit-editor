@@ -1,7 +1,7 @@
 import { editor } from "monaco-editor-core";
 import { ROOT_METHOD, TestsModel } from "../test-model";
 import { YAxUnitEditor } from "../editor";
-import { Method } from "@/bsl/Symbols";
+import { Method } from "@/common/codeModel";
 
 const REGISTERED_TEST_PATTERN = /\.\s*(?:ДобавитьТест|ДобавитьСерверныйТест|ДобавитьКлиентскийТест)\s*\(\s*"([\w\dА-Яа-я_]+)"\s*\)/guim
 

@@ -1,6 +1,13 @@
-import { Scope, UnionScope } from './scope'
-import { Constructor } from './symbols'
-import { ConstructorsHolder, TypeDefinition, TypeHolder, isConstructorsHolder, isTypeHolder } from './types'
+import {
+    ConstructorsHolder,
+    TypeDefinition,
+    TypeHolder,
+    isConstructorsHolder,
+    isTypeHolder,
+    Constructor,
+    Scope,
+    UnionScope
+} from '@/common/scope'
 
 export class GlobalScopeManager extends UnionScope implements TypeHolder {
     readonly typeHolders: TypeHolder[] = []

@@ -1,6 +1,6 @@
 import { IDisposable } from "monaco-editor-core";
 import { Query } from "web-tree-sitter";
-import { createQuery } from "./bslAst";
+import { createQuery } from "./bslParser";
 
 export class Queries implements IDisposable {
     private methodDefinitions?: Query

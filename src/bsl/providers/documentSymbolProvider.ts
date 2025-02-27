@@ -1,5 +1,5 @@
 import { editor, languages, CancellationToken } from "monaco-editor-core";
-import { scopeProvider } from "../scopeProvider";
+import { scopeProvider } from "@/bsl/scopeProvider";
 
 export const documentSymbolProvider: languages.DocumentSymbolProvider = {
     provideDocumentSymbols(model: editor.ITextModel, _: CancellationToken): languages.ProviderResult<languages.DocumentSymbol[]> {

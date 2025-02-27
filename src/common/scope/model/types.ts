@@ -1,5 +1,5 @@
 import { BaseScope, Scope } from "./scope"
-import { Constructor, Symbol } from "./symbols"
+import { Constructor, Member } from "./members"
 
 export interface TypeDefinition extends Scope {
     id: string
@@ -9,7 +9,7 @@ export class PredefinedType extends BaseScope implements TypeDefinition {
     id: string
     description?: string
 
-    constructor(id: string, members: Symbol[], description?: string) {
+    constructor(id: string, members: Member[], description?: string) {
         super(members)
         this.id = id
         this.description = description

@@ -1,5 +1,5 @@
 import { scopeProvider } from "@/bsl/scopeProvider"
-import { Scope } from "@/scope"
+import { Scope } from "@/common/scope"
 import { Node } from "web-tree-sitter"
 
 export enum ExpressionType {
@@ -27,12 +27,9 @@ export interface ArgumentsOwner {
     readonly arguments: ArgumentInfo[]
 }
 
-export function isAccessible(expression: any): expression is Accessible {
-    return (<Accessible>expression).path !== undefined
-}
-
-export function isArgumentsOwner(expression: any): expression is ArgumentsOwner {
-    return (<ArgumentsOwner>expression).arguments !== undefined
+export interface ArgumentInfo {
+    startIndex: number,
+    endIndex: number
 }
 
 abstract class BaseExpression implements Expression {
@@ -89,11 +86,6 @@ export class Constructor extends BaseExpression implements ArgumentsOwner {
     }
 }
 
-export interface ArgumentInfo {
-    startIndex: number,
-    endIndex: number
-}
-
 export class FieldAccess extends BaseExpression implements Accessible {
     readonly name: string
     readonly path: string[]
@@ -105,24 +97,6 @@ export class FieldAccess extends BaseExpression implements Accessible {
 
     toString() {
         return 'Filed ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
-    }
-
-    async getResultTypeId(scope: Scope | undefined) {
-        return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
-    }
-}
-
-export class Unknown extends BaseExpression implements Accessible {
-    readonly name: string
-    readonly path: string[]
-    constructor(node: Node, name: string, path: string[]) {
-        super(node, ExpressionType.unknown)
-        this.name = name
-        this.path = path
-    }
-
-    toString() {
-        return 'Unknown ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
     }
 
     async getResultTypeId(scope: Scope | undefined) {
@@ -149,4 +123,30 @@ export class MethodCall extends BaseExpression implements Accessible, ArgumentsO
     async getResultTypeId(scope: Scope | undefined) {
         return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
     }
+}
+
+export class Unknown extends BaseExpression implements Accessible {
+    readonly name: string
+    readonly path: string[]
+    constructor(node: Node, name: string, path: string[]) {
+        super(node, ExpressionType.unknown)
+        this.name = name
+        this.path = path
+    }
+
+    toString() {
+        return 'Unknown ' + this.name + (this.path.length ? ' of ' + this.path.join('.') : ' global')
+    }
+
+    async getResultTypeId(scope: Scope | undefined) {
+        return scope ? (await scopeProvider.resolveSymbolMember(scope, this))?.type : undefined
+    }
+}
+
+export function isAccessible(expression: any): expression is Accessible {
+    return (<Accessible>expression).path !== undefined
+}
+
+export function isArgumentsOwner(expression: any): expression is ArgumentsOwner {
+    return (<ArgumentsOwner>expression).arguments !== undefined
 }

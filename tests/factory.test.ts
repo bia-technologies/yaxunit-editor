@@ -1,4 +1,4 @@
-import { BslParser, useTreeSitterBsl, ExpressionType, resolveSymbol } from '../src/bsl-tree-sitter'
+import { BslParser, useTreeSitterBsl, ExpressionType, resolveSymbol } from '../src/bsl/tree-sitter'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 beforeAll(async () => {

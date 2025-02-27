@@ -1,8 +1,8 @@
 import { languages } from 'monaco-editor-core';
-import { completionItemProvider } from '../../bsl/features/completionItemProvider'
-import { signatureHelpProvider } from '../../bsl/features/signatureHelpProvider'
-import { documentSymbolProvider } from '../../bsl/features/documentSymbolProvider';
-import { hoverProvider } from '@/bsl/features/hoverProvider';
+import { completionItemProvider } from '../providers/completionItemProvider'
+import { signatureHelpProvider } from '../providers/signatureHelpProvider'
+import { documentSymbolProvider } from '../providers/documentSymbolProvider';
+import { hoverProvider } from '@/bsl/providers/hoverProvider';
 
 interface ILangImpl {
   conf: languages.LanguageConfiguration;
