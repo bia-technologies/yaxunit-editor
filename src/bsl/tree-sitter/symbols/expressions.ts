@@ -1,5 +1,5 @@
 import { scopeProvider } from "@/bsl/scopeProvider"
-import { Scope } from "@/bsl/scope/scope"
+import { Scope } from "@/common/scope"
 import { Node } from "web-tree-sitter"
 
 export enum ExpressionType {

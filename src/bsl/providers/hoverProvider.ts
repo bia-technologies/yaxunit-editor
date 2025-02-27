@@ -1,9 +1,9 @@
 import { ArgumentInfo, Constructor, Expression, FieldAccess, MethodCall, resolveSymbol } from "@/bsl/tree-sitter";
 import { IMarkdownString, languages, editor } from "monaco-editor-core";
-import { EditorScope } from "../scope/editorScope";
+import { EditorScope } from "@/bsl/scope/editorScope";
 import { getPositionOffset } from "@/monaco/utils";
 import { GlobalScope, Signature, MemberType } from "@/common/scope";
-import { scopeProvider } from "../scopeProvider";
+import { scopeProvider } from "@/bsl/scopeProvider";
 
 export const hoverProvider: languages.HoverProvider = {
     async provideHover(model: editor.ITextModel, position): Promise<languages.Hover | undefined> {
@@ -15,8 +15,8 @@ export const hoverProvider: languages.HoverProvider = {
         if (node) {
             const symbol = resolveSymbol(node)
             content = await symbolDescription(symbol, model)
-
         }
+
         console.log('hover', performance.now() - start, 'ms')
 
         return content ? { contents: content } : undefined
@@ -127,8 +127,8 @@ async function fieldDescription(symbol: FieldAccess, model: editor.ITextModel) {
             case MemberType.enum:
                 typeDescription = 'Перечисление'
                 break
-
         }
+        
         content.push({ value: `${typeDescription} \`${member.name}\`` })
         if (member.description) {
             content.push({ value: member.description })

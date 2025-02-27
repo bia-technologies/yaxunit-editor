@@ -1,3 +1,4 @@
+import { AutoDisposable } from '@/common/utils/autodisposable';
 import { Member } from './members'
 import { TypeDefinition, TypeHolder } from './types';
 
@@ -7,10 +8,11 @@ export interface Scope {
     forEachMembers(callbackfn: (value: Member, index: number, array: Member[]) => void): void;
 }
 
-export class BaseScope implements Scope {
+export class BaseScope extends AutoDisposable implements Scope {
     members: Member[]
 
     constructor(members: Member[]) {
+        super()
         this.members = members
     }
 

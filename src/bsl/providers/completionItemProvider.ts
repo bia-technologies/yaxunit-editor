@@ -1,9 +1,9 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
 import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope';
-import { scopeProvider } from '../scopeProvider';
+import { scopeProvider } from '@/bsl/scopeProvider';
 import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/bsl/tree-sitter';
 import { getEditedPositionOffset } from '@/monaco/utils';
-import { EditorScope } from '../scope/editorScope';
+import { EditorScope } from '@/bsl/scope/editorScope';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],

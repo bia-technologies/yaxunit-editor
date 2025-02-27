@@ -1,10 +1,10 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor-core'
-import { scopeProvider } from '../scopeProvider'
+import { scopeProvider } from '@/bsl/scopeProvider'
 import { Member, MemberType, MethodMember, Signature, isPlatformMethod, GlobalScope } from '@/common/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
 import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/bsl/tree-sitter'
 import { getEditedPositionOffset } from '@/monaco/utils'
-import { EditorScope } from '../scope/editorScope'
+import { EditorScope } from '@/bsl/scope/editorScope'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],

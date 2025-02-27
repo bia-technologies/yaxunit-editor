@@ -1,8 +1,8 @@
 import { Scope, UnionScope, GlobalScope } from '@/common/scope'
-import { LocalModuleScope } from '@/bsl/scope/localModuleScope'
 import { editor } from 'monaco-editor-core'
-import { Method } from '@/bsl/Symbols'
+import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
+import { BslModuleScope } from './bslModuleScope'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -15,12 +15,13 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 }
 
 export class EditorScope extends UnionScope {
-    localScope: LocalModuleScope
+    localScope: BslModuleScope
     editor: editor.IStandaloneCodeEditor
     modelVersionId: number = 0
+
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
-        this.localScope = new LocalModuleScope(model)
+        this.localScope = new BslModuleScope(model)
         this.editor = editor
 
         this.scopes.push(this.localScope)
@@ -57,7 +58,6 @@ export class EditorScope extends UnionScope {
             this.modelVersionId = currentVersionId ?? 0
             this.localScope.updateMembers()
         }
-
     }
 
     onDidChangeContent(_: editor.IModelContentChangedEvent): void {

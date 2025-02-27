@@ -46,7 +46,6 @@ export class BslEditor {
         this.editor.getModel()?.onDidChangeContent(e => {
             this.scope.onDidChangeContent(e)
         })
-
     }
 
     set content(value:string){

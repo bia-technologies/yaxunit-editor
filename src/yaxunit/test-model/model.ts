@@ -1,7 +1,7 @@
 import { IEvent, Emitter } from 'monaco-editor-core'
 
 import { TestDefinition, TestStatus } from './types'
-import { Method } from '@/bsl/Symbols'
+import { Method } from '@/common/codeModel'
 import { Report, TestCaseResult, TestSuiteResult } from './report'
 
 export const ROOT_METHOD = 'ИсполняемыеСценарии'

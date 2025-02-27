@@ -37,4 +37,4 @@ function generateTokenTypes(source, destination){
 copyFile('node_modules/web-tree-sitter/tree-sitter.wasm', './assets/tree-sitter.wasm')
 copyFile('node_modules/tree-sitter-bsl/tree-sitter-bsl.wasm', './assets/tree-sitter-bsl.wasm')
 replaceInFile('node_modules/web-tree-sitter/tree-sitter.js', /0n/, '0')
-generateTokenTypes('node_modules/tree-sitter-bsl/src/node-types.json', 'src/bsl-tree-sitter/bslTokenTypes.ts')
+generateTokenTypes('node_modules/tree-sitter-bsl/src/node-types.json', 'src/bsl/tree-sitter/bslTokenTypes.ts')

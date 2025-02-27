@@ -1,24 +1,25 @@
 import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
-import { editor, IDisposable, Position } from 'monaco-editor-core';
-import { Method, ModuleVariable, Variable } from '../Symbols';
+import { editor, Position } from 'monaco-editor-core';
+import { Method, ModuleVariable, Variable } from '@/common/codeModel';
 import { Queries } from './queries';
 import { isModel } from '@/monaco/utils';
 import { createSymbolForNode } from './symbols';
 import { Scope } from '@/common/scope';
 import { EditorScope } from '@/bsl/scope/editorScope';
+import { AutoDisposable } from '@/common/utils/autodisposable';
 
 let bslLanguage: Language | undefined = undefined
 
-export class BslParser implements IDisposable {
+export class BslParser extends AutoDisposable {
     private parser: Parser
     private tree: Tree | null = null
     private model?: editor.IReadOnlyModel
-    disposable: IDisposable[] = []
 
-    private queries: Queries = new Queries()
+    private readonly queries: Queries
 
     constructor(model: editor.IReadOnlyModel | string) {
+        super()
         if (!bslLanguage) {
             throw 'Constructor: bsl language not loaded'
         }
@@ -28,10 +29,12 @@ export class BslParser implements IDisposable {
 
         if (isModel(model)) {
             this.setModel(this.model = model)
-            this.disposable.push(this.model.onDidChangeContent(e => this.onEditorContentChange(e)))
+            this._disposables.push(this.model.onDidChangeContent(e => this.onEditorContentChange(e)))
         } else {
             this.setContent(model)
         }
+        this._disposables.push(this.queries = new Queries())
+
         console.log('parser init', performance.now() - start, 'ms')
     }
 
@@ -255,12 +258,10 @@ export class BslParser implements IDisposable {
     }
 
     dispose(): void {
-        this.disposable.forEach(d => d.dispose())
+        super.dispose()
         this.parser?.delete()
         this.tree?.delete()
-        this.queries.dispose()
     }
-
 }
 
 export function createQuery(queryText: string) {
