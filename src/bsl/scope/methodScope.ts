@@ -1,13 +1,13 @@
-import { BaseScope, Symbol, SymbolType } from "@/scope"
+import { BaseScope, Member, MemberType } from "@/common/scope"
 import { Method, Variable } from "../Symbols"
-import { BslParser } from "@/bsl-tree-sitter"
+import { BslParser } from "@/bsl/tree-sitter"
 
 export class MethodScope extends BaseScope {
 
 }
 export function createMethodScope(method: Method, parser: BslParser) {
 
-    const members: Symbol[] = []
+    const members: Member[] = []
 
     if (!method.vars) {
         method.vars = []
@@ -20,12 +20,12 @@ export function createMethodScope(method: Method, parser: BslParser) {
     
     method.vars.forEach(v => members.push({
         name: v.name,
-        kind: SymbolType.variable,
+        kind: MemberType.variable,
         type: v.type
     }))
     method.params.forEach(v => members.push({
         name: v.name,
-        kind: SymbolType.variable,
+        kind: MemberType.variable,
     }))
 
     return new MethodScope(members)

@@ -1,11 +1,12 @@
 import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, IDisposable, Position } from 'monaco-editor-core';
-import { Method, ModuleVariable, Variable } from '../bsl/Symbols';
+import { Method, ModuleVariable, Variable } from '../Symbols';
 import { Queries } from './queries';
 import { isModel } from '@/monaco/utils';
 import { createSymbolForNode } from './symbols';
-import { EditorScope, Scope } from '@/scope';
+import { Scope } from '@/common/scope';
+import { EditorScope } from '@/bsl/scope/editorScope';
 
 let bslLanguage: Language | undefined = undefined
 

@@ -1,10 +1,11 @@
 import { editor } from 'monaco-editor-core';
-import { Scope, Symbol, GlobalScope, EditorScope, TypeDefinition, } from '@/scope';
+import { Scope, Member, GlobalScope, TypeDefinition, } from '@/common/scope';
 import { Method } from './Symbols';
-import { Accessible } from '@/bsl-tree-sitter';
+import { Accessible } from '@/bsl/tree-sitter';
 import { isModel } from '@/monaco/utils';
+import { EditorScope } from './scope/editorScope';
 
-type ResolvedSymbol = Promise<Symbol | undefined>
+type ResolvedSymbol = Promise<Member | undefined>
 type ResolvedScope = Promise<Scope | undefined>
 type ModelOrScope = editor.ITextModel | Scope
 

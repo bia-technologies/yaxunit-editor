@@ -1,9 +1,10 @@
 import { editor, languages, Position, CancellationToken } from 'monaco-editor-core'
 import { scopeProvider } from '../scopeProvider'
-import { Symbol, SymbolType, MethodSymbol, MethodSignature, isPlatformMethod, EditorScope, GlobalScope } from '@/scope'
+import { Member, MemberType, MethodMember, Signature, isPlatformMethod, GlobalScope } from '@/common/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/bsl-tree-sitter'
+import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner, resolveMethodSymbol } from '@/bsl/tree-sitter'
 import { getEditedPositionOffset } from '@/monaco/utils'
+import { EditorScope } from '../scope/editorScope'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
@@ -89,7 +90,7 @@ async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCa
         return undefined
     }
 
-    const isMethod = method.kind === SymbolType.function || method.kind === SymbolType.procedure
+    const isMethod = method.kind === MemberType.function || method.kind === MemberType.procedure
     const sign = {
         signatures: isMethod ? methodSignature(method) : [],
         activeParameter: 0,
@@ -130,16 +131,16 @@ function setActiveParameter(signature: languages.SignatureHelp, args: ArgumentIn
     }
 }
 
-function methodSignature(symbol: Symbol): languages.SignatureInformation[] {
+function methodSignature(symbol: Member): languages.SignatureInformation[] {
     if (isPlatformMethod(symbol)) {
         return symbol.signatures.map(s => createSignature(symbol, s))
     } else {
-        const methodSymbol = symbol as MethodSymbol;
+        const methodSymbol = symbol as MethodMember;
         return [createSignature(methodSymbol, methodSymbol)]
     }
 }
 
-function createSignature(method: Symbol, sign: MethodSignature): languages.SignatureInformation {
+function createSignature(method: Member, sign: Signature): languages.SignatureInformation {
     return {
         label: signatureLabel(method, sign),
         documentation: signatureDocumentation(method, sign),

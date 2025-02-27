@@ -1,7 +1,7 @@
-import { BaseScope, Scope, SymbolType } from '@/scope'
+import { BaseScope, Scope, MemberType } from '@/common/scope'
 import { editor, IDisposable } from "monaco-editor-core"
 import { Method, Module } from "@/bsl/Symbols"
-import { BslParser } from '@/bsl-tree-sitter'
+import { BslParser } from '@/bsl/tree-sitter'
 import { createMethodScope } from './methodScope'
 
 export class LocalModuleScope extends BaseScope implements IDisposable {
@@ -46,13 +46,13 @@ export class LocalModuleScope extends BaseScope implements IDisposable {
 
         for (let i = 0; i < this.module.methods.length; i++) {
             this.members.push({
-                kind: SymbolType.function,
+                kind: MemberType.function,
                 name: this.module.methods[i].name
             })
         }
         for (let i = 0; i < this.module.vars.length; i++) {
             this.members.push({
-                kind: SymbolType.property,
+                kind: MemberType.property,
                 name: this.module.vars[i].name
             })
         }

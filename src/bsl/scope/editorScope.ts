@@ -1,4 +1,4 @@
-import { Scope, UnionScope, GlobalScope } from '@/scope'
+import { Scope, UnionScope, GlobalScope } from '@/common/scope'
 import { LocalModuleScope } from '@/bsl/scope/localModuleScope'
 import { editor } from 'monaco-editor-core'
 import { Method } from '@/bsl/Symbols'

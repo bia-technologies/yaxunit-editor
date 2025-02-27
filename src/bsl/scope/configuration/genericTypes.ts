@@ -1,4 +1,4 @@
-import { GlobalScope, PredefinedType, Symbol, SymbolType, TypeDefinition } from "@/scope"
+import { GlobalScope, PredefinedType, Member, MemberType, TypeDefinition } from "@/common/scope"
 import { ObjectDefinition } from "./objectDefinition"
 import { PlatformScope } from "../platform/loader"
 import { PLATFORM_SCOPE_ID } from "../platform"
@@ -14,12 +14,12 @@ export async function createConfigurationType(typeId: string, definition: Object
         return undefined
     }
     const baseMembers = [...baseType.getMembers()]
-    const members: Symbol[] = definition.properties.map(p => {
+    const members: Member[] = definition.properties.map(p => {
         return {
             name: p.name,
             type: p.type,
             description: p.description,
-            kind: SymbolType.property
+            kind: MemberType.property
         }
     })
     return new PredefinedType(typeId, baseMembers.concat(members))
@@ -38,12 +38,12 @@ export async function createProxyType(typeId: string, definition: ObjectDefiniti
 
     const typeInfo = Types.getTypeInfo(typeDetails.type)
     const baseMembers = getGenericTypeMembers(baseType, typeInfo, typeDetails.name)
-    const members: Symbol[] = definition ? definition.properties.map(p => {
+    const members: Member[] = definition ? definition.properties.map(p => {
         return {
             name: p.name,
             type: p.type,
             description: p.description,
-            kind: SymbolType.property
+            kind: MemberType.property
         }
     }) : []
     return new PredefinedType(typeId, baseMembers.concat(members))

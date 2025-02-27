@@ -1,4 +1,4 @@
-import { SymbolType, PredefinedType, MethodSymbol, GlobalScope, GlobalScopeItem } from "@/scope"
+import { MemberType, PredefinedType, MethodMember, GlobalScope, GlobalScopeItem } from "@/common/scope"
 
 class YAxUnitScope extends GlobalScopeItem { }
 
@@ -10,7 +10,7 @@ async function loadScope() {
     const members = types.filter(v => v.id.startsWith("ОбщийМодуль."))
         .map(t => {
             return {
-                kind: SymbolType.property,
+                kind: MemberType.property,
                 name: t.id.substring(12),
                 type: t.id
             }
@@ -18,10 +18,10 @@ async function loadScope() {
     return new YAxUnitScope(members, types)
 }
 
-function handleMethod(m: any): MethodSymbol {
+function handleMethod(m: any): MethodMember {
     return {
         name: m.name,
-        kind: m.return ? SymbolType.function : SymbolType.procedure,
+        kind: m.return ? MemberType.function : MemberType.procedure,
         description: m.description,
         type: m.return,
         params: m.params

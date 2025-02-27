@@ -1,8 +1,8 @@
-import { ArgumentInfo, Constructor, Expression, FieldAccess, MethodCall, resolveSymbol } from "@/bsl-tree-sitter";
+import { ArgumentInfo, Constructor, Expression, FieldAccess, MethodCall, resolveSymbol } from "@/bsl/tree-sitter";
 import { IMarkdownString, languages, editor } from "monaco-editor-core";
 import { EditorScope } from "../scope/editorScope";
 import { getPositionOffset } from "@/monaco/utils";
-import { GlobalScope, MethodSignature, SymbolType } from "@/scope";
+import { GlobalScope, Signature, MemberType } from "@/common/scope";
 import { scopeProvider } from "../scopeProvider";
 
 export const hoverProvider: languages.HoverProvider = {
@@ -59,7 +59,7 @@ async function constructorDescription(symbol: Constructor, typeId: string) {
     return content
 }
 
-function getSignatureIndex(signatures: MethodSignature[], args: ArgumentInfo[]) {
+function getSignatureIndex(signatures: Signature[], args: ArgumentInfo[]) {
     if (signatures.length <= 1) {
         return 0
     }
@@ -108,23 +108,23 @@ async function fieldDescription(symbol: FieldAccess, model: editor.ITextModel) {
     if (member) {
         let typeDescription = ''
         switch (member.kind) {
-            case SymbolType.variable:
+            case MemberType.variable:
                 typeDescription = 'Локальная переменная'
                 break
-            case SymbolType.property:
+            case MemberType.property:
                 if (symbol.path.length) {
                     typeDescription = 'Свойство'
                 } else {
                     typeDescription = 'Глобальная переменная'
                 }
                 break
-            case SymbolType.function:
+            case MemberType.function:
                 typeDescription = 'Функция'
                 break
-            case SymbolType.procedure:
+            case MemberType.procedure:
                 typeDescription = 'Процедура'
                 break
-            case SymbolType.enum:
+            case MemberType.enum:
                 typeDescription = 'Перечисление'
                 break
 

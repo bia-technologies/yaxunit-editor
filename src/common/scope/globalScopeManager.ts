@@ -1,5 +1,5 @@
 import { Scope, UnionScope } from './scope'
-import { Constructor } from './symbols'
+import { Constructor } from './members'
 import { ConstructorsHolder, TypeDefinition, TypeHolder, isConstructorsHolder, isTypeHolder } from './types'
 
 export class GlobalScopeManager extends UnionScope implements TypeHolder {

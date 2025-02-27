@@ -1,10 +1,10 @@
-import { Constructor, ConstructorsHolder, GlobalScopeItem, PlatformMethodSymbol, PredefinedType, Scope, Symbol, SymbolType, TypeDefinition } from '@/scope'
+import { Constructor, ConstructorsHolder, GlobalScopeItem, PlatformMethodSymbol, PredefinedType, Scope, Member, MemberType, TypeDefinition } from '@/common/scope'
 
 export class PlatformScope extends GlobalScopeItem implements ConstructorsHolder {
     genericTypes: { [key: string]: TypeDefinition } = {}
     private readonly constructors: Constructor[]
 
-    constructor(members: Symbol[], types: TypeDefinition[], constructors: Constructor[]) {
+    constructor(members: Member[], types: TypeDefinition[], constructors: Constructor[]) {
         super(members, types)
         this.constructors = constructors
     }
@@ -28,7 +28,7 @@ export async function loadScope(): Promise<Scope> {
     const properties = propertiesData.default.map(createPropertySymbol)
     const methods = methodsData.default.map(createMethodSymbol)
     const enums = enumsData.default.map(createEnumSymbol)
-    const members = [executeMethodDescription() as Symbol].concat(properties).concat(methods).concat(enums)
+    const members = [executeMethodDescription() as Member].concat(properties).concat(methods).concat(enums)
 
     const enumTypes = enumsData.default.map(createEnumType)
     const types = (<any[]>typesData.default).map(createType)
@@ -48,7 +48,7 @@ export async function loadScope(): Promise<Scope> {
 function executeMethodDescription() {
     return {
         name: 'Выполнить',
-        kind: SymbolType.procedure,
+        kind: MemberType.procedure,
         description: 'Позволяет выполнить фрагмент кода, который передается ему в качестве строкового значения.  \n**Примечание**\nВ режиме запуска веб-клиент оператор не поддерживается, при его вызове будет сгенерировано исключение.',
         signatures: [{
             params: [{
@@ -69,7 +69,7 @@ function createType(t: any): TypeDefinition {
 function createEnumSymbol(d: any) {
     return {
         name: d.name,
-        kind: SymbolType.enum,
+        kind: MemberType.enum,
         type: d.name_en,
         description: d.description
     }
@@ -79,7 +79,7 @@ function createEnumType(d: any) {
     return new PredefinedType(d.name_en, d.values.map((v: any) => {
         return {
             name: v.name,
-            kind: SymbolType.property,
+            kind: MemberType.property,
             description: (v as any).description ?? '',
             type: 'unknown'
         }
@@ -89,7 +89,7 @@ function createEnumType(d: any) {
 function createMethodSymbol(d: any): PlatformMethodSymbol {
     return {
         name: d.name,
-        kind: d.return ? SymbolType.function : SymbolType.procedure,
+        kind: d.return ? MemberType.function : MemberType.procedure,
         type: d.return,
         description: d.description,
         signatures: d.signature.map((s: any) => {
@@ -115,10 +115,10 @@ function createConstructor(d: any): Constructor {
     }
 }
 
-function createPropertySymbol(d: any): Symbol {
+function createPropertySymbol(d: any): Member {
     return {
         name: d.name,
-        kind: SymbolType.property,
+        kind: MemberType.property,
         type: d.type,
         description: d.description
     }

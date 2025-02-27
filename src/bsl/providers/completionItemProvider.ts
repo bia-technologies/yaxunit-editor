@@ -1,8 +1,9 @@
 import { editor, languages, Position, Range } from 'monaco-editor-core';
-import { EditorScope, GlobalScope, isMethod, isPlatformMethod, Scope, Symbol, SymbolType } from '@/scope';
+import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope';
 import { scopeProvider } from '../scopeProvider';
-import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/bsl-tree-sitter';
+import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/bsl/tree-sitter';
 import { getEditedPositionOffset } from '@/monaco/utils';
+import { EditorScope } from '../scope/editorScope';
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
@@ -61,10 +62,10 @@ function currentSymbol(model: editor.ITextModel, position: Position): Expression
     }
 }
 
-function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionItem {
+function newCompletionItem(symbol: Member, range: Range): languages.CompletionItem {
     let insertText: string
 
-    if (symbol.kind === SymbolType.function || symbol.kind === SymbolType.procedure) {
+    if (symbol.kind === MemberType.function || symbol.kind === MemberType.procedure) {
         insertText = methodInsertText(symbol)
     } else {
         insertText = symbol.name
@@ -83,7 +84,7 @@ function newCompletionItem(symbol: Symbol, range: Range): languages.CompletionIt
     }
 }
 
-function methodInsertText(symbol: Symbol): string {
+function methodInsertText(symbol: Member): string {
     let close = false
 
     if (isPlatformMethod(symbol)) {
@@ -97,15 +98,15 @@ function methodInsertText(symbol: Symbol): string {
     return symbol.name + (close ? "()" : "(");
 }
 
-function completionItemKind(type: SymbolType): languages.CompletionItemKind {
+function completionItemKind(type: MemberType): languages.CompletionItemKind {
     switch (type) {
-        case SymbolType.function:
+        case MemberType.function:
             return languages.CompletionItemKind.Function
-        case SymbolType.procedure:
+        case MemberType.procedure:
             return languages.CompletionItemKind.Method
-        case SymbolType.property:
+        case MemberType.property:
             return languages.CompletionItemKind.Field
-        case SymbolType.variable:
+        case MemberType.variable:
             return languages.CompletionItemKind.Variable
         default:
             return languages.CompletionItemKind.Class
