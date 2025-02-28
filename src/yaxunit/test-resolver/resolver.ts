@@ -19,7 +19,8 @@ export class TestsResolver {
     }
 
     getTests(): Method[] | undefined {
-        const rootMethod = this.editor.scope.getMethods().find(isRootMethod)
+        const methods = this.editor.scope.getMethods()
+        const rootMethod = methods.find(isRootMethod)
         if (!rootMethod) {
             return
         }
@@ -35,7 +36,7 @@ export class TestsResolver {
             hash[match[1].toLowerCase()] = true
         }
 
-        return this.editor.scope.getMethods().filter(m => m.isExport && (isRootMethod(m) || hash[m.name.toLowerCase()]))
+        return methods.filter(m => m.isExport && (isRootMethod(m) || hash[m.name.toLowerCase()]))
     }
 
     getMethodContent(method: Method): string | undefined {

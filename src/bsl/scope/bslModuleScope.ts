@@ -3,32 +3,24 @@ import { BslParser } from "@/bsl/tree-sitter";
 import { editor } from "monaco-editor-core";
 import { Member, MemberType, MethodScope } from "@/common/scope";
 import { Method, Variable } from "@/common/codeModel";
+import { BslCodeModel } from "../codeModel/bslCodeModel";
+import serviceRegistry from "../serviceRegistry";
 
 export class BslModuleScope extends LocalModuleScope {
     parser: BslParser
+    codeModel: BslCodeModel
 
     constructor(model: editor.ITextModel) {
         super(model)
         this._disposables.push(this.parser = new BslParser(model))
+        this.codeModel = serviceRegistry.codeModelProvider.buildModel(this.parser)
+    }
+    getMethods(): Method[] {
+        return this.codeModel.methods;
     }
 
     didUpdateMembers() {
-        this.module.methods = this.parser.methods()
-        this.module.vars = this.parser.vars()
-        this.members.length = 0
-
-        for (let i = 0; i < this.module.methods.length; i++) {
-            this.members.push({
-                kind: MemberType.function,
-                name: this.module.methods[i].name
-            })
-        }
-        for (let i = 0; i < this.module.vars.length; i++) {
-            this.members.push({
-                kind: MemberType.property,
-                name: this.module.vars[i].name
-            })
-        }
+        this.codeModel = serviceRegistry.codeModelProvider.buildModel(this.parser)
     }
 
     protected createMethodScope(method: Method): MethodScope {
