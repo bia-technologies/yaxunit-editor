@@ -1,21 +1,18 @@
-export interface Report {
-    testsuite:TestSuiteResult[]
-}
+export type Report = TestSuiteResult[]
 
 export interface TestSuiteResult extends BaseItem {
     context: string,
-    package: string,
-    timestamp: number,
+    package?: string,
     testcase: TestCaseResult[]
 }
 
 export interface TestCaseResult extends BaseItem{
+    classname: string,
     failure?: Failure[],
     skipped?: Error[]
 }
 
 interface BaseItem {
-    classname: string,
     name: string,
     error?: Error[],
     time: number,

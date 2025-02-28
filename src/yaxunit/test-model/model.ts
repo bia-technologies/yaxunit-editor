@@ -66,7 +66,7 @@ export class TestsModel {
         this.lastReport = result
 
         this.tests.forEach(this.cleanTest)
-        result.testsuite.forEach(s => this.loadSuite(s))
+        result.forEach(s => this.loadSuite(s))
         this.emitter.fire(this)
     }
 
