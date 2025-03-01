@@ -1,4 +1,4 @@
-import { Method, Parameter, Variable } from "@/common/codeModel";
+import { Method, ModuleVariable, Parameter, Variable } from "@/common/codeModel";
 import { NamedSymbol } from "@/common/codeModel/base";
 import { Signature } from "@/common/scope";
 
@@ -20,4 +20,8 @@ export class ProcedureDefinition extends MethodDefinition implements Method {
 
 export class FunctionDefinition extends MethodDefinition implements Method {
     get isProc() { return false }
+}
+
+export class ModuleVariableDefinition extends NamedSymbol implements ModuleVariable {
+    isExport: boolean = false
 }
