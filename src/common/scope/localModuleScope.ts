@@ -1,14 +1,10 @@
 import { BaseScope, Scope, MethodScope } from '@/common/scope'
 import { editor } from "monaco-editor-core"
-import { Method, Module } from "@/common/codeModel"
+import { Method } from "@/common/codeModel"
 
 export abstract class LocalModuleScope extends BaseScope {
     protected readonly model: editor.ITextModel
     private modelVersionId: number = 0
-
-    protected module: Module = {
-        vars: [], methods: []
-    }
 
     constructor(model: editor.ITextModel) {
         super([])
@@ -22,7 +18,7 @@ export abstract class LocalModuleScope extends BaseScope {
     }
 
     getMethodAtLine(line: number): Method | undefined {
-        return this.module.methods.find(m => m.startLine <= line && m.endLine >= line)
+        return this.getMethods().find(m => m.startLine <= line && m.endLine >= line)
     }
 
     getMethodScope(line: number): Scope | undefined {
@@ -38,9 +34,7 @@ export abstract class LocalModuleScope extends BaseScope {
         this.didUpdateMembers()
     }
 
-    getMethods(): Method[] {
-        return this.module.methods;
-    }
+    abstract getMethods(): Method[]
 
     protected abstract createMethodScope(method: Method): MethodScope;
     protected abstract didUpdateMembers(): void;

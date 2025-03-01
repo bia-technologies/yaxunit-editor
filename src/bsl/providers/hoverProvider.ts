@@ -4,6 +4,7 @@ import { EditorScope } from "@/bsl/scope/editorScope";
 import { getPositionOffset } from "@/monaco/utils";
 import { GlobalScope, Signature, MemberType } from "@/common/scope";
 import { scopeProvider } from "@/bsl/scopeProvider";
+import { BaseTypes } from "../scope/baseTypes";
 
 export const hoverProvider: languages.HoverProvider = {
     async provideHover(model: editor.ITextModel, position): Promise<languages.Hover | undefined> {
@@ -138,7 +139,7 @@ async function fieldDescription(symbol: FieldAccess, model: editor.ITextModel) {
         const typeDescription = symbol.path.length ? 'Свойство' : 'Глобальная переменная'
         content.push({ value: `${typeDescription} \`${symbol.name}\`` })
     }
-    content.push({ value: `**Тип:** \`${memberType ?? 'Неизвестный'}\`` })
+    content.push({ value: `**Тип:** \`${memberType ?? BaseTypes.unknown}\`` })
 
     return content
 }

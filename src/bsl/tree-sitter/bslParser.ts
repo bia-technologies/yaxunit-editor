@@ -122,41 +122,6 @@ export class BslParser extends AutoDisposable {
         return undefined
     }
 
-    methods(): Method[] {
-        const start = performance.now()
-        const captures = this.queries.methodDefinitionsQuery().captures(this.getRootNode())
-
-        const methods: Method[] = []
-        let currentMethod: Method | undefined
-        for (const { name, node } of captures) {
-            if (name === 'function') {
-                currentMethod = {
-                    name: '',
-                    params: [],
-                    isProc: false,
-                    isExport: false,
-                    ...symbolPosition(node)
-                }
-                methods.push(currentMethod)
-            } else if (name === 'procedure') {
-                currentMethod = {
-                    name: '',
-                    params: [],
-                    isProc: true,
-                    isExport: false,
-                    ...symbolPosition(node)
-                }
-                methods.push(currentMethod)
-            } else if (name === 'name' && currentMethod) {
-                currentMethod.name = node.text
-            } else if (name === 'export' && currentMethod) {
-                currentMethod.isExport = true
-            }
-        }
-        console.log('get methods', performance.now() - start, 'ms')
-        return methods.filter(m => m.name)
-    }
-
     vars(): ModuleVariable[] {
         const start = performance.now()
         const captures = this.queries.varDefinitionsQuery().captures(this.getRootNode())

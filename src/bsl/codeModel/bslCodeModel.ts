@@ -1,9 +1,9 @@
-import { NamedSymbol } from "@/common/codeModel/base";
+import { BaseSymbol } from "@/common/codeModel/base";
 import { FunctionDefinition, ProcedureDefinition } from "./definitions";
 import { Method } from "@/common/codeModel";
 
 export class BslCodeModel {
-    children: NamedSymbol[] = []
+    children: BaseSymbol[] = []
 
     get methods(){
         return this.children

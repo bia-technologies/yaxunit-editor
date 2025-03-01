@@ -26,6 +26,7 @@ export enum BslTokenTypes {
     line_comment = 'line_comment',
     method_call = 'method_call',
     new_expression = 'new_expression',
+    new_expression_method = 'new_expression_method',
     parameter = 'parameter',
     parameters = 'parameters',
     preprocessor = 'preprocessor',

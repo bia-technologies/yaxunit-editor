@@ -1,6 +1,7 @@
 import { Node } from "web-tree-sitter"
 import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "./expressions";
 import { BslTokenTypes } from "../bslTokenTypes";
+import { getConstValueType } from "@/bsl/codeModel/factory";
 
 export function resolveSymbol(currentNode: Node, position: number | undefined = undefined): Expression {
     return createSymbolForSuitableNode(currentNode, position, (n) => {
@@ -79,23 +80,7 @@ export function createSymbolForNode(node: Node, position: number | undefined = u
 }
 
 function createConstantExpression(node: Node): Expression {
-    let type: string | undefined
-    if (node.firstNamedChild) {
-        type = constValues()[node.firstNamedChild.type]
-    }
-    return new Constant(node, type)
-}
-
-function constValues() {
-    const res: { [key: string]: string } = {}
-    res[BslTokenTypes.number] = 'Число'
-    res[BslTokenTypes.date] = 'Дата'
-    res[BslTokenTypes.string] = 'Строка'
-    res[BslTokenTypes.boolean] = 'Булево'
-    res[BslTokenTypes.undefined_keyword] = 'Неопределено'
-    res[BslTokenTypes.null_keyword] = 'NULL'
-
-    return res
+    return new Constant(node, getConstValueType(node.firstNamedChild))
 }
 
 function createConstructorExpression(node: Node): Expression {
