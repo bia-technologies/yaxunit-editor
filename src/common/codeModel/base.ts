@@ -1,7 +1,14 @@
 import { Node } from "web-tree-sitter"
 
+export interface CodeSymbol {
+    startLine: number,
+    startColumn: number,
+    endLine: number,
+    endColumn: number,
+
+}
 export class BaseSymbol {
-    node: Node
+    protected node: Node
     constructor(node: Node) {
         this.node = node
     }
@@ -12,11 +19,11 @@ export class BaseSymbol {
     get endColumn() { return this.node.endPosition.column }
 }
 
-export class NamedSymbol extends BaseSymbol {
-    name: string
+export interface ExpressionSymbol extends CodeSymbol {
+    type?: string
+    value?: string
+}
 
-    constructor(node: Node, name?: string) {
-        super(node)
-        this.name = name ?? ''
-    }
+export interface NamedSymbol {
+    name: string
 }

@@ -1,5 +1,23 @@
-import { AssignmentStatementSymbol, BslCodeModel, FunctionDefinitionSymbol, IndexAccessSymbol, MethodCallSymbol, ModuleVariableDefinitionSymbol, ParameterDefinitionSymbol, ProcedureDefinitionSymbol, PropertyAccessSymbol, PropertySymbol, ReturnStatementSymbol, VariableSymbol } from "@/bsl/codeModel";
-import { BaseSymbol } from "@/common/codeModel";
+import {
+    AssignmentStatementSymbol,
+    BinaryExpressionSymbol,
+    BslCodeModel,
+    ConstSymbol,
+    ConstructorSymbol,
+    FunctionDefinitionSymbol,
+    IndexAccessSymbol,
+    MethodCallSymbol,
+    ModuleVariableDefinitionSymbol,
+    ParameterDefinitionSymbol,
+    ProcedureDefinitionSymbol,
+    AccessSequenceSymbol,
+    PropertySymbol,
+    ReturnStatementSymbol,
+    TernaryExpressionSymbol,
+    VariableSymbol,
+    UnaryExpressionSymbol
+} from "@/bsl/codeModel";
+import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
 
 export interface Acceptable {
     accept(visitor: CodeModelVisitor): void
@@ -11,30 +29,40 @@ function isAcceptable(symbol: any): symbol is Acceptable {
 
 export interface CodeModelVisitor {
     visitModel(model: BslCodeModel): void
-    visitVariableSymbol(symbol: VariableSymbol): void
-    visitPropertySymbol(symbol: PropertySymbol): void
-    visitIndexAccessSymbol(symbol: IndexAccessSymbol): void
-    visitMethodCallSymbol(symbol: MethodCallSymbol): void
-    visitPropertyAccessSymbol(symbol: PropertyAccessSymbol): void
 
-
+    // definitions
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol): void
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol): void
     visitParameterDefinition(symbol: ParameterDefinitionSymbol): void
     visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): void
 
+    // statements
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): void
     visitReturnStatement(symbol: ReturnStatementSymbol): void
+
+    // base
+    visitVariableSymbol(symbol: VariableSymbol): void
+    visitPropertySymbol(symbol: PropertySymbol): void
+    visitIndexAccessSymbol(symbol: IndexAccessSymbol): void
+    visitMethodCallSymbol(symbol: MethodCallSymbol): void
+    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): void
+
+    // expression
+    visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): void
+    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): void
+    visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): void
+    visitConstructorSymbol(symbol: ConstructorSymbol): void
+    visitConstSymbol(symbol: ConstSymbol): void
 }
 
 export class BaseCodeModelVisitor implements CodeModelVisitor {
 
-    protected acceptItems(items: BaseSymbol[]) {
+    protected acceptItems(items: CodeSymbol[]) {
         items.filter(isAcceptable)
             .forEach((a: any) => (<Acceptable>a).accept(this))
     }
 
-    protected accept(symbol: BaseSymbol | undefined) {
+    protected accept(symbol: CodeSymbol | undefined) {
         if (symbol && isAcceptable(symbol)) {
             symbol.accept(this)
         }
@@ -86,7 +114,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
         }
     }
 
-    visitPropertyAccessSymbol(symbol: PropertyAccessSymbol): void {
+    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): void {
         this.acceptItems(symbol.access)
     }
 
@@ -95,6 +123,34 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     visitVariableSymbol(symbol: VariableSymbol): void {
+
+    }
+
+    // expression
+    visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): void {
+        this.accept(symbol.operand)
+    }
+
+    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): void {
+        this.accept(symbol.left)
+        this.accept(symbol.right)
+    }
+
+    visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): void {
+        this.accept(symbol.condition)
+        this.accept(symbol.condition)
+        this.accept(symbol.alternative)
+    }
+
+    visitConstructorSymbol(symbol: ConstructorSymbol): void {
+        if (Array.isArray(symbol.arguments)) {
+            this.acceptItems(symbol.arguments)
+        } else {
+            this.accept(symbol.arguments)
+        }
+    }
+
+    visitConstSymbol(symbol: ConstSymbol): void {
 
     }
 }

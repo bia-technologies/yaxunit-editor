@@ -1,5 +1,5 @@
 
-import { AssignmentStatementSymbol, BinaryExpressionSymbol, ConstructorSymbol, FunctionDefinitionSymbol, MethodCallSymbol, ModuleVariableDefinitionSymbol, ProcedureDefinitionSymbol } from '../../src/bsl/codeModel'
+import { AccessSequenceSymbol, AssignmentStatementSymbol, BinaryExpressionSymbol, ConstructorSymbol, FunctionDefinitionSymbol, MethodCallSymbol, ModuleVariableDefinitionSymbol, ProcedureDefinitionSymbol, TernaryExpressionSymbol, UnaryExpressionSymbol } from '../../src/bsl/codeModel'
 import { useTreeSitterBsl } from '../../src/bsl/tree-sitter'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import utils from './utils'
@@ -144,6 +144,33 @@ describe('expressions', () => {
         return (model.children[0] as AssignmentStatementSymbol).expression
     }
 
+    test('UnaryExpression. constants', () => {
+        const exp = expression('-1')
+        expect(exp).toBeInstanceOf(UnaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                operand: {
+                    value: '1',
+                    type: 'Число'
+                },
+                operator: '-'
+            }
+        )
+    })
+
+    test('UnaryExpression. variable', () => {
+        const exp = expression('не Документ.Проведен')
+        expect(exp).toBeInstanceOf(UnaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                operand: {
+                    access: [{ name: 'Документ' }, { name: 'Проведен' }],
+                    operator: 'не'
+                }
+            }
+        )
+    })
+
     test('BinaryExpression. constants', () => {
         const exp = expression('1 + "1"')
         expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
@@ -158,6 +185,7 @@ describe('expressions', () => {
             }
         )
     })
+
     test('BinaryExpression. variables', () => {
         const exp = expression('Документ.Дата + Смещение')
         expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
@@ -169,6 +197,7 @@ describe('expressions', () => {
             }
         )
     })
+
     test('BinaryExpression. many', () => {
         const exp = expression('Документ.Дата * 1 + СмещениеМинут/60')
         expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
@@ -188,6 +217,23 @@ describe('expressions', () => {
             }
         )
     })
+
+    test('Ternary expression', () => {
+        const exp = expression('?(a >= 3, a, 2)')
+        expect(exp).toBeInstanceOf(TernaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                condition: {
+                    left: { name: 'a' },
+                    right: { value: '3' },
+                    operator: '>='
+                },
+                consequence: { name: 'a' },
+                alternative: { value: '2' }
+            }
+        )
+    })
+
     test('Constructor', () => {
         const exp = expression('Новый Массив')
         expect(exp).toBeInstanceOf(ConstructorSymbol)
@@ -208,6 +254,7 @@ describe('expressions', () => {
             }
         )
     })
+
     test('Constructor as method', () => {
         const exp = expression('Новый("Массив", Параметры)')
         expect(exp).toBeInstanceOf(ConstructorSymbol)
@@ -240,6 +287,31 @@ describe('expressions', () => {
             }
         )
     })
+
+    test('Method call. Global', () => {
+        const exp = expression('Сообщить(1)')
+        expect(exp).toBeInstanceOf(MethodCallSymbol)
+        expect(exp).toMatchObject(
+            {
+                name: 'Сообщить',
+                arguments: [{ value: '1' }]
+            }
+        )
+    })
+    test('Method call. Global', () => {
+        const exp = expression('Объект.Сообщить(1)')
+        expect(exp).toBeInstanceOf(AccessSequenceSymbol)
+        expect(exp).toMatchObject(
+            {
+                access: [
+                    { name: 'Объект' },
+                    {
+                        name: 'Сообщить',
+                        arguments: [{ value: '1' }]
+                    }]
+            }
+        )
+    })
 })
 
 describe('complex', () => {
@@ -262,7 +334,7 @@ describe('complex', () => {
                     }]
                 },
                 {
-                    expression:  { name: 'Результат' }
+                    expression: { name: 'Результат' }
                 }
             ]
         })
