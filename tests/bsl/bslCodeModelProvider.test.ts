@@ -1,22 +1,21 @@
-import { provider } from '../../src/bsl/codeModel/bslCodeModelProvider'
-import { AssignmentStatement, BinaryExpression, Constructor, FunctionDefinition, MethodCall, ModuleVariableDefinition, ProcedureDefinition } from '../../src/bsl/codeModel'
-import { BslParser, useTreeSitterBsl } from '../../src/bsl/tree-sitter'
+
+import { AssignmentStatementSymbol, BinaryExpressionSymbol, ConstructorSymbol, FunctionDefinitionSymbol, MethodCallSymbol, ModuleVariableDefinitionSymbol, ProcedureDefinitionSymbol } from '../../src/bsl/codeModel'
+import { useTreeSitterBsl } from '../../src/bsl/tree-sitter'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import utils from './utils'
 
 beforeAll(async () => {
     await useTreeSitterBsl()
 })
 
-var parser: BslParser | undefined
-
 afterAll(() => {
-    parser?.dispose()
+    utils.cleanAfterAll()
 })
 
 describe('buildModel', () => {
     test('MethodCall', () => {
-        const model = buildModel('Сообщить(1)')
-        expect(model.children[0]).toBeInstanceOf(MethodCall)
+        const model = utils.buildModel('Сообщить(1)')
+        expect(model.children[0]).toBeInstanceOf(MethodCallSymbol)
         expect(model.children[0]).toMatchObject({
             name: 'Сообщить',
             arguments: [
@@ -29,9 +28,9 @@ describe('buildModel', () => {
     })
 
     test('FunctionDefinition', () => {
-        const model = buildModel('Функция Сложить(Операнд1, Знач Операнд2 = 1) Экспорт КонецФункции')
+        const model = utils.buildModel('Функция Сложить(Операнд1, Знач Операнд2 = 1) Экспорт КонецФункции')
 
-        expect(model.children[0]).toBeInstanceOf(FunctionDefinition)
+        expect(model.children[0]).toBeInstanceOf(FunctionDefinitionSymbol)
         expect(model.children[0]).toMatchObject({
             name: 'Сложить',
             params: [
@@ -50,9 +49,9 @@ describe('buildModel', () => {
     })
 
     test('FunctionDefinition with body', () => {
-        const model = buildModel('Функция Сложить(Операнд1, Знач Операнд2 = 1) Экспорт Сообщить(Операнд1 + Операнд2);Возврат Операнд1 + Операнд2 КонецФункции')
+        const model = utils.buildModel('Функция Сложить(Операнд1, Знач Операнд2 = 1) Экспорт Сообщить(Операнд1 + Операнд2);Возврат Операнд1 + Операнд2 КонецФункции')
 
-        expect(model.children[0]).toBeInstanceOf(FunctionDefinition)
+        expect(model.children[0]).toBeInstanceOf(FunctionDefinitionSymbol)
         expect(model.children[0]).toMatchObject({
             children: [
                 {
@@ -74,9 +73,9 @@ describe('buildModel', () => {
     })
 
     test('ProcedureDefinition', () => {
-        const model = buildModel('Процедура Сложить(Знач Операнд1, Операнд2 = "123") КонецПроцедуры')
+        const model = utils.buildModel('Процедура Сложить(Знач Операнд1, Операнд2 = "123") КонецПроцедуры')
 
-        expect(model.children[0]).toBeInstanceOf(ProcedureDefinition)
+        expect(model.children[0]).toBeInstanceOf(ProcedureDefinitionSymbol)
         expect(model.children[0]).toMatchObject({
             name: 'Сложить',
             params: [
@@ -95,7 +94,7 @@ describe('buildModel', () => {
     })
 
     test('ModuleVariableDefinition', () => {
-        const model = buildModel('Перем П1, П2 Экспорт; Перем П3;')
+        const model = utils.buildModel('Перем П1, П2 Экспорт; Перем П3;')
 
         expect(model.children).length(3)
         expect(model.children).toMatchObject([
@@ -106,7 +105,7 @@ describe('buildModel', () => {
     })
 
     test('Assignment local variable', () => {
-        const model = buildModel('Документ = Документы.ПКО.СоздатьДокумент();')
+        const model = utils.buildModel('Документ = Документы.ПКО.СоздатьДокумент();')
 
         expect(model.children[0]).toMatchObject({
             variable: { name: 'Документ' }
@@ -114,7 +113,7 @@ describe('buildModel', () => {
     })
 
     test('Assignment property', () => {
-        const model = buildModel('Документ.Дата = ТекущаяДата();')
+        const model = utils.buildModel('Документ.Дата = ТекущаяДата();')
 
         expect(model.children[0]).toMatchObject({
             variable: { access: [{ name: 'Документ' }, { name: 'Дата' }] }
@@ -122,7 +121,7 @@ describe('buildModel', () => {
     })
 
     test('Assignment index', () => {
-        const model = buildModel('Даты[0] = ТекущаяДата();')
+        const model = utils.buildModel('Даты[0] = ТекущаяДата();')
 
         expect(model.children[0]).toMatchObject({
             variable: { access: [{ name: 'Даты' }, { name: '0' }] }
@@ -130,7 +129,7 @@ describe('buildModel', () => {
     })
 
     test('Assignment method result', () => {
-        const model = buildModel('Даты().Текущая = ТекущаяДата();')
+        const model = utils.buildModel('Даты().Текущая = ТекущаяДата();')
 
         expect(model.children[0]).toMatchObject({
             variable: { access: [{ name: 'Даты' }, { name: 'Текущая' }] }
@@ -141,13 +140,13 @@ describe('buildModel', () => {
 
 describe('expressions', () => {
     function expression(content: string) {
-        const model = buildModel(`м = ${content};`)
-        return (model.children[0] as AssignmentStatement).expression
+        const model = utils.buildModel(`м = ${content};`)
+        return (model.children[0] as AssignmentStatementSymbol).expression
     }
 
     test('BinaryExpression. constants', () => {
         const exp = expression('1 + "1"')
-        expect(exp).toBeInstanceOf(BinaryExpression)
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
         expect(exp).toMatchObject(
             {
                 left: {
@@ -161,7 +160,7 @@ describe('expressions', () => {
     })
     test('BinaryExpression. variables', () => {
         const exp = expression('Документ.Дата + Смещение')
-        expect(exp).toBeInstanceOf(BinaryExpression)
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
         expect(exp).toMatchObject(
             {
                 left: { access: [{ name: 'Документ' }, { name: 'Дата' }] },
@@ -172,7 +171,7 @@ describe('expressions', () => {
     })
     test('BinaryExpression. many', () => {
         const exp = expression('Документ.Дата * 1 + СмещениеМинут/60')
-        expect(exp).toBeInstanceOf(BinaryExpression)
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
         expect(exp).toMatchObject(
             {
                 left: {
@@ -191,7 +190,7 @@ describe('expressions', () => {
     })
     test('Constructor', () => {
         const exp = expression('Новый Массив')
-        expect(exp).toBeInstanceOf(Constructor)
+        expect(exp).toBeInstanceOf(ConstructorSymbol)
         expect(exp).toMatchObject(
             {
                 name: 'Массив'
@@ -201,7 +200,7 @@ describe('expressions', () => {
 
     test('Constructor with arguments', () => {
         const exp = expression('Новый Массив(1)')
-        expect(exp).toBeInstanceOf(Constructor)
+        expect(exp).toBeInstanceOf(ConstructorSymbol)
         expect(exp).toMatchObject(
             {
                 name: 'Массив',
@@ -211,7 +210,7 @@ describe('expressions', () => {
     })
     test('Constructor as method', () => {
         const exp = expression('Новый("Массив", Параметры)')
-        expect(exp).toBeInstanceOf(Constructor)
+        expect(exp).toBeInstanceOf(ConstructorSymbol)
         expect(exp).toMatchObject(
             {
                 name: 'Массив',
@@ -222,7 +221,7 @@ describe('expressions', () => {
 
     test('Constructor as method variable', () => {
         const exp = expression('Новый(ТипЗначения, Параметры)')
-        expect(exp).toBeInstanceOf(Constructor)
+        expect(exp).toBeInstanceOf(ConstructorSymbol)
         expect(exp).toMatchObject(
             {
                 name: { name: 'ТипЗначения' },
@@ -233,7 +232,7 @@ describe('expressions', () => {
 
     test('Constructor as method by type', () => {
         const exp = expression('Новый(Тип("Массив"), Параметры)')
-        expect(exp).toBeInstanceOf(Constructor)
+        expect(exp).toBeInstanceOf(ConstructorSymbol)
         expect(exp).toMatchObject(
             {
                 name: { name: 'Тип', arguments: [{ value: 'Массив' }] },
@@ -243,12 +242,11 @@ describe('expressions', () => {
     })
 })
 
-
 describe('complex', () => {
     test('FunctionDefinition with body', () => {
-        const model = buildModel('Функция Сложить(Операнд1, Знач Операнд2 = 1) Экспорт Результат = Операнд1 + Операнд2;Сообщить(СтрШаблон("%1 + %2 = %3", Операнд1, Операнд2, Результат));Возврат Результат КонецФункции')
+        const model = utils.buildModel('Функция Сложить(Операнд1, Знач Операнд2 = 1) Экспорт Результат = Операнд1 + Операнд2;Сообщить(СтрШаблон("%1 + %2 = %3", Операнд1, Операнд2, Результат));Возврат Результат КонецФункции')
 
-        expect(model.children[0]).toBeInstanceOf(FunctionDefinition)
+        expect(model.children[0]).toBeInstanceOf(FunctionDefinitionSymbol)
         expect(model.children[0]).toMatchObject({
             children: [
                 {
@@ -270,7 +268,7 @@ describe('complex', () => {
         })
     })
     test('case 1', () => {
-        const model = buildModel(`Перем Операнд1, Операнд2;
+        const model = utils.buildModel(`Перем Операнд1, Операнд2;
             Функция Сложить() Возврат Операнд1 + Операнд2;КонецФункции;
             Процедура Вывести(Значение) Сообщить(Значение);КонецПроцедуры;
             Операнд1 = "Сложение 1 И ";
@@ -278,17 +276,13 @@ describe('complex', () => {
             Вывести(Сложить());
             `)
         expect(model.children).length(7)
-        expect(model.children[0]).toBeInstanceOf(ModuleVariableDefinition)
-        expect(model.children[1]).toBeInstanceOf(ModuleVariableDefinition)
-        expect(model.children[2]).toBeInstanceOf(FunctionDefinition)
-        expect(model.children[3]).toBeInstanceOf(ProcedureDefinition)
-        expect(model.children[4]).toBeInstanceOf(AssignmentStatement)
-        expect(model.children[5]).toBeInstanceOf(AssignmentStatement)
-        expect(model.children[6]).toBeInstanceOf(MethodCall)
+        expect(model.children[0]).toBeInstanceOf(ModuleVariableDefinitionSymbol)
+        expect(model.children[1]).toBeInstanceOf(ModuleVariableDefinitionSymbol)
+        expect(model.children[2]).toBeInstanceOf(FunctionDefinitionSymbol)
+        expect(model.children[3]).toBeInstanceOf(ProcedureDefinitionSymbol)
+        expect(model.children[4]).toBeInstanceOf(AssignmentStatementSymbol)
+        expect(model.children[5]).toBeInstanceOf(AssignmentStatementSymbol)
+        expect(model.children[6]).toBeInstanceOf(MethodCallSymbol)
     })
 })
-
-function buildModel(content: string) {
-    return provider.buildModel(parser = new BslParser(content))
-}
 

@@ -3,7 +3,7 @@ import { BslParser } from "@/bsl/tree-sitter";
 import { editor } from "monaco-editor-core";
 import { Member, MemberType, MethodScope } from "@/common/scope";
 import { Method, Variable } from "@/common/codeModel";
-import { BslCodeModel } from "../codeModel/bslCodeModel";
+import { BslCodeModel } from "../codeModel/model/bslCodeModel";
 import serviceRegistry from "../serviceRegistry";
 
 export class BslModuleScope extends LocalModuleScope {

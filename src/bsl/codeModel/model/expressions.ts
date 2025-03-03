@@ -1,18 +1,18 @@
-import { BaseSymbol, NamedSymbol } from "@/common/codeModel/base";
+import { BaseSymbol } from "@/common/codeModel/base";
 import { Node } from "web-tree-sitter";
 
-export class BinaryExpression extends BaseSymbol {
+export class BinaryExpressionSymbol extends BaseSymbol {
     left?: BaseSymbol
     right?: BaseSymbol
     operator?: string
 }
 
-export class Constructor extends BaseSymbol {
+export class ConstructorSymbol extends BaseSymbol {
     name?: string | BaseSymbol
     arguments?: BaseSymbol[] | BaseSymbol
 }
 
-export class ConstExpression extends BaseSymbol {
+export class ConstSymbol extends BaseSymbol {
     value: string
     type: string
 
