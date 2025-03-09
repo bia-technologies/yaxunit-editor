@@ -1,6 +1,5 @@
 import { scopeProvider } from "@/bsl/scopeProvider"
 import { Scope } from "@/common/scope"
-import { Node } from "web-tree-sitter"
 
 export enum ExpressionType {
     ctor,
@@ -12,7 +11,6 @@ export enum ExpressionType {
 }
 
 export interface Expression {
-    readonly node: Node
     readonly type: ExpressionType
     toString(): string
     getResultTypeId(scope: Scope | undefined): Promise<string | undefined> | string | undefined
@@ -34,22 +32,21 @@ export interface ArgumentInfo {
 
 abstract class BaseExpression implements Expression {
     readonly type: ExpressionType
-    readonly node: Node
-    constructor(node: Node, type: ExpressionType) {
+    constructor(type: ExpressionType) {
         this.type = type
-        this.node = node
     }
     abstract getResultTypeId(scope: Scope | undefined): Promise<string | undefined> | string | undefined
 }
 
 export class Constant extends BaseExpression {
     valueType: string | undefined
-    constructor(node: Node, type: string | undefined) {
-        super(node, ExpressionType.constant)
+
+    constructor(type: string | undefined) {
+        super(ExpressionType.constant)
         this.valueType = type
     }
     toString() {
-        return 'Константное значение ' + this.node.text
+        return 'Константное значение '
     }
 
     getResultTypeId(_: Scope | undefined) {
@@ -58,8 +55,8 @@ export class Constant extends BaseExpression {
 }
 
 export class None extends BaseExpression {
-    constructor(node: Node) {
-        super(node, ExpressionType.none)
+    constructor() {
+        super(ExpressionType.none)
     }
     toString() {
         return 'Неизвестный'
@@ -73,8 +70,8 @@ export class Constructor extends BaseExpression implements ArgumentsOwner {
     readonly name: string
     readonly arguments: ArgumentInfo[]
 
-    constructor(node: Node, name: string, args: ArgumentInfo[]) {
-        super(node, ExpressionType.ctor)
+    constructor(name: string, args: ArgumentInfo[]) {
+        super(ExpressionType.ctor)
         this.name = name
         this.arguments = args
     }
@@ -89,8 +86,8 @@ export class Constructor extends BaseExpression implements ArgumentsOwner {
 export class FieldAccess extends BaseExpression implements Accessible {
     readonly name: string
     readonly path: string[]
-    constructor(node: Node, name: string, path: string[]) {
-        super(node, ExpressionType.fieldAccess)
+    constructor(name: string, path: string[]) {
+        super(ExpressionType.fieldAccess)
         this.name = name
         this.path = path
     }
@@ -109,8 +106,8 @@ export class MethodCall extends BaseExpression implements Accessible, ArgumentsO
     readonly path: string[]
     readonly arguments: ArgumentInfo[]
 
-    constructor(node: Node, name: string, path: string[], args: ArgumentInfo[]) {
-        super(node, ExpressionType.methodCall)
+    constructor(name: string, path: string[], args: ArgumentInfo[]) {
+        super(ExpressionType.methodCall)
         this.name = name
         this.path = path
         this.arguments = args
@@ -128,8 +125,8 @@ export class MethodCall extends BaseExpression implements Accessible, ArgumentsO
 export class Unknown extends BaseExpression implements Accessible {
     readonly name: string
     readonly path: string[]
-    constructor(node: Node, name: string, path: string[]) {
-        super(node, ExpressionType.unknown)
+    constructor(name: string, path: string[]) {
+        super(ExpressionType.unknown)
         this.name = name
         this.path = path
     }

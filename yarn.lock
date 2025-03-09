@@ -619,6 +619,11 @@ jsdom@^26.0.0:
     ws "^8.18.0"
     xml-name-validator "^5.0.0"
 
+lokijs@~1.5.0:
+  version "1.5.12"
+  resolved "https://registry.yarnpkg.com/lokijs/-/lokijs-1.5.12.tgz#cb55b37009bdf09ee7952a6adddd555b893653a0"
+  integrity sha512-Q5ALD6JiS6xAUWCwX3taQmgwxyveCtIIuL08+ml0nHwT3k0S/GIFJN+Hd38b1qYIMaE5X++iqsqWVksz7SYW+Q==
+
 loupe@^3.1.0, loupe@^3.1.2:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/loupe/-/loupe-3.1.3.tgz#042a8f7986d77f3d0f98ef7990a2b2fef18b0fd2"
@@ -685,6 +690,13 @@ nwsapi@^2.2.16:
   version "2.2.16"
   resolved "https://registry.yarnpkg.com/nwsapi/-/nwsapi-2.2.16.tgz#177760bba02c351df1d2644e220c31dfec8cdb43"
   integrity sha512-F1I/bimDpj3ncaNDhfyMWuFqmQDBwDB0Fogc2qpL3BWvkQteFD/8BzWuIRl83rq0DXfm8SGt/HFhLXZyljTXcQ==
+
+onec-syntaxparser@^0.1.11:
+  version "0.1.11"
+  resolved "https://registry.yarnpkg.com/onec-syntaxparser/-/onec-syntaxparser-0.1.11.tgz#4d82c4ea421308982fa3e0881a55b5952c3fbc89"
+  integrity sha512-zCb9VehSlLnm9CF0bOPV5Mgu7xg2Y2QgDjLfc+R9IWiYILltvq7vxA5siw8IST39V1srZW+06TuWEbSXrlksjQ==
+  dependencies:
+    lokijs "~1.5.0"
 
 parse5@^7.2.1:
   version "7.2.1"

@@ -1,19 +1,19 @@
-import { ArgumentInfo, Constructor, Expression, FieldAccess, MethodCall, resolveSymbol } from "@/bsl/tree-sitter";
+import { ArgumentInfo, Constructor, Expression, FieldAccess, MethodCall } from '../expressions/expressions'
 import { IMarkdownString, languages, editor } from "monaco-editor-core";
 import { EditorScope } from "@/bsl/scope/editorScope";
-import { getPositionOffset } from "@/monaco/utils";
 import { GlobalScope, Signature, MemberType } from "@/common/scope";
 import { scopeProvider } from "@/bsl/scopeProvider";
+import { ModuleModel } from "../moduleModel";
 
 export const hoverProvider: languages.HoverProvider = {
     async provideHover(model: editor.ITextModel, position): Promise<languages.Hover | undefined> {
         const start = performance.now()
-        const scope = EditorScope.getScope(model)
-        const node = scope.getAst().getCurrentNode(getPositionOffset(model, position))
         let content: IMarkdownString[] | undefined
 
-        if (node) {
-            const symbol = resolveSymbol(node)
+        const moduleModel = model as ModuleModel
+        const symbol = moduleModel.getCurrentExpression(position)
+
+        if (symbol) {
             content = await symbolDescription(symbol, model)
         }
 

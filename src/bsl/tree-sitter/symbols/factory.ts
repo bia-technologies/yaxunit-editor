@@ -1,5 +1,5 @@
 import { Node } from "web-tree-sitter"
-import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "./expressions";
+import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "../../expressions/expressions";
 import { BslTokenTypes } from "../bslTokenTypes";
 
 export function resolveSymbol(currentNode: Node, position: number | undefined = undefined): Expression {
