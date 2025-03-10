@@ -1,8 +1,9 @@
-import { Scope, UnionScope, GlobalScope, LocalModuleScope } from '@/common/scope'
+import { Scope, UnionScope, GlobalScope } from '@/common/scope'
 import { editor } from 'monaco-editor-core'
 import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
 import { ModuleModel } from '../moduleModel'
+import { BslModuleScope } from './bslModuleScope'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -15,7 +16,7 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 }
 
 export class EditorScope extends UnionScope {
-    localScope: LocalModuleScope
+    localScope: BslModuleScope
     editor: editor.IStandaloneCodeEditor
     modelVersionId: number = 0
 

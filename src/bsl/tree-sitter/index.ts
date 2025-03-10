@@ -1,3 +1,4 @@
 export * from './bslParser'
 export * from './bslTokenTypes'
-export * from './symbols'
+export * from './expressionsFactory'
+export * from './codeModelFactory'

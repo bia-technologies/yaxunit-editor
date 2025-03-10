@@ -1,10 +1,11 @@
 import { Node } from "web-tree-sitter";
-import { BslTokenTypes } from "../tree-sitter";
+import { BslParser, BslTokenTypes } from ".";
 import { BaseSymbol } from "@/common/codeModel";
 import {
     Access,
     AssignmentStatementSymbol,
     BinaryExpressionSymbol,
+    BslCodeModel,
     ConstSymbol,
     ConstructorSymbol,
     FunctionDefinitionSymbol,
@@ -18,8 +19,19 @@ import {
     PropertySymbol,
     ReturnStatementSymbol,
     VariableSymbol
-} from "./model";
-import { BaseTypes } from "../scope/baseTypes";
+} from "../codeModel/model";
+import { BaseTypes } from "../scope/baseTypes"
+
+export const TreeSitterCodeModelFactory = {
+    buildModel(parser: BslParser) {
+        const start = performance.now()
+        const model = new BslCodeModel()
+        const root = parser.getRootNode()
+        fillChildren(root.children, model.children)
+        console.debug('Build code model', performance.now() - start, 'ms')
+        return model
+    },
+}
 
 export function createSymbol(node: Node): BaseSymbol | BaseSymbol[] | undefined {
     const constructor = constructors[node.type]

@@ -1,7 +1,7 @@
 import { Node } from "web-tree-sitter"
-import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "../../expressions/expressions";
-import { BslTokenTypes } from "../bslTokenTypes";
-import { getConstValueType } from "@/bsl/codeModel/factory";
+import { ArgumentInfo, Constant, Constructor, Expression, FieldAccess, MethodCall, None, Unknown } from "../expressions/expressions";
+import { BslTokenTypes } from "./bslTokenTypes";
+import { getConstValueType } from "./codeModelFactory";
 
 export function resolveSymbol(currentNode: Node, position: number | undefined = undefined): Expression {
     return createSymbolForSuitableNode(currentNode, position, (n) => {

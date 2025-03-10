@@ -39,12 +39,6 @@ class BSLParser extends CstParser {
         () => this.CONSUME(keywords.FALSE),
     ))
 
-    // multiline_string = this.RULE('multiline_string', () => {
-    //     this.CONSUME(tokens.string_start)
-    //     this.MANY(() => this.CONSUME(tokens.string_part))
-    //     this.CONSUME2(tokens.string_tail)
-    // })
-
     string_literal = this.RULE('string_literal', () => this.choice(
         () => this.CONSUME(tokens.string),
         () => this.CONSUME(tokens.multilineString)

@@ -1,7 +1,9 @@
-import { LocalModuleScope } from "@/common/scope";
 import { editor } from "monaco-editor-core";
 import { ExpressionProvider } from "./expressions/expressionProvider";
+import { BslCodeModel } from "./codeModel";
+import { BslModuleScope } from "./scope/bslModuleScope";
 
 export interface ModuleModel extends editor.ITextModel, ExpressionProvider {
-    getScope(): LocalModuleScope,
+    getScope(): BslModuleScope,
+    getCodeModel(): BslCodeModel | undefined
 }

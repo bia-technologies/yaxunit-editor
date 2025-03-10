@@ -1,50 +1,65 @@
-import { LocalModuleScope } from "@/common/scope/localModuleScope";
-import { BslParser } from "@/bsl/tree-sitter";
-import { editor } from "monaco-editor-core";
-import { Member, MemberType, MethodScope } from "@/common/scope";
-import { Method, Variable } from "@/common/codeModel";
-import { BslCodeModel } from "../codeModel/model/bslCodeModel";
-import serviceRegistry from "../serviceRegistry";
+import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
+import { Method } from "@/common/codeModel"
+import { ModuleModel } from '@/bsl/moduleModel'
+import { editor } from 'monaco-editor-core'
 
-export class BslModuleScope extends LocalModuleScope {
-    parser: BslParser
-    codeModel: BslCodeModel
+export class BslModuleScope extends BaseScope {
+    protected readonly model: editor.ITextModel
 
-    constructor(model: editor.ITextModel) {
-        super(model)
-        this._disposables.push(this.parser = new BslParser(model))
-        this.codeModel = serviceRegistry.codeModelProvider.buildModel(this.parser)
+    private modelVersionId: number = 0
+
+    constructor(model: ModuleModel) {
+        super([])
+        this.model = model
     }
+
+    beforeGetMembers() {
+        if (this.model.getVersionId() != this.modelVersionId) {
+            this.updateMembers()
+        }
+    }
+
+    getMethodAtLine(line: number): Method | undefined {
+        return this.getMethods().find(m => m.startLine <= line && m.endLine >= line)
+    }
+
+    getMethodScope(line: number): Scope | undefined {
+        const method = this.getMethodAtLine(line)
+        if (method === undefined) {
+            return undefined
+        }
+        return this.createMethodScope(method)
+    }
+
+    updateMembers(): void {
+        this.modelVersionId = this.model.getVersionId()
+        this.didUpdateMembers()
+    }
+
     getMethods(): Method[] {
-        return this.codeModel.methods;
-    }
-
-    didUpdateMembers() {
-        this.codeModel = serviceRegistry.codeModelProvider.buildModel(this.parser)
+        return this.model.getCodeModel()?.methods ?? []
     }
 
     protected createMethodScope(method: Method): MethodScope {
         const members: Member[] = []
-
-        if (!method.vars) {
-            method.vars = []
-            const iter = this.parser.getMethodVars(method)
-            let variable: IteratorResult<Variable>
-            while (!(variable = iter.next()).done) {
-                method.vars.push(variable.value)
-            }
+        const methodDefinition = this.model.getCodeModel()?.getMethodDefinition(method)
+        if (!methodDefinition) {
+            return new MethodScope(members)
         }
 
-        method.vars.forEach(v => members.push({
+        methodDefinition.vars?.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
-            type: v.type
+            // type: v.type
         }))
-        method.params.forEach(v => members.push({
+
+        methodDefinition.params.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
         }))
 
         return new MethodScope(members)
     }
+
+    protected didUpdateMembers(): void { }
 }

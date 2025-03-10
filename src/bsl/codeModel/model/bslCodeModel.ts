@@ -1,6 +1,7 @@
-import { BaseSymbol } from "@/common/codeModel";
+import { BaseSymbol, Method } from "@/common/codeModel";
 import { VariablesScope } from "../interfaces";
 import { MethodsCalculator, VariablesCalculator } from "../calculators";
+import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitions";
 
 export class BslCodeModel implements VariablesScope {
     children: BaseSymbol[] = []
@@ -11,5 +12,9 @@ export class BslCodeModel implements VariablesScope {
 
     get vars() {
         return (new VariablesCalculator()).calculate(this)
+    }
+
+    getMethodDefinition(method: Method): FunctionDefinitionSymbol | ProcedureDefinitionSymbol | undefined {
+        return this.methods.find(m => m.name === method.name)
     }
 }

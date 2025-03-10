@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { parseModule, parseExpression } from '../../src/bsl/chevrotain/parser'
+import { parseModule, parseExpression } from '../../src/bsl/chevrotain/parser/parser'
 
 describe('chevrotain', () => {
     test('simple expression', () => {
