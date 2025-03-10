@@ -1,4 +1,4 @@
-import { createToken, Lexer, CstParser, Rule, TokenType } from "chevrotain"
+import { createToken, Lexer, TokenType } from "chevrotain"
 
 const CORE_KEYWORDS = [
     // Control flow
@@ -88,11 +88,11 @@ function buildKeywords() {
 
 export const keywords = buildKeywords()
 
+const string = createToken({ name: "string", pattern: /"([^\r\n"]|"")*"/, })
+
 export const tokens = {
     LSquare: createToken({ name: "LSquare", pattern: /\[/ }),
     RSquare: createToken({ name: "RSquare", pattern: /]/ }),
-    DoubleQuote: createToken({ name: "DoubleQuote", pattern: /"/ }),
-    SingleQuote: createToken({ name: "SingleQuote", pattern: /'/ }),
     LPAREN: createToken({ name: 'LPAREN', pattern: '(' }),
     RPAREN: createToken({ name: 'RPAREN', pattern: ')' }),
     COLON: createToken({ name: 'COLON', pattern: ':' }),
@@ -114,12 +114,13 @@ export const tokens = {
     QUESTION: createToken({ name: 'QUESTION', pattern: '?' }),
     BAR: createToken({ name: 'BAR', pattern: '|' }),
     whiteSpace: createToken({ name: "whiteSpace", pattern: /[ \t\n\r]+/, group: Lexer.SKIPPED }),
-    string: createToken({ name: "string", pattern: /"([^\r\n"]|"")*"/, }),
-    string_start: createToken({ name: "STRINGSTART", pattern: /"([^\r\n"]|"")*/ }),
-    string_tail: createToken({ name: "STRINGSTART", pattern: /\|([^\r\n"]|"")*"/, }),
-    string_part: createToken({ name: "STRINGPART", pattern: /\|([^\r\n"]|"")*/, }),
+    string,
+    multilineString: createToken({ name: "multilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/ }),
+    // string_start: createToken({ name: "string_start", pattern: /"([^\r\n"]|"")*\n/ }),
+    // string_tail: createToken({ name: "string_tail", pattern: /\|([^\r\n"]|"")*"/ }),
+    // string_part: createToken({ name: "string_part", pattern: /\|([^\r\n"]|"")*\n/ }),
     number: createToken({ name: "number", pattern: /\d+(\.\d+)?/, }),
-    date: createToken({ name: '', pattern: /'\d{8,14}'/ }),
+    date: createToken({ name: 'date', pattern: /'\d{8,14}'/ }),
 
     identifier: createToken({ name: 'identifier', pattern: /[\wа-я_][\wа-я_0-9]*/i }),
 }

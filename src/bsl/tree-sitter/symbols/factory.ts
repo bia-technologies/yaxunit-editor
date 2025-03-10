@@ -31,7 +31,7 @@ function createSymbolForSuitableNode(node: Node, position: number | undefined, p
     if (node.type === BslTokenTypes.source_file
         || node.type === BslTokenTypes.procedure_definition
         || node.type === BslTokenTypes.function_definition) {
-        symbol = new None(node)
+        symbol = new None()
     } else if (predicate(node)) {
         symbol = createSymbolForNode(node, position)
     }
@@ -48,7 +48,7 @@ function createSymbolForSuitableNode(node: Node, position: number | undefined, p
     }
 
     if (!symbol) {
-        symbol = new None(node)
+        symbol = new None()
     }
 
     return symbol
@@ -72,7 +72,7 @@ export function createSymbolForNode(node: Node, position: number | undefined = u
         case BslTokenTypes.ERROR:
             return createUnknownExpression(node, position)
         case BslTokenTypes.arguments:
-            return new None(node)
+            return new None()
         default:
             return undefined
     }
@@ -83,7 +83,7 @@ function createConstantExpression(node: Node): Expression {
     if (node.firstNamedChild) {
         type = constValues()[node.firstNamedChild.type]
     }
-    return new Constant(node, type)
+    return new Constant(type)
 }
 
 function constValues() {
@@ -101,25 +101,25 @@ function constValues() {
 function createConstructorExpression(node: Node): Expression {
     const typeNode = node.childForFieldName("type")
     const args = collectArguments(node)
-    return new Constructor(node, typeNode?.text ?? '', args)
+    return new Constructor(typeNode?.text ?? '', args)
 }
 
 function createMethodCallExpression(node: Node, _: number | undefined): Expression {
     if (node.type === BslTokenTypes.call_expression) {
         const tokens = collectAccessTokens(node, undefined)
         const args = collectArguments(node.lastNamedChild as Node)
-        return new MethodCall(node, tokens.pop() ?? '', tokens, args)
+        return new MethodCall(tokens.pop() ?? '', tokens, args)
     } else {
         const nameNode = node.childForFieldName("name")
         const tokens = node.parent ? collectPathTokens(node) : []
         const args = collectArguments(node)
-        return new MethodCall(node, nameNode?.text ?? '', tokens, args)
+        return new MethodCall(nameNode?.text ?? '', tokens, args)
     }
 }
 
 function createFiledAccessExpression(node: Node, position: number | undefined): Expression {
     const tokens = collectAccessTokens(node, position)
-    return new FieldAccess(node, tokens.pop() ?? '', tokens)
+    return new FieldAccess(tokens.pop() ?? '', tokens)
 }
 
 function createUnknownExpression(node: Node, position: number | undefined): Expression {
@@ -135,7 +135,7 @@ function createUnknownExpression(node: Node, position: number | undefined): Expr
         tokens = collectAccessTokens(node, position)
     }
 
-    return new Unknown(node, tokens.pop() ?? '', tokens)
+    return new Unknown(tokens.pop() ?? '', tokens)
 }
 
 function collectArguments(node: Node): ArgumentInfo[] {
