@@ -1,7 +1,5 @@
 import { editor } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
-import { VanillaModuleModel } from './vanilla-tokens/moduleModel'
-import { TreeSitterModuleModel } from './tree-sitter/moduleModel'
 
 let activeEditor: BslEditor | undefined
 
@@ -19,6 +17,7 @@ export class BslEditor {
         if (container === null) {
             throw 'Error!';
         }
+
         this.editor = editor.create(container, {
             language: 'bsl',
             automaticLayout: true,
@@ -39,10 +38,9 @@ export class BslEditor {
             // fontFamily: 'Courier New',
             // fontSize: 12,
             fontLigatures: true,
-            wordBasedSuggestions: false,
-            model: this.createModel()
+            wordBasedSuggestions: false
         });
-
+        
         tuneEditor(this.editor)
 
         this.scope = EditorScope.createScope(this.editor)
@@ -52,28 +50,17 @@ export class BslEditor {
         })
     }
 
-    set content(value: string) {
+    set content(value:string){
         this.editor.setValue(value)
     }
 
-    get content() {
+    get content(){
         return this.editor.getValue()
     }
 
     getText(): string {
         const model = this.editor.getModel()
         return model ? model.getValue() : ''
-    }
-
-    createModel() {
-
-        const model = editor.createModel('', 'bsl');
-
-        if (wasmSupported()) {
-            return TreeSitterModuleModel.create(model)
-        } else {
-            return VanillaModuleModel.create(model)
-        }
     }
 }
 
@@ -86,9 +73,4 @@ function tuneEditor(editor: editor.IStandaloneCodeEditor) {
 
 export function getActiveEditor() {
     return activeEditor
-}
-
-function wasmSupported() {
-    return false && typeof WebAssembly === "object"
-        && typeof WebAssembly.instantiate === "function"
 }
