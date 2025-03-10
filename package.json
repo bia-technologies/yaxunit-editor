@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@ungap/global-this": "^0.4.4",
+    "chevrotain": "^11.0.3",
     "monaco-editor-core": "^0.43",
     "onec-syntaxparser": "^0.1.11",
     "performance-polyfill": "^0.0.3",
