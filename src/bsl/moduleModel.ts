@@ -6,4 +6,5 @@ import { BslModuleScope } from "./scope/bslModuleScope";
 export interface ModuleModel extends editor.ITextModel, ExpressionProvider {
     getScope(): BslModuleScope,
     getCodeModel(): BslCodeModel | undefined
+    updateCodeModel(): void
 }

@@ -1,6 +1,5 @@
 import { Acceptable, CodeModelVisitor } from "../visitor"
-import { Variable as CommonVariable, BaseSymbol, ExpressionSymbol, NamedSymbol } from "@/common/codeModel";
-import { Node } from "web-tree-sitter";
+import { BaseSymbol, Variable as CommonVariable, ExpressionSymbol, NamedSymbol, SymbolPosition } from "@/common/codeModel";
 
 export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol {
     type?: string
@@ -10,8 +9,8 @@ export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol
 export class NamedExpressionSymbol extends BaseExpressionSymbol implements ExpressionSymbol, NamedSymbol {
     name: string
 
-    constructor(node: Node, name?: string) {
-        super(node)
+    constructor(position: SymbolPosition, name?: string) {
+        super(position)
         this.name = name ?? ''
     }
 }
@@ -22,7 +21,7 @@ export class VariableSymbol extends NamedExpressionSymbol implements CommonVaria
     }
 }
 export class PropertySymbol extends NamedExpressionSymbol implements Acceptable {
-    constructor(node: Node) { super(node, node.text) }
+    constructor(position: SymbolPosition, name?: string) { super(position, name) }
     accept(visitor: CodeModelVisitor): void {
         visitor.visitPropertySymbol(this)
     }

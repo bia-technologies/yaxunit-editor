@@ -1,7 +1,7 @@
 import { Signature, Parameter as ParameterMember } from "../scope"
-import { Symbol, SymbolRange, Variable } from "./"
+import { NamedSymbol, Symbol, Variable } from "./"
 
-export interface Method extends SymbolRange, Signature {
+export interface Method extends NamedSymbol, Signature {
     isExport: boolean
     isProc: boolean
     params: Parameter[]

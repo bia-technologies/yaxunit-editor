@@ -1,10 +1,9 @@
-import { BaseSymbol, NamedSymbol, Method, ModuleVariable, Parameter } from "@/common/codeModel";
+import { BaseSymbol, NamedSymbol, Method, ModuleVariable, Parameter, SymbolPosition } from "@/common/codeModel";
 import { Signature } from "@/common/scope";
 import { VariablesScope } from "../interfaces";
-import { NamedExpressionSymbol, VariableSymbol } from "./baseSymbols";
+import { VariableSymbol } from "./baseSymbols";
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
-import { Node } from "web-tree-sitter";
 
 export abstract class MethodDefinition extends BaseSymbol implements Signature, VariablesScope, NamedSymbol {
     name: string
@@ -13,8 +12,8 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
     vars?: VariableSymbol[]
     children: BaseSymbol[] = []
 
-    constructor(node: Node, name?: string) {
-        super(node)
+    constructor(position: SymbolPosition, name?: string) {
+        super(position)
         this.name = name ?? ''
     }
 }
@@ -28,8 +27,8 @@ export class ParameterDefinitionSymbol extends BaseSymbol implements Parameter, 
         return this.defaultValue?.value
     }
 
-    constructor(node: Node, name?: string) {
-        super(node)
+    constructor(position: SymbolPosition, name?: string) {
+        super(position)
         this.name = name ?? ''
     }
 

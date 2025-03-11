@@ -19,7 +19,8 @@ export class TreeSitterModuleModel extends AutoDisposable implements ExpressionP
         (editorModel as ModuleModel).getEditingExpression = moduleScope.getEditingExpression.bind(moduleScope);
         (editorModel as ModuleModel).getCurrentExpression = moduleScope.getCurrentExpression.bind(moduleScope);
         (editorModel as ModuleModel).getEditingMethod = moduleScope.getEditingMethod.bind(moduleScope);
-        (editorModel as ModuleModel).getCodeModel = () => moduleScope.codeModel;
+        (editorModel as ModuleModel).getCodeModel = moduleScope.getCodeModel.bind(moduleScope);
+        (editorModel as ModuleModel).updateCodeModel = moduleScope.updateCodeModel.bind(moduleScope);
 
         return editorModel as ModuleModel
     }
@@ -41,6 +42,14 @@ export class TreeSitterModuleModel extends AutoDisposable implements ExpressionP
 
     getScope() {
         return this.scope
+    }
+
+    getCodeModel() {
+        return this.codeModel
+    }
+
+    updateCodeModel(){
+        this.codeModel = TreeSitterCodeModelFactory.buildModel(this.parser)
     }
 
     getEditingExpression(position: Position): Expression | undefined {

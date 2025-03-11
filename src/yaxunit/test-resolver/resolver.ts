@@ -1,7 +1,8 @@
-import { editor } from "monaco-editor-core";
+import { editor, IPosition } from "monaco-editor-core";
 import { ROOT_METHOD, TestsModel } from "../test-model";
 import { YAxUnitEditor } from "../editor";
 import { Method } from "@/common/codeModel";
+import { ModuleModel } from "@/bsl/moduleModel";
 
 const REGISTERED_TEST_PATTERN = /\.\s*(?:ДобавитьТест|ДобавитьСерверныйТест|ДобавитьКлиентскийТест)\s*\(\s*"([\w\dА-Яа-я_]+)"\s*\)/guim
 
@@ -15,10 +16,10 @@ export class TestsResolver {
     }
 
     onDidChangeContent(_: editor.IModelContentChangedEvent): void {
-        this.model.updateTests(this.getTests() ?? [])
+        this.model.updateTests(this.getTestMethods() ?? [], this.getPosition.bind(this))
     }
 
-    getTests(): Method[] | undefined {
+    private getTestMethods(): Method[] | undefined {
         const methods = this.editor.scope.getMethods()
         const rootMethod = methods.find(isRootMethod)
         if (!rootMethod) {
@@ -39,11 +40,19 @@ export class TestsResolver {
         return methods.filter(m => m.isExport && (isRootMethod(m) || hash[m.name.toLowerCase()]))
     }
 
-    getMethodContent(method: Method): string | undefined {
+    private getMethodContent(method: Method): string | undefined {
+        const startPosition = this.getPosition(method.startOffset)
+        const endPosition = this.getPosition(method.endOffset)
+
         return this.editor.editor.getModel()?.getValueInRange({
-            startColumn: method.startColumn, startLineNumber: method.startLine,
-            endColumn: method.endColumn, endLineNumber: method.endLine
+            startColumn: startPosition.column, startLineNumber: startPosition.lineNumber,
+            endColumn: endPosition.column, endLineNumber: endPosition.lineNumber
         })
+    }
+
+    private getPosition(offset: number): IPosition {
+        const model = this.editor.editor.getModel() as ModuleModel
+        return model.getPositionAt(offset)
     }
 }
 

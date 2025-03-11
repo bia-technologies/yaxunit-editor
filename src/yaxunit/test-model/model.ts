@@ -1,4 +1,4 @@
-import { IEvent, Emitter } from 'monaco-editor-core'
+import { IEvent, Emitter, IPosition } from 'monaco-editor-core'
 
 import { TestDefinition, TestStatus } from './types'
 import { Method } from '@/common/codeModel'
@@ -20,17 +20,18 @@ export class TestsModel {
         return this.errors
     }
 
-    updateTests(methods: Method[]) {
+    updateTests(methods: Method[], getPosition:(offset:number)=>IPosition) {
         let changed = false
         methods.forEach(m => {
             const test = this.findTest(m.name)
+            const methodLine = getPosition(m.startOffset).lineNumber
             if (test) {
-                if (test.lineNumber !== m.startLine) {
-                    test.lineNumber = m.startLine
+                if (test.lineNumber !== methodLine) {
+                    test.lineNumber = methodLine
                     changed = true
                 }
             } else {
-                this.tests.push(new TestDefinition(m))
+                this.tests.push(new TestDefinition(m, methodLine))
                 changed = true
             }
         })

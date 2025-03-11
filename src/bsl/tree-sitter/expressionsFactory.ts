@@ -80,7 +80,7 @@ export function createSymbolForNode(node: Node, position: number | undefined = u
 }
 
 function createConstantExpression(node: Node): Expression {
-    return new Constant(node, getConstValueType(node.firstNamedChild))
+    return new Constant(getConstValueType(node.firstNamedChild))
 }
 
 function createConstructorExpression(node: Node): Expression {

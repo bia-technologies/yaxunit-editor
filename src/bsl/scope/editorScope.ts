@@ -16,16 +16,16 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 }
 
 export class EditorScope extends UnionScope {
-    localScope: BslModuleScope
+    moduleScope: BslModuleScope
     editor: editor.IStandaloneCodeEditor
     modelVersionId: number = 0
 
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
-        this.localScope = (model as ModuleModel).getScope()
+        this.moduleScope = (model as ModuleModel).getScope()
         this.editor = editor
 
-        this.scopes.push(this.localScope)
+        this.scopes.push(this.moduleScope)
         this.scopes.push(GlobalScope)
     }
 
@@ -33,7 +33,7 @@ export class EditorScope extends UnionScope {
         if (!line) {
             return this.scopes;
         }
-        const method = this.localScope.getMethodScope(line)
+        const method = this.moduleScope.getMethodScope(line)
         if (!method) {
             return this.scopes;
         } else {
@@ -46,14 +46,14 @@ export class EditorScope extends UnionScope {
     }
 
     getMethods(): Method[] {
-        return this.localScope.getMethods()
+        return this.moduleScope.getMethods()
     }
 
     update() {
         const currentVersionId = this.editor.getModel()?.getVersionId()
         if (currentVersionId != this.modelVersionId) {
             this.modelVersionId = currentVersionId ?? 0
-            this.localScope.updateMembers()
+            this.moduleScope.updateMembers()
         }
     }
 

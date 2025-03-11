@@ -1,10 +1,9 @@
 import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
 import { Method } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
-import { editor } from 'monaco-editor-core'
 
 export class BslModuleScope extends BaseScope {
-    protected readonly model: editor.ITextModel
+    protected readonly model: ModuleModel
 
     private modelVersionId: number = 0
 
@@ -61,5 +60,7 @@ export class BslModuleScope extends BaseScope {
         return new MethodScope(members)
     }
 
-    protected didUpdateMembers(): void { }
+    protected didUpdateMembers(): void { 
+        this.model.updateCodeModel()
+    }
 }

@@ -1,7 +1,7 @@
 import { Node } from "web-tree-sitter";
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { BaseExpressionSymbol } from "./baseSymbols";
-import { ExpressionSymbol } from "@/common/codeModel";
+import { ExpressionSymbol, SymbolPosition } from "@/common/codeModel";
 
 export class BinaryExpressionSymbol extends BaseExpressionSymbol implements Acceptable {
     left?: ExpressionSymbol
@@ -45,8 +45,8 @@ export class ConstSymbol extends BaseExpressionSymbol implements Acceptable {
     value: string
     type: string
 
-    constructor(node: Node, value: string, type: string) {
-        super(node)
+    constructor(position: SymbolPosition, value: string, type: string) {
+        super(position)
         this.value = value
         this.type = type
     }

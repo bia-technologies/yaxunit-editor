@@ -1,29 +1,26 @@
-import { Node } from "web-tree-sitter"
-
-export interface CodeSymbol {
-    startLine: number,
-    startColumn: number,
-    endLine: number,
-    endColumn: number,
-
+export interface SymbolPosition {
+    startOffset: number,
+    endOffset: number,
 }
-export class BaseSymbol {
-    protected node: Node
-    constructor(node: Node) {
-        this.node = node
-    }
 
-    get startLine() { return this.node.startPosition.row }
-    get startColumn() { return this.node.startPosition.column }
-    get endLine() { return this.node.endPosition.row }
-    get endColumn() { return this.node.endPosition.column }
-}
+export interface CodeSymbol extends SymbolPosition { }
 
 export interface ExpressionSymbol extends CodeSymbol {
     type?: string
     value?: string
 }
 
-export interface NamedSymbol {
+export interface NamedSymbol extends CodeSymbol {
     name: string
+}
+
+export class BaseSymbol implements CodeSymbol {
+    protected position: SymbolPosition
+
+    constructor(position: SymbolPosition) {
+        this.position = position
+    }
+
+    get startOffset() { return this.position.startOffset }
+    get endOffset() { return this.position.endOffset }
 }

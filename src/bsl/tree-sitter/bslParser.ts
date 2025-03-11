@@ -1,7 +1,7 @@
 import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter'
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
 import { editor, Position } from 'monaco-editor-core'
-import { Method, ModuleVariable, Variable } from '@/common/codeModel'
+import { Method, ModuleVariable, SymbolPosition, Variable } from '@/common/codeModel'
 import { Queries } from './queries'
 import { isModel } from '@/monaco/utils'
 import { Scope } from '@/common/scope'
@@ -150,10 +150,7 @@ export class BslParser extends AutoDisposable {
     }
 
     *getMethodVars(method: Method) {
-        const captures = this.queries.methodVarsQuery().captures(this.getRootNode(), {
-            startPosition: { row: method.startLine - 1, column: method.startColumn - 1 },
-            endPosition: { row: method.endLine - 1, column: method.endColumn - 1 }
-        })
+        const captures = this.queries.methodVarsQuery().captures(this.getRootNode(), { startIndex: method.startOffset, endIndex: method.endOffset })
 
         const vars: Variable[] = []
         let currentVar: Variable | undefined
@@ -259,12 +256,10 @@ export async function useTreeSitterBsl(): Promise<void> {
     }
 }
 
-function symbolPosition(node: Node) {
+function symbolPosition(node: Node): SymbolPosition {
     return {
-        startLine: node.startPosition.row + 1,
-        startColumn: node.startPosition.column + 1,
-        endLine: node.endPosition.row + 1,
-        endColumn: node.endPosition.column + 1,
+        startOffset: node.startIndex,
+        endOffset: node.endIndex
     }
 }
 

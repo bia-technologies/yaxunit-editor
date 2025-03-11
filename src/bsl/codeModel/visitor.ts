@@ -15,9 +15,10 @@ import {
     ReturnStatementSymbol,
     TernaryExpressionSymbol,
     VariableSymbol,
-    UnaryExpressionSymbol
+    UnaryExpressionSymbol,
+    PreprocessorSymbol
 } from "@/bsl/codeModel";
-import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
+import { CodeSymbol } from "@/common/codeModel";
 
 export interface Acceptable {
     accept(visitor: CodeModelVisitor): void
@@ -53,6 +54,9 @@ export interface CodeModelVisitor {
     visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): void
     visitConstructorSymbol(symbol: ConstructorSymbol): void
     visitConstSymbol(symbol: ConstSymbol): void
+
+    // preprocessor
+    visitPreprocessorSymbol(symbol: PreprocessorSymbol): void
 }
 
 export class BaseCodeModelVisitor implements CodeModelVisitor {
@@ -152,5 +156,10 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
 
     visitConstSymbol(symbol: ConstSymbol): void {
 
+    }
+
+    // preprocessor
+    visitPreprocessorSymbol(symbol: PreprocessorSymbol): void {
+        
     }
 }

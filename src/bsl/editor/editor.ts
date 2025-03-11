@@ -89,6 +89,6 @@ export function getActiveEditor() {
 }
 
 function wasmSupported() {
-    return false && typeof WebAssembly === "object"
+    return typeof WebAssembly === "object"
         && typeof WebAssembly.instantiate === "function"
 }

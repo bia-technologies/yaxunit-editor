@@ -22,7 +22,7 @@ class BSLParser extends CstParser {
 
     assignment_statement = this.RULE("assignment_statement", () => {
         this.SUBRULE(this.qualifiedName)
-        this.CONSUME(tokens.ASSIGN)
+        this.CONSUME(tokens.Assign)
         this.SUBRULE(this.expression)
     })
 
@@ -40,26 +40,26 @@ class BSLParser extends CstParser {
     ))
 
     string_literal = this.RULE('string_literal', () => this.choice(
-        () => this.CONSUME(tokens.string),
-        () => this.CONSUME(tokens.multilineString)
+        () => this.CONSUME(tokens.String),
+        () => this.CONSUME(tokens.MultilineString)
     ))
 
     private qualifiedName = this.RULE("qualifiedName", () => {
-        this.CONSUME(tokens.identifier)
+        this.CONSUME(tokens.Identifier)
         this.MANY({
             // The gate condition is in addition to basic grammar lookahead, so this.LA(1) === dot
             // is always checked
             //   GATE: () => this.LA(2).tokenType === tokens.identifier,
             DEF: () => {
-                this.CONSUME(tokens.DOT)
-                this.CONSUME2(tokens.identifier)
+                this.CONSUME(tokens.Dot)
+                this.CONSUME2(tokens.Identifier)
             }
         });
     });
 
     private literal = this.RULE('literal', () => this.choice(
-        () => this.CONSUME(tokens.number),
-        () => this.CONSUME(tokens.date),
+        () => this.CONSUME(tokens.Number),
+        () => this.CONSUME(tokens.Date),
         () => this.SUBRULE(this.boolean_literal),
         () => this.SUBRULE(this.string_literal),
         () => this.CONSUME(keywords.UNDEFINED),
@@ -73,13 +73,13 @@ class BSLParser extends CstParser {
     ))
 
     private methodCall = this.RULE('methodCall', () => {
-        this.CONSUME(tokens.identifier)
-        this.CONSUME(tokens.LPAREN)
+        this.CONSUME(tokens.Identifier)
+        this.CONSUME(tokens.LParen)
         this.MANY_SEP({
-            SEP: tokens.COMMA,
+            SEP: tokens.Comma,
             DEF: () => this.SUBRULE(this.expression)
         })
-        this.CONSUME(tokens.RPAREN)
+        this.CONSUME(tokens.RParen)
     })
 
     private operator = this.RULE('operator', () => this.choice(...operators.map(t => { return () => this.CONSUME(t) })))

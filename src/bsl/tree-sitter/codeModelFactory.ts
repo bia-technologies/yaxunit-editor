@@ -1,6 +1,6 @@
 import { Node } from "web-tree-sitter";
 import { BslParser, BslTokenTypes } from ".";
-import { BaseSymbol } from "@/common/codeModel";
+import { BaseSymbol, SymbolPosition } from "@/common/codeModel";
 import {
     Access,
     AssignmentStatementSymbol,
@@ -21,7 +21,8 @@ import {
     TernaryExpressionSymbol,
     VariableSymbol,
     UnaryExpressionSymbol,
-    ExpressionSymbol
+    ExpressionSymbol,
+    PreprocessorSymbol
 } from "../codeModel";
 import { BaseTypes } from "../scope/baseTypes";
 
@@ -76,7 +77,7 @@ type ConstructorsType = { [key: string]: CreatorType }
 
 const expressionConstructors: { [key: string]: (node: Node) => ExpressionSymbol | undefined } = {
     [BslTokenTypes.const_expression]: createConstExpression,
-    [BslTokenTypes.identifier]: n => new VariableSymbol(n, n.text),
+    [BslTokenTypes.identifier]: n => new VariableSymbol(symbolPosition(n), n.text),
     [BslTokenTypes.unary_expression]: createUnaryExpression,
     [BslTokenTypes.binary_expression]: createBinaryExpression,
     [BslTokenTypes.ternary_expression]: createTernaryExpressionSymbol,
@@ -100,21 +101,21 @@ const statementConstructors: ConstructorsType = {
     [BslTokenTypes.call_statement]: n => n.firstNamedChild ? createMethodCall(n.firstNamedChild) : undefined,
     [BslTokenTypes.assignment_statement]: createAssignmentStatement,
     [BslTokenTypes.return_statement]: createReturnStatement,
-    [BslTokenTypes.try_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.rise_error_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.var_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.if_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.while_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.for_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.for_each_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.continue_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.break_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.goto_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.label_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.add_handler_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.remove_handler_statement]: () => { throw 'not implemented' },
-    [BslTokenTypes.preprocessor]: () => { throw 'not implemented' },
-    [BslTokenTypes.await_statement]: () => { throw 'not implemented' },
+    [BslTokenTypes.try_statement]: () => { throw 'not implemented ' + BslTokenTypes.try_statement },
+    [BslTokenTypes.rise_error_statement]: () => { throw 'not implemented ' + BslTokenTypes.rise_error_statement },
+    [BslTokenTypes.var_statement]: () => { throw 'not implemented ' + BslTokenTypes.var_statement },
+    [BslTokenTypes.if_statement]: () => { throw 'not implemented ' + BslTokenTypes.if_statement },
+    [BslTokenTypes.while_statement]: () => { throw 'not implemented ' + BslTokenTypes.while_statement },
+    [BslTokenTypes.for_statement]: () => { throw 'not implemented ' + BslTokenTypes.for_statement },
+    [BslTokenTypes.for_each_statement]: () => { throw 'not implemented ' + BslTokenTypes.for_each_statement },
+    [BslTokenTypes.continue_statement]: () => { throw 'not implemented ' + BslTokenTypes.continue_statement },
+    [BslTokenTypes.break_statement]: () => { throw 'not implemented ' + BslTokenTypes.break_statement },
+    [BslTokenTypes.goto_statement]: () => { throw 'not implemented ' + BslTokenTypes.goto_statement },
+    [BslTokenTypes.label_statement]: () => { throw 'not implemented ' + BslTokenTypes.label_statement },
+    [BslTokenTypes.add_handler_statement]: () => { throw 'not implemented ' + BslTokenTypes.add_handler_statement },
+    [BslTokenTypes.remove_handler_statement]: () => { throw 'not implemented ' + BslTokenTypes.remove_handler_statement },
+    [BslTokenTypes.preprocessor]: createPreprocessorSymbol,
+    [BslTokenTypes.await_statement]: () => { throw 'not implemented ' + BslTokenTypes.await_statement },
     [BslTokenTypes.property_access]: createAccessSequence,
 }
 
@@ -124,14 +125,14 @@ const constructors: ConstructorsType = {
 }
 
 function createFunction(node: Node) {
-    const method = new FunctionDefinitionSymbol(node, node.childForFieldName('name')?.text)
+    const method = new FunctionDefinitionSymbol(symbolPosition(node), node.childForFieldName('name')?.text)
     fillMethodDefinition(method, node)
     fillChildren(node.namedChildren, method.children)
     return method
 }
 
 function createProcedure(node: Node) {
-    const method = new ProcedureDefinitionSymbol(node, node.childForFieldName('name')?.text)
+    const method = new ProcedureDefinitionSymbol(symbolPosition(node), node.childForFieldName('name')?.text)
     fillMethodDefinition(method, node)
     fillChildren(node.namedChildren, method.children)
     return method
@@ -143,7 +144,7 @@ function createModuleVariable(node: Node) {
     let child = node.firstNamedChild
     while (child !== null) {
         if (child.type === BslTokenTypes.identifier) {
-            symbols.push(new ModuleVariableDefinitionSymbol(node, child.text))
+            symbols.push(new ModuleVariableDefinitionSymbol(symbolPosition(node), child.text))
         }
         child = child.nextNamedSibling
     }
@@ -154,7 +155,7 @@ function createModuleVariable(node: Node) {
 }
 
 function createParameter(node: Node) {
-    const symbol = new ParameterDefinitionSymbol(node, node.childForFieldName('name')?.text)
+    const symbol = new ParameterDefinitionSymbol(symbolPosition(node), node.childForFieldName('name')?.text)
     symbol.byVal = node.childForFieldName('val') !== null
     const defNode = node.childForFieldName('def')
     if (defNode) {
@@ -165,7 +166,7 @@ function createParameter(node: Node) {
 }
 
 function createAssignmentStatement(node: Node) {
-    const symbol = new AssignmentStatementSymbol(node)
+    const symbol = new AssignmentStatementSymbol(symbolPosition(node))
     const left = node.childForFieldName('left')
     if (!left) {
         throw 'Не указана переменная для присвоения'
@@ -185,12 +186,12 @@ function createAssignmentStatement(node: Node) {
 }
 
 function createVariable(node: Node) {
-    const symbol = new VariableSymbol(node, node.text)
+    const symbol = new VariableSymbol(symbolPosition(node), node.text)
     return symbol
 }
 
 function createAccessSequence(node: Node) {
-    const symbol = new AccessSequenceSymbol(node)
+    const symbol = new AccessSequenceSymbol(symbolPosition(node))
     if (node.firstNamedChild) {
         symbol.access = collectAccessTokens(node)
     }
@@ -198,21 +199,21 @@ function createAccessSequence(node: Node) {
 }
 
 function createReturnStatement(node: Node) {
-    const symbol = new ReturnStatementSymbol(node)
+    const symbol = new ReturnStatementSymbol(symbolPosition(node))
     symbol.expression = createExpressionSymbol(node.childForFieldName('result'))
 
     return symbol
 }
 
 function createMethodCall(node: Node) {
-    const symbol = new MethodCallSymbol(node, node.childForFieldName('name')?.text)
+    const symbol = new MethodCallSymbol(symbolPosition(node), node.childForFieldName('name')?.text)
     symbol.arguments = collectArguments(node.childForFieldName('arguments'))
 
     return symbol
 }
 
 function createIndexAccess(node: Node) {
-    const symbol = new IndexAccessSymbol(node, node.firstNamedChild?.text)
+    const symbol = new IndexAccessSymbol(symbolPosition(node), node.firstNamedChild?.text)
     return symbol
 }
 
@@ -241,14 +242,14 @@ function createAccessSymbol(node: Node) {
             return createMethodCall(node)
         case BslTokenTypes.identifier:
         case BslTokenTypes.property:
-            return new PropertySymbol(node)
+            return new PropertySymbol(symbolPosition(node))
         case BslTokenTypes.index:
             return createIndexAccess(node)
     }
 }
 
 function createBinaryExpression(node: Node) {
-    const symbol = new BinaryExpressionSymbol(node)
+    const symbol = new BinaryExpressionSymbol(symbolPosition(node))
 
     symbol.left = createExpressionSymbol(node.childForFieldName('left'))
     symbol.right = createExpressionSymbol(node.childForFieldName('right'))
@@ -259,7 +260,7 @@ function createBinaryExpression(node: Node) {
 }
 
 function createUnaryExpression(node: Node) {
-    const symbol = new UnaryExpressionSymbol(node)
+    const symbol = new UnaryExpressionSymbol(symbolPosition(node))
 
     symbol.operand = createExpressionSymbol(node.childForFieldName('argument'))
     symbol.operator = node.childForFieldName('operator')?.text
@@ -269,7 +270,7 @@ function createUnaryExpression(node: Node) {
 }
 
 function createTernaryExpressionSymbol(node: Node) {
-    const symbol = new TernaryExpressionSymbol(node)
+    const symbol = new TernaryExpressionSymbol(symbolPosition(node))
 
     symbol.condition = createExpressionSymbol(node.childForFieldName('condition'))
     symbol.consequence = createExpressionSymbol(node.childForFieldName('consequence'))
@@ -290,11 +291,11 @@ function createConstExpression(node: Node) {
     }
     const type = getConstValueType(node)
 
-    return new ConstSymbol(node, value, type)
+    return new ConstSymbol(symbolPosition(node), value, type)
 }
 
 function createConstructor(node: Node) {
-    const symbol = new ConstructorSymbol(node)
+    const symbol = new ConstructorSymbol(symbolPosition(node))
     symbol.name = node.childForFieldName('type')?.text
     symbol.arguments = collectArguments(node.childForFieldName('arguments'))
 
@@ -302,7 +303,7 @@ function createConstructor(node: Node) {
 }
 
 function createConstructorMethod(node: Node) {
-    const symbol = new ConstructorSymbol(node)
+    const symbol = new ConstructorSymbol(symbolPosition(node))
     symbol.name = createExpressionSymbol(node.childForFieldName('type'))
     symbol.arguments = createExpressionSymbol(node.childForFieldName('arguments'))
 
@@ -310,6 +311,12 @@ function createConstructorMethod(node: Node) {
         symbol.name = symbol.name.value
     }
 
+    return symbol
+}
+
+function createPreprocessorSymbol(node: Node) {
+    const symbol = new PreprocessorSymbol(symbolPosition(node))
+    symbol.name = node.text
     return symbol
 }
 
@@ -349,4 +356,11 @@ function collectArguments(node: Node | null) {
     return node.namedChildren
         .map(createExpressionSymbol)
         .map(n => n as BaseSymbol)
+}
+
+function symbolPosition(node: Node): SymbolPosition {
+    return {
+        startOffset: node.startIndex,
+        endOffset: node.endIndex
+    }
 }
