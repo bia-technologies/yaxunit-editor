@@ -1,5 +1,5 @@
 import { BslParser } from "../../src/bsl/tree-sitter"
-import { provider } from '../../src/bsl/codeModel/bslCodeModelProvider'
+import { TreeSitterCodeModelFactory } from '../../src/bsl/tree-sitter/codeModelFactory'
 
 var parser: BslParser | undefined
 
@@ -8,7 +8,7 @@ function cleanAfterAll() {
 }
 
 function buildModel(content: string) {
-    return provider.buildModel(parser = new BslParser(content))
+    return TreeSitterCodeModelFactory.buildModel(parser = new BslParser(content))
 }
 
 export default {

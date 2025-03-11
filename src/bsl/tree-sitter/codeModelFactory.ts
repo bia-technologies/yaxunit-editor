@@ -1,5 +1,6 @@
 import { Node } from "web-tree-sitter";
-import { BslParser, BslTokenTypes } from ".";
+import { BslParser } from "./bslParser";
+import { BslTokenTypes } from "./bslTokenTypes";
 import { BaseSymbol, SymbolPosition } from "@/common/codeModel";
 import {
     Access,
@@ -213,7 +214,7 @@ function createMethodCall(node: Node) {
 }
 
 function createIndexAccess(node: Node) {
-    const symbol = new IndexAccessSymbol(symbolPosition(node), node.firstNamedChild?.text)
+    const symbol = new IndexAccessSymbol(symbolPosition(node))
     return symbol
 }
 

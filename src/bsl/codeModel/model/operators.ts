@@ -13,7 +13,6 @@ export enum Operators {
     multiply = '*',
     divide = '/',
     mod = '%'
-
 }
 
 export function isCompareOperator(operator: string) {

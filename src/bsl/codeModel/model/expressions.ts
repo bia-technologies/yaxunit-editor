@@ -1,4 +1,3 @@
-import { Node } from "web-tree-sitter";
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { BaseExpressionSymbol } from "./baseSymbols";
 import { ExpressionSymbol, SymbolPosition } from "@/common/codeModel";

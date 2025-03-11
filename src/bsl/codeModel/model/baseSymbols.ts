@@ -1,5 +1,11 @@
 import { Acceptable, CodeModelVisitor } from "../visitor"
-import { BaseSymbol, Variable as CommonVariable, ExpressionSymbol, NamedSymbol, SymbolPosition } from "@/common/codeModel";
+import {
+    BaseSymbol,
+    Variable as CommonVariable,
+    ExpressionSymbol,
+    NamedSymbol,
+    SymbolPosition
+} from "@/common/codeModel";
 
 export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol {
     type?: string
@@ -21,13 +27,13 @@ export class VariableSymbol extends NamedExpressionSymbol implements CommonVaria
     }
 }
 export class PropertySymbol extends NamedExpressionSymbol implements Acceptable {
-    constructor(position: SymbolPosition, name?: string) { super(position, name) }
     accept(visitor: CodeModelVisitor): void {
         visitor.visitPropertySymbol(this)
     }
 }
 
-export class IndexAccessSymbol extends NamedExpressionSymbol implements Acceptable {
+export class IndexAccessSymbol extends BaseExpressionSymbol implements Acceptable {
+    index?: BaseSymbol
     accept(visitor: CodeModelVisitor): void {
         visitor.visitIndexAccessSymbol(this)
     }
@@ -40,7 +46,7 @@ export class MethodCallSymbol extends NamedExpressionSymbol implements Acceptabl
     }
 }
 
-export type Access = (MethodCallSymbol | PropertySymbol | IndexAccessSymbol)[]
+export type Access = (MethodCallSymbol | VariableSymbol | PropertySymbol | IndexAccessSymbol)[]
 
 export class AccessSequenceSymbol extends BaseExpressionSymbol implements Acceptable {
     access: Access = []

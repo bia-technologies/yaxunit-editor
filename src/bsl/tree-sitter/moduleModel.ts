@@ -13,14 +13,14 @@ import { BslModuleScope } from "../scope/bslModuleScope"
 export class TreeSitterModuleModel extends AutoDisposable implements ExpressionProvider {
 
     static create(editorModel: editor.ITextModel): ModuleModel {
-        const moduleScope = new TreeSitterModuleModel(editorModel);
+        const moduleModelImpl = new TreeSitterModuleModel(editorModel);
 
-        (editorModel as ModuleModel).getScope = moduleScope.getScope.bind(moduleScope);
-        (editorModel as ModuleModel).getEditingExpression = moduleScope.getEditingExpression.bind(moduleScope);
-        (editorModel as ModuleModel).getCurrentExpression = moduleScope.getCurrentExpression.bind(moduleScope);
-        (editorModel as ModuleModel).getEditingMethod = moduleScope.getEditingMethod.bind(moduleScope);
-        (editorModel as ModuleModel).getCodeModel = moduleScope.getCodeModel.bind(moduleScope);
-        (editorModel as ModuleModel).updateCodeModel = moduleScope.updateCodeModel.bind(moduleScope);
+        (editorModel as ModuleModel).getScope = moduleModelImpl.getScope.bind(moduleModelImpl);
+        (editorModel as ModuleModel).getEditingExpression = moduleModelImpl.getEditingExpression.bind(moduleModelImpl);
+        (editorModel as ModuleModel).getCurrentExpression = moduleModelImpl.getCurrentExpression.bind(moduleModelImpl);
+        (editorModel as ModuleModel).getEditingMethod = moduleModelImpl.getEditingMethod.bind(moduleModelImpl);
+        (editorModel as ModuleModel).getCodeModel = moduleModelImpl.getCodeModel.bind(moduleModelImpl);
+        (editorModel as ModuleModel).updateCodeModel = moduleModelImpl.updateCodeModel.bind(moduleModelImpl);
 
         return editorModel as ModuleModel
     }
