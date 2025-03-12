@@ -1,5 +1,5 @@
 import { BslParser } from "./bslParser"
-import { editor, Position } from "monaco-editor-core"
+import { editor, IPosition } from "monaco-editor-core"
 import { ModuleModel } from "../moduleModel"
 import { ExpressionProvider } from "../expressions/expressionProvider"
 import { Constructor, Expression, MethodCall } from "../expressions/expressions"
@@ -52,7 +52,7 @@ export class TreeSitterModuleModel extends AutoDisposable implements ExpressionP
         this.codeModel = TreeSitterCodeModelFactory.buildModel(this.parser)
     }
 
-    getEditingExpression(position: Position): Expression | undefined {
+    getEditingExpression(position: IPosition): Expression | undefined {
         const positionOffset = getEditedPositionOffset(this.editorModel, position)
 
         const node = this.parser.getCurrentEditingNode(positionOffset)
@@ -61,14 +61,14 @@ export class TreeSitterModuleModel extends AutoDisposable implements ExpressionP
         }
     }
 
-    getCurrentExpression(position: Position): Expression | undefined {
+    getCurrentExpression(position: IPosition): Expression | undefined {
         const node = this.parser.getCurrentNode(getPositionOffset(this.editorModel, position))
         if (node) {
             return resolveSymbol(node)
         }
     }
 
-    getEditingMethod(position: Position): Constructor | MethodCall | undefined {
+    getEditingMethod(position: IPosition): Constructor | MethodCall | undefined {
         const positionOffset = getEditedPositionOffset(this.editorModel, position)
         const node = this.parser.getCurrentEditingNode(positionOffset)
         if (node) {

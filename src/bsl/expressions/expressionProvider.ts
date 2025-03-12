@@ -1,8 +1,9 @@
-import { Position } from "monaco-editor-core";
+import { IPosition } from "monaco-editor-core";
 import { Constructor, Expression, MethodCall } from "./expressions";
+import { CodeSymbol } from "@/common/codeModel";
 
 export interface ExpressionProvider {
-    getEditingExpression(position: Position): Expression | undefined,
-    getEditingMethod(position: Position): Constructor | MethodCall | undefined,
-    getCurrentExpression(position: Position): Expression | undefined
+    getEditingExpression(position: IPosition): Expression | undefined,
+    getEditingMethod(position: IPosition): Constructor | MethodCall | undefined,
+    getCurrentExpression(position: IPosition): CodeSymbol | undefined
 }

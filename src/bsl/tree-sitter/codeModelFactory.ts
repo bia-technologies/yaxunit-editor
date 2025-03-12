@@ -243,7 +243,7 @@ function createAccessSymbol(node: Node) {
             return createMethodCall(node)
         case BslTokenTypes.identifier:
         case BslTokenTypes.property:
-            return new PropertySymbol(symbolPosition(node))
+            return new PropertySymbol(symbolPosition(node), node.text)
         case BslTokenTypes.index:
             return createIndexAccess(node)
     }

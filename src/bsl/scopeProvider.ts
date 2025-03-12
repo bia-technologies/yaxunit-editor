@@ -1,7 +1,7 @@
 import { editor } from 'monaco-editor-core';
 import { Scope, Member, GlobalScope, TypeDefinition, } from '@/common/scope';
-import { Method } from '@/common/codeModel';
-import { Accessible } from './expressions/expressions';
+import { Method, NamedSymbol } from '@/common/codeModel';
+import { Accessible, isAccessible } from './expressions/expressions';
 import { isModel } from '@/monaco/utils';
 import { EditorScope } from './scope/editorScope';
 
@@ -15,11 +15,11 @@ const scopeProvider = {
         return GlobalScope.resolveType(typeId)
     },
 
-    async resolveSymbolMember(model: ModelOrScope, symbol: Accessible): ResolvedSymbol {
+    async resolveSymbolMember(model: ModelOrScope, symbol: Accessible | NamedSymbol): ResolvedSymbol {
         console.debug('resolve symbol member for', symbol)
         let scope: Scope | undefined = isModel(model) ? EditorScope.getScope(model) : model
 
-        if (symbol.path && symbol.path.length) {
+        if (isAccessible(symbol) && symbol.path && symbol.path.length) {
             scope = await this.resolveExpressionType(scope, symbol.path)
         }
 

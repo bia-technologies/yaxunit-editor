@@ -1,4 +1,4 @@
-import { editor, Position } from "monaco-editor-core"
+import { editor, IPosition } from "monaco-editor-core"
 import { ModuleModel } from "../moduleModel";
 import { ExpressionProvider } from "../expressions/expressionProvider";
 import { Constructor, Expression, FieldAccess, MethodCall } from "../expressions/expressions";
@@ -7,6 +7,7 @@ import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslCodeModel } from "../codeModel";
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "../scope/bslModuleScope";
+import { CodeSymbol } from "@/common/codeModel";
 
 export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
 
@@ -33,6 +34,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         this.scope = new BslModuleScope(this.editorModel)
 
         this.codeModel = ChevrotainSitterCodeModelFactory.buildModel(this.editorModel)
+        this.codeModel?.afterUpdate()
     }
 
     getScope() {
@@ -43,21 +45,24 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         return this.codeModel
     }
 
-    updateCodeModel(){
+    updateCodeModel() {
         this.codeModel = ChevrotainSitterCodeModelFactory.buildModel(this.editorModel)
+        this.codeModel?.afterUpdate()
     }
 
-    getCurrentExpression(position: Position): Expression | undefined {
-        const tokensSeq = tokensProvider.currentTokens(this.editorModel, position)
-        return createExpression(tokensSeq)
+    getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position)
+        }
+        return this.codeModel?.descendantByOffset(position)
     }
 
-    getEditingExpression(position: Position): Expression | undefined {
+    getEditingExpression(position: IPosition): Expression | undefined {
         const tokensSeq = tokensProvider.resolve(this.editorModel, position)
         return createExpression(tokensSeq)
     }
 
-    getEditingMethod(position: Position): Constructor | MethodCall | undefined {
+    getEditingMethod(position: IPosition): Constructor | MethodCall | undefined {
         const tokensSeq = tokensProvider.currentMethod(this.editorModel, position)
         return createExpression(tokensSeq) as Constructor | MethodCall
     }
@@ -75,5 +80,8 @@ function createExpression(tokensSeq: TokensSequence | undefined): Expression | u
     } else {
         return new FieldAccess(tokens.pop() ?? '', tokens)
     }
+}
 
+function isPosition(object: any): object is IPosition {
+    return (object as IPosition).lineNumber !== undefined
 }

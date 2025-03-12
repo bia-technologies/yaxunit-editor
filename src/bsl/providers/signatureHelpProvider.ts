@@ -1,4 +1,4 @@
-import { editor, languages, Position, CancellationToken } from 'monaco-editor-core'
+import { editor, languages, IPosition, CancellationToken } from 'monaco-editor-core'
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { Member, MemberType, MethodMember, Signature, isPlatformMethod, GlobalScope } from '@/common/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
@@ -11,7 +11,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
     signatureHelpRetriggerCharacters: [')'],
 
-    async provideSignatureHelp(model: editor.ITextModel, position: Position, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
+    async provideSignatureHelp(model: editor.ITextModel, position: IPosition, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
         console.debug('Method context', context)
         
         const positionOffset = getEditedPositionOffset(model, position)

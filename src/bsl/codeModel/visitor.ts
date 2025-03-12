@@ -21,42 +21,42 @@ import {
 import { CodeSymbol } from "@/common/codeModel";
 
 export interface Acceptable {
-    accept(visitor: CodeModelVisitor): void
+    accept(visitor: CodeModelVisitor): any
 }
 
-function isAcceptable(symbol: any): symbol is Acceptable {
+export function isAcceptable(symbol: any): symbol is Acceptable {
     return (<Acceptable>symbol).accept !== undefined
 }
 
 export interface CodeModelVisitor {
-    visitModel(model: BslCodeModel): void
+    visitModel(model: BslCodeModel): any
 
     // definitions
-    visitProcedureDefinition(symbol: ProcedureDefinitionSymbol): void
-    visitFunctionDefinition(symbol: FunctionDefinitionSymbol): void
-    visitParameterDefinition(symbol: ParameterDefinitionSymbol): void
-    visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): void
+    visitProcedureDefinition(symbol: ProcedureDefinitionSymbol): any
+    visitFunctionDefinition(symbol: FunctionDefinitionSymbol): any
+    visitParameterDefinition(symbol: ParameterDefinitionSymbol): any
+    visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): any
 
     // statements
-    visitAssignmentStatement(symbol: AssignmentStatementSymbol): void
-    visitReturnStatement(symbol: ReturnStatementSymbol): void
+    visitAssignmentStatement(symbol: AssignmentStatementSymbol): any
+    visitReturnStatement(symbol: ReturnStatementSymbol): any
 
     // base
-    visitVariableSymbol(symbol: VariableSymbol): void
-    visitPropertySymbol(symbol: PropertySymbol): void
-    visitIndexAccessSymbol(symbol: IndexAccessSymbol): void
-    visitMethodCallSymbol(symbol: MethodCallSymbol): void
-    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): void
+    visitVariableSymbol(symbol: VariableSymbol): any
+    visitPropertySymbol(symbol: PropertySymbol): any
+    visitIndexAccessSymbol(symbol: IndexAccessSymbol): any
+    visitMethodCallSymbol(symbol: MethodCallSymbol): any
+    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): any
 
     // expression
-    visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): void
-    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): void
-    visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): void
-    visitConstructorSymbol(symbol: ConstructorSymbol): void
-    visitConstSymbol(symbol: ConstSymbol): void
+    visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): any
+    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): any
+    visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): any
+    visitConstructorSymbol(symbol: ConstructorSymbol): any
+    visitConstSymbol(symbol: ConstSymbol): any
 
     // preprocessor
-    visitPreprocessorSymbol(symbol: PreprocessorSymbol): void
+    visitPreprocessorSymbol(symbol: PreprocessorSymbol): any
 }
 
 export class BaseCodeModelVisitor implements CodeModelVisitor {
@@ -72,94 +72,97 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
         }
     }
 
-    visitModel(model: BslCodeModel): void {
+    visitModel(model: BslCodeModel): any {
         this.acceptItems(model.children)
     }
 
     // definitions
-    visitFunctionDefinition(symbol: FunctionDefinitionSymbol): void {
+    visitFunctionDefinition(symbol: FunctionDefinitionSymbol): any {
         this.acceptItems(symbol.params)
         this.acceptItems(symbol.children)
     }
 
-    visitProcedureDefinition(symbol: ProcedureDefinitionSymbol): void {
+    visitProcedureDefinition(symbol: ProcedureDefinitionSymbol): any {
         this.acceptItems(symbol.params)
         this.acceptItems(symbol.children)
     }
 
-    visitParameterDefinition(symbol: ParameterDefinitionSymbol): void {
+    visitParameterDefinition(symbol: ParameterDefinitionSymbol): any {
         this.accept(symbol.defaultValue)
     }
 
-    visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): void {
+    visitModuleVariableDefinition(_: ModuleVariableDefinitionSymbol): any {
 
     }
 
     // statements
 
-    visitAssignmentStatement(symbol: AssignmentStatementSymbol): void {
+    visitAssignmentStatement(symbol: AssignmentStatementSymbol): any {
         this.accept(symbol.variable)
         this.accept(symbol.expression)
     }
 
-    visitReturnStatement(symbol: ReturnStatementSymbol): void {
+    visitReturnStatement(symbol: ReturnStatementSymbol): any {
         this.accept(symbol.expression)
     }
 
     // basic
 
-    visitIndexAccessSymbol(symbol: IndexAccessSymbol): void {
-
+    visitIndexAccessSymbol(symbol: IndexAccessSymbol): any {
+        this.accept(symbol.index)
     }
 
-    visitMethodCallSymbol(symbol: MethodCallSymbol): void {
+    visitMethodCallSymbol(symbol: MethodCallSymbol): any {
         if (symbol.arguments) {
             this.acceptItems(symbol.arguments)
         }
     }
 
-    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): void {
+    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): any {
         this.acceptItems(symbol.access)
     }
 
-    visitPropertySymbol(symbol: PropertySymbol): void {
+    visitPropertySymbol(_: PropertySymbol): any {
 
     }
 
-    visitVariableSymbol(symbol: VariableSymbol): void {
+    visitVariableSymbol(_: VariableSymbol): any {
 
     }
 
     // expression
-    visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): void {
+    visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): any {
         this.accept(symbol.operand)
     }
 
-    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): void {
+    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): any {
         this.accept(symbol.left)
         this.accept(symbol.right)
     }
 
-    visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): void {
+    visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): any {
         this.accept(symbol.condition)
         this.accept(symbol.condition)
         this.accept(symbol.alternative)
     }
 
-    visitConstructorSymbol(symbol: ConstructorSymbol): void {
+    visitConstructorSymbol(symbol: ConstructorSymbol): any {
         if (Array.isArray(symbol.arguments)) {
             this.acceptItems(symbol.arguments)
         } else {
             this.accept(symbol.arguments)
         }
+        if (typeof symbol.name === 'object') {
+            this.accept(symbol.name)
+        }
     }
 
-    visitConstSymbol(symbol: ConstSymbol): void {
+    visitConstSymbol(_: ConstSymbol): any {
 
     }
 
     // preprocessor
-    visitPreprocessorSymbol(symbol: PreprocessorSymbol): void {
-        
+    visitPreprocessorSymbol(_: PreprocessorSymbol): any {
+
     }
 }

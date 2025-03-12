@@ -4,6 +4,7 @@ import { parseModule, BslVisitor } from "./parser"
 import {
     AccessSequenceSymbol,
     AssignmentStatementSymbol,
+    BaseExpressionSymbol,
     BinaryExpressionSymbol,
     BslCodeModel,
     ConstructorSymbol,
@@ -205,7 +206,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
         let symbols: any[] = []
 
         if (ctx.variable) {
-            ctx.variable.forEach(s => symbols.push(createVariable(Identifier(s as IToken))))
+            ctx.variable.forEach(s => symbols.push(createVariable(s as IToken)))
         }
 
         if (ctx.methodCall) {
@@ -250,9 +251,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
 
     constructorExpression(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const name = firstTokenText(ctx.Identifier)
-        const symbol = new ConstructorSymbol(nodePosition(location))
-        symbol.name = name
-        symbol.type = name
+        const symbol = new ConstructorSymbol(nodePosition(location), name, name)
         if (ctx.arguments) {
             symbol.arguments = this.visitFirst(ctx.arguments)
         }
@@ -262,13 +261,12 @@ class CodeModelFactoryVisitor extends BslVisitor {
     constructorMethodExpression(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const type = this.visitFirst(ctx.type)
         const args = this.visitFirst(ctx.arguments)
-        const symbol = new ConstructorSymbol(nodePosition(location))
+        let symbol: ConstructorSymbol
 
         if (type instanceof ConstSymbol && type.type === BaseTypes.string) {
-            symbol.name = type.value
-            symbol.type = type.value
+            symbol = new ConstructorSymbol(nodePosition(location), type.value, type.value)
         } else {
-            symbol.name = type
+            symbol = new ConstructorSymbol(nodePosition(location), type as BaseExpressionSymbol)
         }
         symbol.arguments = args
         return symbol
@@ -313,42 +311,16 @@ class CodeModelFactoryVisitor extends BslVisitor {
     }
 }
 
-interface TokenInfo {
-    name: string,
-    startOffset: number,
-    endOffset: number
-}
-
-function Identifier(value: IToken): TokenInfo {
-    return {
-        name: value.image,
-        startOffset: value.startOffset,
-        endOffset: (value.endOffset ?? 0) + 1
-    }
-}
-
 function firstTokenText(tokens: CstElement[]) {
     return (tokens[0] as IToken).image
 }
 
 function Properties(value: IToken[]): PropertySymbol[] {
-    return value.map(s =>
-        createProperty(Identifier(s))
-    )
+    return value.map(token => new PropertySymbol(tokenPosition(token), token.image))
 }
 
-function createVariable(identifier: TokenInfo) {
-    return new VariableSymbol({
-        startOffset: identifier.startOffset,
-        endOffset: identifier.endOffset
-    }, identifier.name)
-}
-
-function createProperty(identifier: TokenInfo) {
-    return new PropertySymbol({
-        startOffset: identifier.startOffset,
-        endOffset: identifier.endOffset
-    }, identifier.name)
+function createVariable(token: IToken) {
+    return new VariableSymbol(tokenPosition(token), token.image)
 }
 
 function tokenPosition(token: IToken): SymbolPosition {

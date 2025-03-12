@@ -1,4 +1,4 @@
-import { editor, languages, Position, Range } from 'monaco-editor-core';
+import { editor, languages, IPosition, Range } from 'monaco-editor-core';
 import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope';
 import { scopeProvider } from '@/bsl/scopeProvider';
 import { ExpressionType, isAccessible } from '../expressions/expressions';
@@ -8,7 +8,7 @@ import { EditorScope } from '@/bsl/scope/editorScope';
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
-    async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
+    async provideCompletionItems(model: editor.ITextModel, position: IPosition): Promise<languages.CompletionList | undefined> {
         const moduleModel = model as ModuleModel
 
         const symbol = moduleModel.getEditingExpression(position)

@@ -1,6 +1,6 @@
 import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter'
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
-import { editor, Position } from 'monaco-editor-core'
+import { editor, IPosition } from 'monaco-editor-core'
 import { Method, ModuleVariable, SymbolPosition, Variable } from '@/common/codeModel'
 import { Queries } from './queries'
 import { isModel } from '@/monaco/utils'
@@ -237,7 +237,7 @@ function monacoOffsetToPoint(model: editor.ITextModel, offset: number): Point {
     return monacoPositionToPoint(model.getPositionAt(offset))
 }
 
-function monacoPositionToPoint(position: Position): Point {
+function monacoPositionToPoint(position: IPosition): Point {
     return { row: position.lineNumber - 1, column: position.column - 1 };
 }
 
