@@ -24,25 +24,31 @@ import { BaseSymbol, SymbolPosition } from "@/common/codeModel"
 import { BaseTypes } from "../scope/baseTypes"
 
 export const ChevrotainSitterCodeModelFactory = {
-    buildModel(model: ModuleModel | string): BslCodeModel | undefined {
-        const start = performance.now()
-        const visitor = new CodeModelFactoryVisitor()
-        const tree = parseModule(isModel(model) ? model.getValue() : model)
-
+    buildModel(model: ModuleModel | string): BslCodeModel {
         const codeModel = new BslCodeModel()
+        this.updateModel(codeModel, model)
+        return codeModel
+    },
+
+    updateModel(codeModel: BslCodeModel, model: ModuleModel | string): void {
+        const start = performance.now()
+
+        codeModel.children.length = 0 // Clear
+        const tree = parseModule(isModel(model) ? model.getValue() : model)
 
         tree.lexErrors.forEach(e => console.error('lexError', e))
         tree.parseErrors.forEach(e => console.error('parseError', e))
 
+        const visitor = new CodeModelFactoryVisitor()
         const children = visitor.visit(tree.cst)
+
         if (Array.isArray(children)) {
             codeModel.children.push(...children)
         } else if (children) {
             codeModel.children.push(children)
         }
         console.debug('Build code model by chevrotain', performance.now() - start, 'ms')
-        return codeModel
-    },
+    }
 }
 
 class CodeModelFactoryVisitor extends BslVisitor {
@@ -72,6 +78,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
     procedure(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const symbol = new ProcedureDefinitionSymbol(nodePosition(location))
         symbol.name = firstTokenText(ctx.name)
+        symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]
         }
@@ -82,6 +89,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
     function(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const symbol = new FunctionDefinitionSymbol(nodePosition(location))
         symbol.name = firstTokenText(ctx.name)
+        symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]
         }

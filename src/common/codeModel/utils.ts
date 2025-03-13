@@ -1,3 +1,4 @@
+import { editor, IRange } from "monaco-editor-core";
 import { BaseSymbol, CodeSymbol, CompositeSymbol } from "./base";
 
 export function descendantByOffset(offset: number, ...symbols: (BaseSymbol | undefined)[]): CodeSymbol | undefined {
@@ -13,4 +14,15 @@ export function descendantByOffset(offset: number, ...symbols: (BaseSymbol | und
 
 export function isCompositeSymbol(symbol: CodeSymbol): symbol is CompositeSymbol {
     return (symbol as CompositeSymbol).descendantByOffset !== undefined
+}
+
+export function symbolRange(symbol: CodeSymbol, model: editor.ITextModel): IRange {
+    const start = model.getPositionAt(symbol.startOffset)
+    const end = model.getPositionAt(symbol.endOffset)
+    return {
+        startLineNumber: start.lineNumber,
+        startColumn: start.column,
+        endLineNumber: end.lineNumber,
+        endColumn: end.column
+    }
 }

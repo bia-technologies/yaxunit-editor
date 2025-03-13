@@ -3,7 +3,7 @@ import { BslParser } from "./bslParser";
 import { BslTokenTypes } from "./bslTokenTypes";
 import { BaseSymbol, SymbolPosition } from "@/common/codeModel";
 import {
-    Access,
+    AccessProperty,
     AssignmentStatementSymbol,
     BinaryExpressionSymbol,
     BslCodeModel,
@@ -219,7 +219,7 @@ function createIndexAccess(node: Node) {
 }
 
 function collectAccessTokens(accessNode: Node) {
-    const path: Access = []
+    const path: AccessProperty[] = []
     let node: Node | null = accessNode.type !== BslTokenTypes.identifier ? accessNode.firstChild : accessNode;
     let lastNode: Node | undefined = undefined
     while (node) {

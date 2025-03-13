@@ -12,13 +12,12 @@ import {
     ProcedureDefinitionSymbol,
     PropertySymbol,
     VariableSymbol
-} from "../codeModel"
+} from "@/bsl/codeModel"
 import { CodeSymbol, NamedSymbol } from "@/common/codeModel"
-import { isAccessible } from "../expressions/expressions"
 import { IMarkdownString } from "monaco-editor-core"
-import { ModuleModel } from "../moduleModel"
-import { scopeProvider } from "../scopeProvider"
-import { BaseTypes } from "../scope/baseTypes"
+import { ModuleModel } from "../../moduleModel"
+import { scopeProvider } from "../../scopeProvider"
+import { BaseTypes } from "../../scope/baseTypes"
 
 export function signatureLabel(method: Member | string, signature: Signature) {
     const name = (method as Member).name ?? method
@@ -72,7 +71,11 @@ class HoverVisitor extends BaseCodeModelVisitor {
     }
 
     visitPropertySymbol(symbol: PropertySymbol) {
-        return fieldDescription(currentAccessSequence(symbol), this.model)
+        return fieldDescription(symbol, this.model)
+    }
+
+    visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
+        return fieldDescription(symbol, this.model)
     }
 
     visitConstructorSymbol(symbol: ConstructorSymbol) {
@@ -120,11 +123,6 @@ async function constructorDescription(symbol: ConstructorSymbol) {
 
 async function methodDescription(symbol: MethodCallSymbol, model: ModuleModel) {
     const content: string[] = []
-
-    const seq = currentAccessSequence(symbol)
-    if (seq) {
-        symbol = seq
-    }
 
     const member = await scopeProvider.resolveSymbolMember(model, symbol)
 
@@ -197,7 +195,7 @@ async function fieldDescription(symbol: AccessSequenceSymbol | NamedSymbol | und
     const member = await scopeProvider.resolveSymbolMember(model, symbol)
     let memberType: string | undefined
 
-    const isVar = !isAccessible(symbol) || symbol.access.length === 1
+    const isVar = !(symbol instanceof AccessSequenceSymbol) || symbol.access.length === 1
 
     if (member) {
         let typeDescription = memberDescription(member, isVar)
@@ -216,19 +214,6 @@ async function fieldDescription(symbol: AccessSequenceSymbol | NamedSymbol | und
     return content
 }
 
-function currentAccessSequence(symbol: MethodCallSymbol | PropertySymbol) {
-    if (symbol.parent instanceof AccessSequenceSymbol) {
-        const seq = new AccessSequenceSymbol(symbol.parent.position)
-        seq.access = [...symbol.parent.access]
-        for (let index = seq.access.length; index > 0; index--) {
-            if (symbol === seq.access[index - 1]) {
-                seq.access.length = index
-                break
-            }
-        }
-        return seq
-    }
-}
 // function getSignatureIndex(signatures: Signature[], args: ArgumentInfo[]) {
 //     if (signatures.length <= 1) {
 //         return 0

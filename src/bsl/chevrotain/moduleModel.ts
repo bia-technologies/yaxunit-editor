@@ -1,12 +1,9 @@
 import { editor, IPosition } from "monaco-editor-core"
-import { ModuleModel } from "../moduleModel";
-import { ExpressionProvider } from "../expressions/expressionProvider";
-import { Constructor, Expression, FieldAccess, MethodCall } from "../expressions/expressions";
-import tokensProvider, { TokensSequence } from "../vanilla-tokens/tokensProvider";
+import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
-import { BslCodeModel } from "../codeModel";
+import { AccessProperty, AccessSequenceSymbol, BslCodeModel, ConstructorSymbol, isAccessProperty, MethodCallSymbol } from "@/bsl/codeModel";
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
-import { BslModuleScope } from "../scope/bslModuleScope";
+import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
 import { CodeSymbol } from "@/common/codeModel";
 
 export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
@@ -24,7 +21,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         return editorModel as ModuleModel
     }
 
-    codeModel: BslCodeModel | undefined
+    codeModel: BslCodeModel
     editorModel: ModuleModel
     scope: BslModuleScope
 
@@ -33,8 +30,8 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         this.editorModel = model as ModuleModel
         this.scope = new BslModuleScope(this.editorModel)
 
-        this.codeModel = ChevrotainSitterCodeModelFactory.buildModel(this.editorModel)
-        this.codeModel?.afterUpdate()
+        this.codeModel = new BslCodeModel()
+        this.updateCodeModel()
     }
 
     getScope() {
@@ -46,39 +43,59 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
     }
 
     updateCodeModel() {
-        this.codeModel = ChevrotainSitterCodeModelFactory.buildModel(this.editorModel)
-        this.codeModel?.afterUpdate()
+        ChevrotainSitterCodeModelFactory.updateModel(this.codeModel, this.editorModel)
+        this.codeModel.afterUpdate()
     }
 
     getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        return this.codeModel?.descendantByOffset(position)
+        const symbol = this.codeModel.descendantByOffset(position)
+
+        if (symbol && isAccessProperty(symbol)) {
+            const seq = currentAccessSequence(symbol)
+            if (seq) {
+                return seq
+            }
+        }
+        return symbol
     }
 
-    getEditingExpression(position: IPosition): Expression | undefined {
-        const tokensSeq = tokensProvider.resolve(this.editorModel, position)
-        return createExpression(tokensSeq)
+    getEditingExpression(position: IPosition | number): CodeSymbol | undefined {
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position)
+        }
+        const symbol = this.codeModel.descendantByOffset(position)
+
+        if (symbol && isAccessProperty(symbol)) {
+            const seq = currentAccessSequence(symbol)
+            if (seq) {
+                return seq
+            }
+        }
+        return symbol
     }
 
-    getEditingMethod(position: IPosition): Constructor | MethodCall | undefined {
-        const tokensSeq = tokensProvider.currentMethod(this.editorModel, position)
-        return createExpression(tokensSeq) as Constructor | MethodCall
+    getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol | undefined {
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position)
+        }
+        return this.codeModel.descendantByOffset(position)
     }
 }
 
-function createExpression(tokensSeq: TokensSequence | undefined): Expression | undefined {
-    if (!tokensSeq) {
-        return undefined
-    }
-    const tokens = tokensSeq.tokens.reverse()
-    if (tokensSeq.left.toLowerCase().endsWith('новый')) {
-        return new Constructor(tokens.pop() ?? '', [])
-    } else if (tokensSeq.right.trimStart().startsWith('(')) {
-        return new MethodCall(tokens.pop() ?? '', tokens, [])
-    } else {
-        return new FieldAccess(tokens.pop() ?? '', tokens)
+function currentAccessSequence(symbol: AccessProperty) {
+    if (symbol.parent instanceof AccessSequenceSymbol) {
+        const seq = new AccessSequenceSymbol(symbol.parent.position)
+        seq.access = [...symbol.parent.access]
+        for (let index = seq.access.length; index > 0; index--) {
+            if (symbol === seq.access[index - 1]) {
+                seq.access.length = index
+                break
+            }
+        }
+        return seq
     }
 }
 

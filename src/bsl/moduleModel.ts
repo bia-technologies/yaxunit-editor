@@ -1,10 +1,18 @@
 import { editor } from "monaco-editor-core";
-import { ExpressionProvider } from "./expressions/expressionProvider";
 import { BslCodeModel } from "./codeModel";
 import { BslModuleScope } from "./scope/bslModuleScope";
+import { IPosition } from "monaco-editor-core";
+import { CodeSymbol } from "@/common/codeModel";
+import { AccessSequenceSymbol, ConstructorSymbol, MethodCallSymbol } from "@/bsl/codeModel";
+
+export interface ExpressionProvider {
+    getEditingExpression(position: IPosition): CodeSymbol | undefined,
+    getEditingMethod(position: IPosition): MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol | undefined,
+    getCurrentExpression(position: IPosition): CodeSymbol | undefined
+}
 
 export interface ModuleModel extends editor.ITextModel, ExpressionProvider {
     getScope(): BslModuleScope,
-    getCodeModel(): BslCodeModel | undefined
+    getCodeModel(): BslCodeModel
     updateCodeModel(): void
 }

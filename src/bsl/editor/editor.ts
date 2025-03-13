@@ -2,6 +2,7 @@ import { editor } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
 import { TreeSitterModuleModel } from '../tree-sitter/moduleModel'
+import { ModuleModel } from '../moduleModel'
 
 let activeEditor: BslEditor | undefined
 
@@ -65,6 +66,10 @@ export class BslEditor {
         return model ? model.getValue() : ''
     }
 
+    getModel(): ModuleModel {
+        return this.editor.getModel() as ModuleModel
+    }
+
     createModel() {
 
         const model = editor.createModel('', 'bsl');
@@ -89,6 +94,6 @@ export function getActiveEditor() {
 }
 
 function wasmSupported() {
-    return typeof WebAssembly === "object"
+    return false && typeof WebAssembly === "object"
         && typeof WebAssembly.instantiate === "function"
 }

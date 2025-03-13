@@ -1,7 +1,6 @@
 import { editor } from 'monaco-editor-core';
 import { Scope, Member, GlobalScope, TypeDefinition, } from '@/common/scope';
 import { Method, NamedSymbol } from '@/common/codeModel';
-import { Accessible, isAccessible } from './expressions/expressions';
 import { isModel } from '@/monaco/utils';
 import { EditorScope } from './scope/editorScope';
 

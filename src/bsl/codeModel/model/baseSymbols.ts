@@ -1,4 +1,3 @@
-import { Accessible } from "@/bsl/expressions/expressions";
 import { Acceptable, CodeModelVisitor } from "../visitor"
 import {
     BaseSymbol,
@@ -72,10 +71,17 @@ export class MethodCallSymbol extends BaseExpressionSymbol implements Acceptable
     }
 }
 
-export type Access = (MethodCallSymbol | VariableSymbol | PropertySymbol | IndexAccessSymbol)[]
+export type AccessProperty = (MethodCallSymbol | VariableSymbol | PropertySymbol | IndexAccessSymbol)
 
-export class AccessSequenceSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol, Accessible {
-    access: Access = []
+export function isAccessProperty(symbol: CodeSymbol): symbol is AccessProperty {
+    return symbol instanceof MethodCallSymbol
+        || symbol instanceof VariableSymbol
+        || symbol instanceof PropertySymbol
+        || symbol instanceof IndexAccessSymbol
+}
+
+export class AccessSequenceSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol {
+    access: AccessProperty[] = []
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitAccessSequenceSymbol(this)

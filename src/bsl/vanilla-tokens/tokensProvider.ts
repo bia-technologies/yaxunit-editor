@@ -1,5 +1,5 @@
 import { editor, IPosition, Token } from 'monaco-editor-core';
-import { TokenType } from '../language/tokenTypes';
+import { TokenType } from '../editor/language/tokenTypes';
 
 export enum TokensSequenceType {
     expression,

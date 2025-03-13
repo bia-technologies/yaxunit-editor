@@ -2,10 +2,10 @@ import { editor, languages, IPosition, CancellationToken } from 'monaco-editor-c
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { Member, MemberType, MethodMember, Signature, isPlatformMethod, GlobalScope } from '@/common/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner } from '../expressions/expressions'
+import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner } from '../../expressions/expressions'
 import { getEditedPositionOffset } from '@/monaco/utils'
 import { EditorScope } from '@/bsl/scope/editorScope'
-import { ModuleModel } from '../moduleModel'
+import { ModuleModel } from '../../moduleModel'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],

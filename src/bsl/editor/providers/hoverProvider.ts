@@ -1,5 +1,5 @@
 import { languages, editor } from "monaco-editor-core";
-import { ModuleModel } from "../moduleModel";
+import { ModuleModel } from "@/bsl/moduleModel";
 import { hoverSymbolDescription } from './documentationRender';
 
 export const hoverProvider: languages.HoverProvider = {

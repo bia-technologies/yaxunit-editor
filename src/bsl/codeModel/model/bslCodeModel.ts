@@ -3,9 +3,12 @@ import { VariablesScope } from "../interfaces";
 import { MethodsCalculator, VariablesCalculator } from "../calculators";
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitions";
 import { ParentsCalculator } from "../calculators";
+import { Emitter, IEvent } from "monaco-editor-core";
+import { AutoDisposable } from "@/common/utils/autodisposable";
 
-export class BslCodeModel implements VariablesScope {
+export class BslCodeModel extends AutoDisposable implements VariablesScope {
     children: BaseSymbol[] = []
+    private onDidChangeModelEmitter: Emitter<BslCodeModel> = new Emitter()
 
     get methods() {
         return (new MethodsCalculator()).calculate(this)
@@ -25,5 +28,12 @@ export class BslCodeModel implements VariablesScope {
 
     afterUpdate() {
         new ParentsCalculator().visitModel(this)
+        this.onDidChangeModelEmitter.fire(this)
+    }
+
+    onDidChangeModel: IEvent<BslCodeModel> = (listener) => {
+        let event;
+        this._disposables.push(event = this.onDidChangeModelEmitter.event(listener))
+        return event
     }
 }

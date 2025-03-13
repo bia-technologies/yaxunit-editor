@@ -2,7 +2,7 @@ import { languages } from 'monaco-editor-core';
 import { completionItemProvider } from '../providers/completionItemProvider'
 import { signatureHelpProvider } from '../providers/signatureHelpProvider'
 import { documentSymbolProvider } from '../providers/documentSymbolProvider';
-import { hoverProvider } from '@/bsl/providers/hoverProvider';
+import { hoverProvider } from '../providers/hoverProvider';
 
 interface ILangImpl {
   conf: languages.LanguageConfiguration;

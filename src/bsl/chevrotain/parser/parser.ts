@@ -5,7 +5,8 @@ import { BSLLexer } from "./lexer";
 export class BSLParser extends CstParser {
     constructor() {
         super(allTokens, {
-            nodeLocationTracking: "onlyOffset"
+            nodeLocationTracking: "onlyOffset",
+            recoveryEnabled: true
         });
         this.performSelfAnalysis();
     }

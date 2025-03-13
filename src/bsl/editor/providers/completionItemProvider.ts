@@ -1,9 +1,9 @@
-import { editor, languages, IPosition, Range } from 'monaco-editor-core';
-import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope';
-import { scopeProvider } from '@/bsl/scopeProvider';
-import { ExpressionType, isAccessible } from '../expressions/expressions';
-import { ModuleModel } from '../moduleModel';
-import { EditorScope } from '@/bsl/scope/editorScope';
+import { editor, languages, IPosition, Range } from 'monaco-editor-core'
+import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope'
+import { scopeProvider } from '@/bsl/scopeProvider'
+import { ModuleModel } from '@/bsl/moduleModel'
+import { EditorScope } from '@/bsl/scope/editorScope'
+import { AccessSequenceSymbol, ConstructorSymbol } from '@/bsl/codeModel'
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
@@ -20,11 +20,11 @@ const completionItemProvider: languages.CompletionItemProvider = {
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
         const editorScope = EditorScope.getScope(model)
 
-        if (!symbol || symbol.type === ExpressionType.none) {
+        if (!symbol) {
             scope = editorScope
-        } else if (isAccessible(symbol)) {
+        } else if (symbol instanceof AccessSequenceSymbol) {
             scope = symbol.path.length ? await scopeProvider.resolveExpressionType(editorScope, symbol.path) : editorScope
-        } else if (symbol.type === ExpressionType.ctor) {
+        } else if (symbol instanceof ConstructorSymbol) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
                     return {

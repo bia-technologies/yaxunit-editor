@@ -2,7 +2,7 @@ import './styles/style.css';
 import './polyfill .js';
 
 import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
-import '@/bsl/language/contribution.js'
+import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope'
 import { YAxUnitEditor } from '@/yaxunit'
