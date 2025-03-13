@@ -1,3 +1,3 @@
 export * from './model'
-export * from './interfaces'
+export * from './model/interfaces'
 export * from './visitor'

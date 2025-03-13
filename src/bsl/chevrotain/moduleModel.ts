@@ -1,7 +1,15 @@
 import { editor, IPosition } from "monaco-editor-core"
 import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
-import { AccessProperty, AccessSequenceSymbol, BslCodeModel, ConstructorSymbol, isAccessProperty, MethodCallSymbol } from "@/bsl/codeModel";
+import {
+    AccessProperty,
+    AccessSequenceSymbol,
+    BaseExpressionSymbol,
+    BslCodeModel,
+    ConstructorSymbol,
+    isAccessProperty,
+    MethodCallSymbol
+} from "@/bsl/codeModel";
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
 import { CodeSymbol } from "@/common/codeModel";
@@ -66,15 +74,12 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        const symbol = this.codeModel.descendantByOffset(position)
-
-        if (symbol && isAccessProperty(symbol)) {
-            const seq = currentAccessSequence(symbol)
-            if (seq) {
-                return seq
-            }
+        const current = this.getCurrentExpression(position)
+        if (current instanceof BaseExpressionSymbol) {
+            return current
+        } else {
+            return this.getCurrentExpression(position - 1)
         }
-        return symbol
     }
 
     getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol | undefined {
@@ -88,6 +93,8 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
 function currentAccessSequence(symbol: AccessProperty) {
     if (symbol.parent instanceof AccessSequenceSymbol) {
         const seq = new AccessSequenceSymbol(symbol.parent.position)
+        seq.parent = symbol.parent.parent
+
         seq.access = [...symbol.parent.access]
         for (let index = seq.access.length; index > 0; index--) {
             if (symbol === seq.access[index - 1]) {
@@ -95,6 +102,7 @@ function currentAccessSequence(symbol: AccessProperty) {
                 break
             }
         }
+        seq.type = seq.access[seq.accept.length - 1].type
         return seq
     }
 }

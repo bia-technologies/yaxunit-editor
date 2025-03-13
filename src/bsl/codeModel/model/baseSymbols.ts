@@ -9,6 +9,7 @@ import {
     NamedSymbol,
     SymbolPosition
 } from "@/common/codeModel";
+import { Member } from "@/common/scope";
 
 export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol {
     type?: string
@@ -17,6 +18,7 @@ export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol
 
 export class VariableSymbol extends BaseExpressionSymbol implements CommonVariable, Acceptable, NamedSymbol {
     name: string
+    member?: Member
 
     constructor(position: SymbolPosition, name: string) {
         super(position)
@@ -30,6 +32,7 @@ export class VariableSymbol extends BaseExpressionSymbol implements CommonVariab
 
 export class PropertySymbol extends BaseExpressionSymbol implements Acceptable, NamedSymbol {
     name: string
+    member?: Member
 
     constructor(position: SymbolPosition, name: string) {
         super(position)
@@ -43,6 +46,7 @@ export class PropertySymbol extends BaseExpressionSymbol implements Acceptable, 
 
 export class IndexAccessSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol {
     index?: BaseSymbol
+    member?: Member
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitIndexAccessSymbol(this)
@@ -56,6 +60,7 @@ export class IndexAccessSymbol extends BaseExpressionSymbol implements Acceptabl
 export class MethodCallSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol, NamedSymbol {
     name: string
     arguments?: BaseSymbol[]
+    member?: Member
 
     constructor(position: SymbolPosition, name?: string) {
         super(position)
@@ -89,15 +94,5 @@ export class AccessSequenceSymbol extends BaseExpressionSymbol implements Accept
 
     descendantByOffset(offset: number): CodeSymbol | undefined {
         return descendantByOffset(offset, ...this.access)
-    }
-
-    get path(): string[] {
-        const result = this.access.map(s => (s as NamedSymbol).name)
-        result.pop()
-        return result
-    }
-
-    get name(): string {
-        return (this.access[this.access.length - 1] as NamedSymbol).name
     }
 }

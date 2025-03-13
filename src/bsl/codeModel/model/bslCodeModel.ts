@@ -1,21 +1,22 @@
 import { BaseSymbol, CodeSymbol, descendantByOffset, Method } from "@/common/codeModel";
-import { VariablesScope } from "../interfaces";
-import { MethodsCalculator, VariablesCalculator } from "../calculators";
+import { VariablesScope } from "./interfaces";
+import { MethodsCalculator, TypesCalculator, VariablesCalculator } from "../calculators";
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitions";
 import { ParentsCalculator } from "../calculators";
 import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
+import { CodeModelVisitor } from "../visitor";
+import { BslVariable } from "./variables";
 
 export class BslCodeModel extends AutoDisposable implements VariablesScope {
+    calculators: CodeModelVisitor[] = [new ParentsCalculator(), new VariablesCalculator(), TypesCalculator.instance]
     children: BaseSymbol[] = []
+    vars: BslVariable[] = []
+
     private onDidChangeModelEmitter: Emitter<BslCodeModel> = new Emitter()
 
     get methods() {
         return (new MethodsCalculator()).calculate(this)
-    }
-
-    get vars() {
-        return (new VariablesCalculator()).calculate(this)
     }
 
     getMethodDefinition(method: Method): FunctionDefinitionSymbol | ProcedureDefinitionSymbol | undefined {
@@ -27,13 +28,11 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope {
     }
 
     afterUpdate() {
-        new ParentsCalculator().visitModel(this)
+        this.calculators.forEach(c => c.visitModel(this))
         this.onDidChangeModelEmitter.fire(this)
     }
 
     onDidChangeModel: IEvent<BslCodeModel> = (listener) => {
-        let event;
-        this._disposables.push(event = this.onDidChangeModelEmitter.event(listener))
-        return event
+        return this.onDidChangeModelEmitter.event(listener)
     }
 }

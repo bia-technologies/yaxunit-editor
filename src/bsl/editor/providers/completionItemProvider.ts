@@ -20,11 +20,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
         const editorScope = EditorScope.getScope(model)
 
-        if (!symbol) {
-            scope = editorScope
-        } else if (symbol instanceof AccessSequenceSymbol) {
-            scope = symbol.path.length ? await scopeProvider.resolveExpressionType(editorScope, symbol.path) : editorScope
-        } else if (symbol instanceof ConstructorSymbol) {
+        if (symbol instanceof ConstructorSymbol) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
                     return {
@@ -35,6 +31,12 @@ const completionItemProvider: languages.CompletionItemProvider = {
                     }
                 })
             }
+        }
+
+        if (symbol instanceof AccessSequenceSymbol) {
+            scope = await scopeProvider.resolveSymbolParentScope(editorScope, symbol)
+        } else {
+            scope = editorScope
         }
 
         console.debug('completion scope: ', scope)

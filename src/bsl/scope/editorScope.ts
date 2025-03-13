@@ -1,5 +1,5 @@
 import { Scope, UnionScope, GlobalScope } from '@/common/scope'
-import { editor } from 'monaco-editor-core'
+import { IPosition, editor } from 'monaco-editor-core'
 import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
 import { ModuleModel } from '../moduleModel'
@@ -29,11 +29,11 @@ export class EditorScope extends UnionScope {
         this.scopes.push(GlobalScope)
     }
 
-    getScopesAtLine(line: number | undefined): Scope[] {
-        if (!line) {
+    getScopesAtPosition(position: IPosition | null): Scope[] {
+        if (!position) {
             return this.scopes;
         }
-        const method = this.moduleScope.getMethodScope(line)
+        const method = this.moduleScope.collectScopeAtPosition(position)
         if (!method) {
             return this.scopes;
         } else {
@@ -42,7 +42,7 @@ export class EditorScope extends UnionScope {
     }
 
     getScopes(): Scope[] {
-        return this.getScopesAtLine(this.editor.getPosition()?.lineNumber)
+        return this.getScopesAtPosition(this.editor.getPosition())
     }
 
     getMethods(): Method[] {

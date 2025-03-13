@@ -2,6 +2,7 @@ import { GlobalScope, Member, MemberType, Parameter, Signature } from "@/common/
 import {
     AccessSequenceSymbol,
     BaseCodeModelVisitor,
+    BslVariable,
     ConstructorSymbol,
     ConstSymbol,
     FunctionDefinitionSymbol,
@@ -13,11 +14,11 @@ import {
     PropertySymbol,
     VariableSymbol
 } from "@/bsl/codeModel"
-import { CodeSymbol, NamedSymbol } from "@/common/codeModel"
+import { CodeSymbol } from "@/common/codeModel"
 import { IMarkdownString } from "monaco-editor-core"
 import { ModuleModel } from "../../moduleModel"
-import { scopeProvider } from "../../scopeProvider"
 import { BaseTypes } from "../../scope/baseTypes"
+import { TypesCalculator } from "@/bsl/codeModel/calculators"
 
 export function signatureLabel(method: Member | string, signature: Signature) {
     const name = (method as Member).name ?? method
@@ -70,10 +71,6 @@ class HoverVisitor extends BaseCodeModelVisitor {
         return variableDescription(symbol, this.model)
     }
 
-    visitPropertySymbol(symbol: PropertySymbol) {
-        return fieldDescription(symbol, this.model)
-    }
-
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
         return fieldDescription(symbol, this.model)
     }
@@ -95,11 +92,11 @@ class HoverVisitor extends BaseCodeModelVisitor {
     }
 
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
-        return `Процедура \`${symbol.name}\``
+        return symbol.description ?? `Процедура \`${symbol.name}\``
     }
 
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol) {
-        return `Функция \`${symbol.name}\``
+        return symbol.description ?? `Функция \`${symbol.name}\``
     }
 }
 
@@ -121,18 +118,19 @@ async function constructorDescription(symbol: ConstructorSymbol) {
     return content
 }
 
-async function methodDescription(symbol: MethodCallSymbol, model: ModuleModel) {
+async function methodDescription(symbol: MethodCallSymbol) {
     const content: string[] = []
 
-    const member = await scopeProvider.resolveSymbolMember(model, symbol)
+    if (!symbol.type) {
+        await TypesCalculator.instance.calculate(symbol)
+    }
 
-    if (member) {
-        if (member.description) {
-            content.push(member.description)
+    if (symbol.member) {
+        if (symbol.member.description) {
+            content.push(symbol.member.description)
         }
-        const memberType = await member.type
-        if (memberType) {
-            content.push(`**Возвращает:** \`${memberType}\``)
+        if (symbol.type) {
+            content.push(`**Возвращает:** \`${symbol.type}\``)
         }
     } else {
         content.push(`Метод \`${symbol.name}\``)
@@ -140,23 +138,27 @@ async function methodDescription(symbol: MethodCallSymbol, model: ModuleModel) {
     return content
 }
 
-async function variableDescription(symbol: VariableSymbol, model: ModuleModel) {
+async function variableDescription(symbol: VariableSymbol) {
     const content: string[] = []
 
-    const member = await scopeProvider.resolveSymbolMember(model, symbol)
-    let type = symbol.type
-
-    if (member) {
-        const mDescription = memberDescription(member, true)
-        content.push(`${mDescription} \`${member.name}\``)
-        if (member.description) {
-            content.push(member.description)
-        }
-        type = await member.type
-    } else {
-        content.push(`Переменная \`${symbol.name}\``)
+    if (!symbol.type) {
+        await TypesCalculator.instance.calculate(symbol)
     }
-    content.push(`**Тип:** \`${type ?? BaseTypes.unknown}\``)
+
+    if (symbol.member) {
+        if (symbol.member instanceof BslVariable) {
+            content.push(`Локальная переменная \`${symbol.name}\``)
+        } else {
+            content.push(memberDescription(symbol.member, true))
+        }
+        if (symbol.member.description) {
+            content.push(symbol.member.description)
+        }
+    } else {
+        content.push(`Глобальная переменная \`${symbol.name}\``)
+    }
+
+    content.push(`**Тип:** \`${symbol.type ?? BaseTypes.unknown}\``)
 
     return content
 }
@@ -187,29 +189,36 @@ function memberDescription(member: Member, isVar: boolean) {
     return memberDescription
 }
 
-async function fieldDescription(symbol: AccessSequenceSymbol | NamedSymbol | undefined, model: ModuleModel) {
+async function fieldDescription(symbol: AccessSequenceSymbol, model: ModuleModel) {
     if (!symbol) {
         return 'Неизвестно'
     }
-    const content: string[] = []
-    const member = await scopeProvider.resolveSymbolMember(model, symbol)
-    let memberType: string | undefined
-
-    const isVar = !(symbol instanceof AccessSequenceSymbol) || symbol.access.length === 1
-
-    if (member) {
-        let typeDescription = memberDescription(member, isVar)
-
-        content.push(`${typeDescription} \`${member.name}\``)
-        if (member.description) {
-            content.push(member.description)
-        }
-        memberType = await member.type
-    } else {
-        const typeDescription = isVar ? 'Глобальная переменная' : 'Свойство'
-        content.push(`${typeDescription} \`${symbol.name}\``)
+    if (!symbol.type) {
+        await TypesCalculator.instance.calculate(symbol)
     }
-    content.push(`**Тип:** \`${memberType ?? BaseTypes.unknown}\``)
+
+    const last = symbol.access[symbol.access.length - 1]
+    if (last instanceof VariableSymbol) {
+        return variableDescription(last)
+    } else if (last instanceof MethodCallSymbol) {
+        return methodDescription(last)
+    }
+
+    if (!last.type) {
+        TypesCalculator.instance.calculate(symbol)
+    }
+    const content: string[] = []
+
+    if (last instanceof PropertySymbol) {
+        content.push(`Свойство \`${last.name}\``)
+    } else if (last instanceof IndexAccessSymbol) {
+        content.push(`Элемент коллекции \`${last.index}\``)
+    }
+
+    if (last.member?.description) {
+        content.push(last.member.description)
+    }
+    content.push(`**Тип:** \`${last.type ?? BaseTypes.unknown}\``)
 
     return content
 }

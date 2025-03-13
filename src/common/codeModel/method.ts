@@ -1,5 +1,5 @@
 import { Signature, Parameter as ParameterMember } from "../scope"
-import { NamedSymbol, Symbol, Variable } from "./"
+import { CodeSymbol, NamedSymbol, Variable } from "./"
 
 export interface Method extends NamedSymbol, Signature {
     isExport: boolean
@@ -8,7 +8,7 @@ export interface Method extends NamedSymbol, Signature {
     vars?: Variable[]
 }
 
-export interface Parameter extends Symbol, ParameterMember {
+export interface Parameter extends CodeSymbol, ParameterMember {
     default?: string
     byVal: boolean
 }

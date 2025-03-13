@@ -1,14 +1,40 @@
 import { CaseInsensitiveMap } from "@/common/utils/caseInsensitiveMap";
-import { BaseCodeModelVisitor } from "../visitor";
-import { AssignmentStatementSymbol, BslCodeModel, ModuleVariableDefinitionSymbol, VariableSymbol } from "..";
+import { BaseCodeModelVisitor, isAcceptable } from "../visitor";
+import {
+    AssignmentStatementSymbol,
+    BslCodeModel,
+    FunctionDefinitionSymbol,
+    ModuleVariableDefinitionSymbol,
+    ProcedureDefinitionSymbol,
+    VariableSymbol
+} from "../model";
+import { BslVariable } from "../model/variables";
 
 export class VariablesCalculator extends BaseCodeModelVisitor {
-    variables: VariableSymbol[] = []
-    variablesMap: CaseInsensitiveMap<VariableSymbol> = new CaseInsensitiveMap()
+    variablesMap: CaseInsensitiveMap<BslVariable> = new CaseInsensitiveMap()
+    varScope: VariablesScope | undefined
 
-    calculate(model: BslCodeModel) {
-        this.visitModel(model)
-        return this.variables
+    calculate(model: VariablesScope) {
+        if (model instanceof BslCodeModel) {
+            this.visitModel(model)
+        } else if (isAcceptable(model)) {
+            model.accept(this)
+        }
+    }
+
+    visitModel(model: BslCodeModel) {
+        this.setVarScope(model)
+        super.visitModel(model)
+    }
+
+    visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
+        this.setVarScope(symbol)
+        super.visitProcedureDefinition(symbol)
+    }
+
+    visitFunctionDefinition(symbol: FunctionDefinitionSymbol) {
+        this.setVarScope(symbol)
+        super.visitFunctionDefinition(symbol)
     }
 
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): void {
@@ -18,14 +44,26 @@ export class VariablesCalculator extends BaseCodeModelVisitor {
         super.visitAssignmentStatement(symbol)
     }
 
+    visitVariableSymbol(symbol: VariableSymbol) {
+        symbol.member = this.variablesMap.get(symbol.name)
+    }
+
     visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): void {
         this.handleVar(symbol)
     }
 
-    handleVar(variable: VariableSymbol) {
-        if (!this.variablesMap.has(variable.name)) {
+    private setVarScope(varScope: VariablesScope) {
+        this.varScope = varScope
+        this.variablesMap.clear()
+    }
+
+    handleVar(symbol: VariableSymbol) {
+        let variable = this.variablesMap.get(symbol.name)
+        if (!variable) {
+            variable = new BslVariable(symbol.name)
             this.variablesMap.set(variable.name, variable)
-            this.variables.push(variable)
+            this.varScope.vars.push(variable)
         }
+        symbol.member = variable
     }
 }

@@ -9,18 +9,21 @@ import {
     CodeSymbol,
     descendantByOffset
 } from "@/common/codeModel";
-import { Signature } from "@/common/scope";
-import { VariablesScope } from "../interfaces";
+import { Member, Signature } from "@/common/scope";
+import { VariablesScope } from "./interfaces";
 import { VariableSymbol } from "./baseSymbols";
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
+import { BslVariable } from "./variables";
 
 export abstract class MethodDefinition extends BaseSymbol implements Signature, VariablesScope, NamedSymbol, CompositeSymbol {
     name: string
     isExport: boolean = false
     params: ParameterDefinitionSymbol[] = []
-    vars?: VariableSymbol[]
+    vars: BslVariable[] = []
     children: BaseSymbol[] = []
+    description?: string
+    member?: Member
 
     constructor(position: SymbolPosition, name?: string) {
         super(position)

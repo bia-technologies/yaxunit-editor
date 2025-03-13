@@ -27,6 +27,7 @@ export class TestsResolver {
             return
         }
 
+        rootMethod.description = 'Метод регистрации тестов'
         const methodContent = this.getMethodContent(rootMethod)
         if (!methodContent) {
             return
@@ -38,7 +39,11 @@ export class TestsResolver {
             hash[match[1].toLowerCase()] = true
         }
 
-        return methods.filter(m => m.isExport && (isRootMethod(m) || hash[m.name.toLowerCase()]))
+        const testMethods = methods.filter(m => m.isExport && hash[m.name.toLowerCase()])
+        testMethods.forEach(t=>t.description = `Тестовый метод \`${t.name}\``)
+        testMethods.push(rootMethod)
+
+        return testMethods
     }
 
     private getMethodContent(method: Method): string | undefined {

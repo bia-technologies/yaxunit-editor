@@ -1,6 +1,9 @@
 import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
-import { Method } from "@/common/codeModel"
+import { BaseSymbol, Method } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
+import { IPosition } from 'monaco-editor-core'
+import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
+import { VariablesCalculator } from '../codeModel/calculators'
 
 export class BslModuleScope extends BaseScope {
     protected readonly model: ModuleModel
@@ -18,13 +21,18 @@ export class BslModuleScope extends BaseScope {
         }
     }
 
-    getMethodAtLine(line: number): Method | undefined {
-        return this.getMethods().find(m => m.startLine <= line && m.endLine >= line)
-    }
+    collectScopeAtPosition(position: IPosition): Scope | undefined {
+        let symbol = this.model.getCurrentExpression(position) as BaseSymbol
+        let method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined
+        while (symbol && symbol.parent) {
+            symbol = symbol.parent
+            if (symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol) {
+                method = symbol
+                break
+            }
+        }
 
-    getMethodScope(line: number): Scope | undefined {
-        const method = this.getMethodAtLine(line)
-        if (method === undefined) {
+        if (!method) {
             return undefined
         }
         return this.createMethodScope(method)
@@ -39,20 +47,18 @@ export class BslModuleScope extends BaseScope {
         return this.model.getCodeModel()?.methods ?? []
     }
 
-    protected createMethodScope(method: Method): MethodScope {
+    protected createMethodScope(method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol): MethodScope {
         const members: Member[] = []
-        const methodDefinition = this.model.getCodeModel()?.getMethodDefinition(method)
-        if (!methodDefinition) {
-            return new MethodScope(members)
-        }
 
-        methodDefinition.vars?.forEach(v => members.push({
+        new VariablesCalculator().calculate(method)
+
+        method.vars.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
-            // type: v.type
+            type: v.type
         }))
 
-        methodDefinition.params.forEach(v => members.push({
+        method.params.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
         }))
@@ -60,7 +66,7 @@ export class BslModuleScope extends BaseScope {
         return new MethodScope(members)
     }
 
-    protected didUpdateMembers(): void { 
+    protected didUpdateMembers(): void {
         this.model.updateCodeModel()
     }
 }
