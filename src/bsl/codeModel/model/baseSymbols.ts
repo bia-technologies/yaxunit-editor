@@ -4,7 +4,6 @@ import {
     CodeSymbol,
     Variable as CommonVariable,
     CompositeSymbol,
-    descendantByOffset,
     ExpressionSymbol,
     NamedSymbol,
     SymbolPosition
@@ -52,8 +51,8 @@ export class IndexAccessSymbol extends BaseExpressionSymbol implements Acceptabl
         return visitor.visitIndexAccessSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, this.index)
+    getChildrenSymbols(): (BaseSymbol | undefined)[] {
+        return [this.index]
     }
 }
 
@@ -71,8 +70,9 @@ export class MethodCallSymbol extends BaseExpressionSymbol implements Acceptable
         return visitor.visitMethodCallSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return this.arguments ? descendantByOffset(offset, ...this.arguments) : undefined
+
+    getChildrenSymbols() {
+        return this.arguments ?? []
     }
 }
 
@@ -87,12 +87,13 @@ export function isAccessProperty(symbol: CodeSymbol): symbol is AccessProperty {
 
 export class AccessSequenceSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol {
     access: AccessProperty[] = []
+    unclosed = false
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitAccessSequenceSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, ...this.access)
+    getChildrenSymbols() {
+        return this.access
     }
 }

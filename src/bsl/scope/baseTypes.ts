@@ -5,7 +5,7 @@ export enum BaseTypes {
     string = 'Строка',
     boolean = 'Булево',
     undefined = 'Неопределено',
-    null = 'NULL'
+    null = 'Null'
 }
 
 export function isBaseType(typeid: string): boolean {

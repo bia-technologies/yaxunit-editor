@@ -5,9 +5,7 @@ import {
     ModuleVariable,
     Parameter,
     SymbolPosition,
-    CompositeSymbol,
-    CodeSymbol,
-    descendantByOffset
+    CompositeSymbol
 } from "@/common/codeModel";
 import { Member, Signature } from "@/common/scope";
 import { VariablesScope } from "./interfaces";
@@ -30,8 +28,8 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
         this.name = name ?? ''
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, ...this.params, ...this.children)
+    getChildrenSymbols() {
+        return [...this.params, ...this.children]
     }
 }
 
@@ -76,5 +74,13 @@ export class ModuleVariableDefinitionSymbol extends VariableSymbol implements Mo
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitModuleVariableDefinition(this)
+    }
+}
+
+export class VariableDefinitionSymbol extends BaseSymbol implements Acceptable {
+    vars: VariableSymbol[] = []
+
+    accept(visitor: CodeModelVisitor): any {
+        return visitor.visitVariableDefinition(this)
     }
 }

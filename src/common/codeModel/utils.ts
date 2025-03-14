@@ -1,10 +1,11 @@
 import { editor, IRange } from "monaco-editor-core";
 import { BaseSymbol, CodeSymbol, CompositeSymbol } from "./base";
 
-export function descendantByOffset(offset: number, ...symbols: (BaseSymbol | undefined)[]): CodeSymbol | undefined {
-    const symbol = symbols.find(s => s?.hitOffset(offset))
+export function descendantByOffset(offset: number, compositeSymbol: CompositeSymbol): CodeSymbol | undefined {
+    const children = compositeSymbol.getChildrenSymbols()
+    const symbol = children.find(s => hitOffset(s, offset))
     if (symbol && isCompositeSymbol(symbol)) {
-        const descendant = symbol.descendantByOffset(offset)
+        const descendant = descendantByOffset(offset, symbol)
         if (descendant) {
             return descendant
         }
@@ -12,8 +13,15 @@ export function descendantByOffset(offset: number, ...symbols: (BaseSymbol | und
     return symbol
 }
 
-export function isCompositeSymbol(symbol: CodeSymbol): symbol is CompositeSymbol {
-    return (symbol as CompositeSymbol).descendantByOffset !== undefined
+export function hitOffset(symbol: BaseSymbol | undefined, offset: number) {
+    if (!symbol || !symbol.position) {
+        return false
+    }
+    return symbol.position.startOffset <= offset && symbol.position.endOffset >= offset
+}
+
+export function isCompositeSymbol(symbol: any): symbol is CompositeSymbol {
+    return (symbol as CompositeSymbol).getChildrenSymbols !== undefined
 }
 
 export function symbolRange(symbol: CodeSymbol, model: editor.ITextModel): IRange {

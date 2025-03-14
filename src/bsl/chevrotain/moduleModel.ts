@@ -12,7 +12,7 @@ import {
 } from "@/bsl/codeModel";
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
-import { CodeSymbol } from "@/common/codeModel";
+import { CodeSymbol, descendantByOffset } from "@/common/codeModel";
 
 export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
 
@@ -59,7 +59,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        const symbol = this.codeModel.descendantByOffset(position)
+        const symbol = descendantByOffset(position, this.codeModel)
 
         if (symbol && isAccessProperty(symbol)) {
             const seq = currentAccessSequence(symbol)
@@ -86,7 +86,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        return this.codeModel.descendantByOffset(position)
+        return descendantByOffset(position, this.codeModel) as MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol
     }
 }
 

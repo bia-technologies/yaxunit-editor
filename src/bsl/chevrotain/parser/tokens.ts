@@ -34,22 +34,11 @@ export const keywords = {
     PreprocRegion: preproc_keyword('PreprocRegion', 'region', 'область'),
     PreprocEndregion: preproc_keyword('PreprocEndregion', 'endregion', 'конецобласти'),
 
-    If: keyword('If', 'если'),
-    Then: keyword('Then', 'тогда'),
-    Elsif: keyword('Elsif', 'иначеесли'),
-    Else: keyword('Else', 'иначе'),
-    Endif: keyword('Endif', 'конецесли'),
-    For: keyword('For', 'для'),
-    Each: keyword('Each', 'каждого'),
-    In: keyword('In', 'из'),
-    To: keyword('To', 'по'),
-    While: keyword('While', 'пока'),
-    Do: keyword('Do', 'цикл'),
-    EndDo: keyword('EndDo', 'конеццикла'),
-    Goto: keyword('Goto', 'перейти'),
-    Return: keyword('Return', 'возврат'),
-    Break: keyword('Break', 'прервать'),
-    Continue: keyword('Continue', 'продолжить'),
+    // Exceptions
+    EndTry: keyword('EndTry', 'конецпопытки'),
+    Try: keyword('Try', 'попытка'),
+    Except: keyword('Except', 'исключение'),
+    Raise: keyword('Raise', 'вызватьисключение'),
 
     // Declarations
     Procedure: keyword('Procedure', 'процедура'),
@@ -60,21 +49,6 @@ export const keywords = {
     Export: keyword('Export', 'экспорт'),
     Val: keyword('Val', 'знач'),
 
-    // Values
-    True: keyword('True', 'истина'),
-    False: keyword('False', 'ложь'),
-    Undefined: keyword('Undefined', 'неопределено'),
-
-    // Exceptions
-    Try: keyword('Try', 'попытка'),
-    Except: keyword('Except', 'исключение'),
-    Raise: keyword('Raise', 'вызватьисключение'),
-    EndTry: keyword('EndTry', 'конецпопытки'),
-
-    // Async/await
-    Async: keyword('Async', 'асинх'),
-    Await: keyword('Await', 'ждать'),
-
     // New & Execute
     New: keyword('New', 'новый'),
     Execute: keyword('Execute', 'выполнить'),
@@ -83,13 +57,40 @@ export const keywords = {
     AddHandler: keyword('AddHandler', 'добавитьобработчик'),
     RemoveHandler: keyword('RemoveHandler', 'удалитьобработчик'),
 
+    Goto: keyword('Goto', 'перейти'),
+    Endif: keyword('Endif', 'конецесли'),
+    Then: keyword('Then', 'тогда'),
+    Elsif: keyword('Elsif', 'иначеесли'),
+    Else: keyword('Else', 'иначе'),
+    If: keyword('If', 'если'),
+    While: keyword('While', 'пока'),
+    For: keyword('For', 'для'),
+    Each: keyword('Each', 'каждого'),
+    In: keyword('In', 'из'),
+    To: keyword('To', 'по'),
+    EndDo: keyword('EndDo', 'конеццикла'),
+    Do: keyword('Do', 'цикл'),
+    Return: keyword('Return', 'возврат'),
+    Break: keyword('Break', 'прервать'),
+    Continue: keyword('Continue', 'продолжить'),
+
+
+    // Values
+    True: keyword('True', 'истина'),
+    False: keyword('False', 'ложь'),
+    Undefined: keyword('Undefined', 'неопределено'),
+
+    // Async/await
+    Async: keyword('Async', 'асинх'),
+    Await: keyword('Await', 'ждать'),
+
     // Operators
     Or: keyword('Or', 'или'),
     And: keyword('And', 'и'),
     Not: keyword('Not', 'не'),
 
     // NULL
-    Null: keyword('NULL'),
+    Null: keyword('Null'),
 }
 
 export const tokens = {
@@ -114,7 +115,7 @@ export const tokens = {
     Mul: createToken({ name: 'Mul', pattern: '*', categories: MultiplicationOperator }),
     Quotient: createToken({ name: 'Quotient', pattern: '/', categories: MultiplicationOperator }),
     Modulo: createToken({ name: 'Modulo', pattern: '%', categories: MultiplicationOperator }),
-    
+
     NotEqual: createToken({ name: 'NotEqual', pattern: '<>', categories: CompareOperator }),
     LessOrEqual: createToken({ name: 'LessOrEqual', pattern: '<=', categories: CompareOperator }),
     GreaterOrEqual: createToken({ name: 'GreaterOrEqual', pattern: '>=', categories: CompareOperator }),
@@ -123,10 +124,10 @@ export const tokens = {
     Greater: createToken({ name: 'Greater', pattern: '>', categories: CompareOperator }),
 
     Question: createToken({ name: 'Question', pattern: '?' }),
-    String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, }),
     MultilineString: createToken({ name: "MultilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/ }),
+    String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, }),
     Number: createToken({ name: "Number", pattern: /\d+(\.\d+)?/, }),
-    Date: createToken({ name: 'Date', pattern: /'\d{8,14}'/ }),
+    Date: createToken({ name: 'Date', pattern: /'\d{8,14}'|'\d{4}.?\d{2}.?\d{2}(.?\d{2}.?\d{2}.?\d{2})?'/ }),
     Identifier
 }
 

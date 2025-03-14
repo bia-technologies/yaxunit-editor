@@ -5,8 +5,8 @@ export interface SymbolPosition {
 
 export type CodeSymbol = SymbolPosition
 
-export interface CompositeSymbol extends CodeSymbol {
-    descendantByOffset(offset: number): CodeSymbol | undefined
+export interface CompositeSymbol {
+    getChildrenSymbols(): (BaseSymbol | undefined)[]
 }
 
 export interface ExpressionSymbol extends CodeSymbol {
@@ -28,8 +28,4 @@ export class BaseSymbol implements CodeSymbol {
 
     get startOffset() { return this.position.startOffset }
     get endOffset() { return this.position.endOffset }
-
-    hitOffset(offset: number) {
-        return this.position.startOffset <= offset && this.position.endOffset >= offset
-    }
 }

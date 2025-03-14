@@ -23,7 +23,8 @@ import {
     VariableSymbol,
     UnaryExpressionSymbol,
     ExpressionSymbol,
-    PreprocessorSymbol
+    PreprocessorSymbol,
+    BaseExpressionSymbol
 } from "../codeModel";
 import { BaseTypes } from "../scope/baseTypes";
 
@@ -47,7 +48,7 @@ export function createSymbol(node: Node): BaseSymbol | BaseSymbol[] | undefined 
     }
 }
 
-export function createExpressionSymbol(node: Node | null): ExpressionSymbol | undefined {
+export function createExpressionSymbol(node: Node | null): BaseExpressionSymbol | undefined {
     if (!node) {
         return undefined
     }
@@ -221,9 +222,7 @@ function createIndexAccess(node: Node) {
 function collectAccessTokens(accessNode: Node) {
     const path: AccessProperty[] = []
     let node: Node | null = accessNode.type !== BslTokenTypes.identifier ? accessNode.firstChild : accessNode;
-    let lastNode: Node | undefined = undefined
     while (node) {
-        lastNode = node
         if (node.type === BslTokenTypes.access) {
             path.push(...collectAccessTokens(node))
         } else {

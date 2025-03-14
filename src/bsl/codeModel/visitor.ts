@@ -16,7 +16,23 @@ import {
     TernaryExpressionSymbol,
     VariableSymbol,
     UnaryExpressionSymbol,
-    PreprocessorSymbol
+    PreprocessorSymbol,
+    ElseBranchSymbol,
+    IfBranchSymbol,
+    IfStatementSymbol,
+    WhileStatementSymbol,
+    ForStatementSymbol,
+    ForEachStatementSymbol,
+    ContinueStatementSymbol,
+    BreakStatementSymbol,
+    GotoStatementSymbol,
+    LabelStatementSymbol,
+    AddHandlerStatementSymbol,
+    RemoveHandlerStatementSymbol,
+    ExecuteStatementSymbol,
+    TryStatementSymbol,
+    RiseErrorStatementSymbol,
+    VariableDefinitionSymbol
 } from "@/bsl/codeModel";
 import { CodeSymbol } from "@/common/codeModel";
 
@@ -37,9 +53,32 @@ export interface CodeModelVisitor {
     visitParameterDefinition(symbol: ParameterDefinitionSymbol): any
     visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): any
 
-    // statements
+    // #region statements
+    visitVariableDefinition(symbol: VariableDefinitionSymbol): any
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): any
     visitReturnStatement(symbol: ReturnStatementSymbol): any
+
+    visitExecuteStatement(symbol: ExecuteStatementSymbol): any
+    visitTryStatement(symbol: TryStatementSymbol): any
+    visitRiseErrorStatement(symbol: RiseErrorStatementSymbol): any
+
+    visitIfStatement(symbol: IfStatementSymbol): any
+    visitIfBranch(symbol: IfBranchSymbol): any
+    visitElseBrunch(symbol: ElseBranchSymbol): any
+
+    visitWhileStatement(symbol: WhileStatementSymbol): any
+    visitForStatement(symbol: ForStatementSymbol): any
+    visitForEachStatement(symbol: ForEachStatementSymbol): any
+
+    visitContinueStatement(symbol: ContinueStatementSymbol): any
+    visitBreakStatement(symbol: BreakStatementSymbol): any
+
+    visitGotoStatement(symbol: GotoStatementSymbol): any
+    visitLabelStatement(symbol: LabelStatementSymbol): any
+
+    visitAddHandlerStatement(symbol: AddHandlerStatementSymbol): any
+    visitRemoveHandlerStatement(symbol: RemoveHandlerStatementSymbol): any
+    // #endregion
 
     // base
     visitVariableSymbol(symbol: VariableSymbol): any
@@ -61,9 +100,17 @@ export interface CodeModelVisitor {
 
 export class BaseCodeModelVisitor implements CodeModelVisitor {
 
-    protected acceptItems(items: CodeSymbol[]) {
-        items.filter(isAcceptable)
-            .forEach((a: any) => (<Acceptable>a).accept(this))
+    protected acceptItems(items: CodeSymbol[] | undefined) {
+        try {
+            if (items) {
+                items
+                    .filter(item => item && isAcceptable(item))
+                    .forEach((a: any) => (<Acceptable>a).accept(this))
+            }
+        } catch (error) {
+            console.error(items, ' visit error', error)
+        }
+
     }
 
     protected accept(symbol: CodeSymbol | undefined) {
@@ -76,7 +123,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
         this.acceptItems(model.children)
     }
 
-    // definitions
+    // #region definitions
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol): any {
         this.acceptItems(symbol.params)
         this.acceptItems(symbol.children)
@@ -91,11 +138,14 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
         this.accept(symbol.defaultValue)
     }
 
-    visitModuleVariableDefinition(_: ModuleVariableDefinitionSymbol): any {
+    visitModuleVariableDefinition(_: ModuleVariableDefinitionSymbol): any { }
+    // #endregion
 
+    // #region statements
+    visitVariableDefinition(symbol: VariableDefinitionSymbol) {
+        this.acceptItems(symbol.vars)
     }
 
-    // statements
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): any {
         this.accept(symbol.variable)
         this.accept(symbol.expression)
@@ -104,6 +154,61 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     visitReturnStatement(symbol: ReturnStatementSymbol): any {
         this.accept(symbol.expression)
     }
+
+    visitExecuteStatement(symbol: ExecuteStatementSymbol): any {
+        this.accept(symbol.text)
+    }
+
+    visitTryStatement(symbol: TryStatementSymbol): any {
+        this.acceptItems(symbol.body)
+        this.acceptItems(symbol.handler)
+    }
+
+    visitRiseErrorStatement(symbol: RiseErrorStatementSymbol): any {
+        this.accept(symbol.error)
+        this.acceptItems(symbol.arguments)
+    }
+
+    visitIfStatement(symbol: IfStatementSymbol) {
+        this.acceptItems(symbol.brunches)
+        this.accept(symbol.elseBrunch)
+    }
+
+    visitIfBranch(symbol: IfBranchSymbol) {
+        this.accept(symbol.condition)
+        this.acceptItems(symbol.body)
+    }
+
+    visitElseBrunch(symbol: ElseBranchSymbol) {
+        this.acceptItems(symbol.body)
+    }
+
+    visitWhileStatement(symbol: WhileStatementSymbol) {
+        this.accept(symbol.condition)
+        this.acceptItems(symbol.body)
+    }
+
+    visitForStatement(symbol: ForStatementSymbol) {
+        this.accept(symbol.variable)
+        this.accept(symbol.start)
+        this.accept(symbol.end)
+        this.acceptItems(symbol.body)
+    }
+    visitForEachStatement(symbol: ForEachStatementSymbol) {
+        this.accept(symbol.variable)
+        this.accept(symbol.collection)
+        this.acceptItems(symbol.body)
+    }
+
+    visitBreakStatement(_: BreakStatementSymbol) { }
+    visitContinueStatement(_: ContinueStatementSymbol) { }
+
+    visitLabelStatement(_: LabelStatementSymbol) { }
+    visitGotoStatement(_: GotoStatementSymbol) { }
+
+    visitAddHandlerStatement(_: AddHandlerStatementSymbol) { }
+    visitRemoveHandlerStatement(_: RemoveHandlerStatementSymbol) { }
+    // #endregion
 
     // basic
 
@@ -146,10 +251,12 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     visitConstructorSymbol(symbol: ConstructorSymbol): any {
-        if (Array.isArray(symbol.arguments)) {
-            this.acceptItems(symbol.arguments)
-        } else {
-            this.accept(symbol.arguments)
+        if (symbol.arguments) {
+            if (Array.isArray(symbol.arguments)) {
+                this.acceptItems(symbol.arguments)
+            } else {
+                this.accept(symbol.arguments)
+            }
         }
         if (typeof symbol.name === 'object') {
             this.accept(symbol.name)

@@ -12,17 +12,29 @@ import {
     ConstructorSymbol,
     TernaryExpressionSymbol,
     UnaryExpressionSymbol,
-    BslCodeModel
+    BslCodeModel,
+    ElseBranchSymbol,
+    IfBranchSymbol,
+    IfStatementSymbol,
+    WhileStatementSymbol,
+    ForStatementSymbol,
+    ForEachStatementSymbol,
+    AddHandlerStatementSymbol,
+    RemoveHandlerStatementSymbol,
+    ExecuteStatementSymbol,
+    TryStatementSymbol,
+    RiseErrorStatementSymbol,
+    VariableDefinitionSymbol
 } from "../model";
 import { BaseSymbol } from "@/common/codeModel";
 import { ModelCalculator } from "./calculator";
 
 export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
 
-    calculate(model: BslCodeModel){
+    calculate(model: BslCodeModel) {
         this.visitModel(model)
     }
-    
+
     setParent(parent: BaseSymbol, symbol: BaseSymbol | undefined) {
         if (symbol) {
             symbol.parent = parent
@@ -31,8 +43,10 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
             }
         }
     }
-    setParentItems(parent: BaseSymbol, items: BaseSymbol[]) {
-        items.forEach(i => this.setParent(parent, i))
+    setParentItems(parent: BaseSymbol, items: BaseSymbol[] | undefined) {
+        if (items) {
+            items.forEach(i => { if (i) this.setParent(parent, i) })
+        }
     }
 
     visitModel(model: BslCodeModel): any {
@@ -40,7 +54,7 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
             .forEach((symbol: any) => (<Acceptable>symbol).accept(this))
     }
 
-    // definitions
+    // #region definitions
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol): any {
         this.setParentItems(symbol, symbol.params)
         this.setParentItems(symbol, symbol.children)
@@ -56,8 +70,12 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     visitModuleVariableDefinition(_: any): any { }
+    //#endregion
 
-    // statements
+    // #region statements
+    visitVariableDefinition(symbol: VariableDefinitionSymbol) {
+        this.setParentItems(symbol, symbol.vars)
+    }
 
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): any {
         this.setParent(symbol, symbol.variable)
@@ -67,6 +85,67 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
     visitReturnStatement(symbol: ReturnStatementSymbol): any {
         this.setParent(symbol, symbol.expression)
     }
+
+    visitExecuteStatement(symbol: ExecuteStatementSymbol): any {
+        this.setParent(symbol, symbol.text)
+    }
+
+    visitTryStatement(symbol: TryStatementSymbol): any {
+        this.setParentItems(symbol, symbol.body)
+        this.setParentItems(symbol, symbol.handler)
+    }
+
+    visitRiseErrorStatement(symbol: RiseErrorStatementSymbol): any {
+        this.setParent(symbol, symbol.error)
+        this.setParentItems(symbol, symbol.arguments)
+    }
+
+    visitIfStatement(symbol: IfStatementSymbol) {
+        this.setParentItems(symbol, symbol.brunches)
+        this.setParent(symbol, symbol.elseBrunch)
+    }
+
+    visitIfBranch(symbol: IfBranchSymbol) {
+        this.setParent(symbol, symbol.condition)
+        this.setParentItems(symbol, symbol.body)
+    }
+
+    visitElseBrunch(symbol: ElseBranchSymbol) {
+        this.setParentItems(symbol, symbol.body)
+    }
+
+    visitWhileStatement(symbol: WhileStatementSymbol) {
+        this.setParent(symbol, symbol.condition)
+        this.setParentItems(symbol, symbol.body)
+    }
+
+    visitForStatement(symbol: ForStatementSymbol) {
+        this.setParent(symbol, symbol.variable)
+        this.setParent(symbol, symbol.start)
+        this.setParent(symbol, symbol.end)
+        this.setParentItems(symbol, symbol.body)
+    }
+    visitForEachStatement(symbol: ForEachStatementSymbol) {
+        this.setParent(symbol, symbol.variable)
+        this.setParent(symbol, symbol.collection)
+        this.setParentItems(symbol, symbol.body)
+    }
+
+    visitBreakStatement() { }
+    visitContinueStatement() { }
+
+    visitLabelStatement() { }
+    visitGotoStatement() { }
+
+    visitAddHandlerStatement(symbol: AddHandlerStatementSymbol) {
+        this.setParent(symbol, symbol.event)
+        this.setParent(symbol, symbol.handler)
+    }
+    visitRemoveHandlerStatement(symbol: RemoveHandlerStatementSymbol) {
+        this.setParent(symbol, symbol.event)
+        this.setParent(symbol, symbol.handler)
+    }
+    // #endregion
 
     // basic
 

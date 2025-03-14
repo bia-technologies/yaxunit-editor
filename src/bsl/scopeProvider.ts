@@ -29,8 +29,14 @@ const scopeProvider = {
         let scope: Scope | undefined = isModel(model) ? EditorScope.getScope(model) : model
 
         if (symbol instanceof AccessSequenceSymbol) {
+            const lastSymbol = symbol.unclosed ? symbol.access[symbol.access.length - 1] : symbol.access[symbol.access.length - 2]
+            if (lastSymbol && lastSymbol.type) {
+                return await GlobalScope.resolveType(lastSymbol.type)
+            }
             const parentSequence = [...symbol.access]
-            parentSequence.pop()
+            if (!symbol.unclosed) {
+                parentSequence.pop()
+            }
             const member = await resolveSequenceMember(parentSequence, scope)
             if (member) {
                 return GlobalScope.resolveType(await member.type)

@@ -3,21 +3,39 @@ import { ModuleModel } from "../moduleModel"
 import { parseModule, BslVisitor } from "./parser"
 import {
     AccessSequenceSymbol,
+    AddHandlerStatementSymbol,
     AssignmentStatementSymbol,
+    AwaitStatementSymbol,
     BaseExpressionSymbol,
     BinaryExpressionSymbol,
+    BreakStatementSymbol,
     BslCodeModel,
     ConstructorSymbol,
     ConstSymbol,
+    ContinueStatementSymbol,
+    ElseBranchSymbol,
+    ExecuteStatementSymbol,
+    ForEachStatementSymbol,
+    ForStatementSymbol,
     FunctionDefinitionSymbol,
+    GotoStatementSymbol,
+    IfBranchSymbol,
+    IfStatementSymbol,
     IndexAccessSymbol,
+    LabelStatementSymbol,
     MethodCallSymbol,
     ParameterDefinitionSymbol,
     ProcedureDefinitionSymbol,
     PropertySymbol,
+    RemoveHandlerStatementSymbol,
+    ReturnStatementSymbol,
+    RiseErrorStatementSymbol,
     TernaryExpressionSymbol,
+    TryStatementSymbol,
     UnaryExpressionSymbol,
-    VariableSymbol
+    VariableDefinitionSymbol,
+    VariableSymbol,
+    WhileStatementSymbol
 } from "../codeModel"
 import { CstChildrenDictionary, CstElement, CstNode, CstNodeLocation, IToken } from "chevrotain"
 import { BaseSymbol, SymbolPosition } from "@/common/codeModel"
@@ -37,7 +55,7 @@ export const ChevrotainSitterCodeModelFactory = {
         const tree = parseModule(isModel(model) ? model.getValue() : model)
 
         tree.lexErrors.forEach(e => console.error('lexError', e))
-        tree.parseErrors.forEach(e => console.error('parseError', e))
+        tree.parseErrors.forEach(e => console.error('parseError', e.token, e))
 
         const visitor = new CodeModelFactoryVisitor()
         const children = visitor.visit(tree.cst)
@@ -67,14 +85,26 @@ class CodeModelFactoryVisitor extends BslVisitor {
         return symbols
     }
 
-    getStatements(nodes: CstElement[]): BaseSymbol[] {
-        return this.statements((nodes[0] as CstNode).children).filter(s => s)
+    getStatements(nodes: CstElement[] | CstElement): BaseSymbol[] {
+        if (Array.isArray(nodes)) {
+            return this.statements((nodes[0] as CstNode).children).filter(s => s)
+        } else if (nodes) {
+            return this.statements((nodes as CstNode).children).filter(s => s)
+        } else {
+            return []
+        }
     }
 
-    statements(ctx: CstChildrenDictionary) {
-        return Object.values(ctx).flatMap(nodes => this.visitAll(nodes))
+    getArguments(nodes: CstElement[] | CstElement): BaseSymbol[] {
+        if (!nodes) {
+            return []
+        }
+        const node = Array.isArray(nodes) ? nodes[0] : nodes
+        const result = this.arguments((node as CstNode).children)
+        return result ?? []
     }
 
+    // #region module definitions
     procedure(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const symbol = new ProcedureDefinitionSymbol(nodePosition(location))
         symbol.name = firstTokenText(ctx.name)
@@ -107,6 +137,12 @@ class CodeModelFactoryVisitor extends BslVisitor {
 
         return symbol
     }
+    // #endregion
+
+    // #region statements
+    statements(ctx: CstChildrenDictionary) {
+        return Object.values(ctx).flatMap(nodes => this.visitAll(nodes))
+    }
 
     assignmentStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const qualifiedName = this.visitFirst(ctx.qualifiedName) as (VariableSymbol | AccessSequenceSymbol)
@@ -121,13 +157,125 @@ class CodeModelFactoryVisitor extends BslVisitor {
         }
     }
 
+    executeStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const symbol = new ExecuteStatementSymbol(nodePosition(location))
+        symbol.text = this.visitFirst(ctx.expression)
+        return symbol
+    }
+
+    returnStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const symbol = new ReturnStatementSymbol(nodePosition(location))
+        symbol.expression = this.visitFirst(ctx.expression)
+        return symbol
+    }
+
+    tryStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new TryStatementSymbol(nodePosition(location)
+            , this.getStatements(ctx.statements)
+            , this.getStatements(ctx.handler))
+    }
+
+    riseErrorStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const error = this.visitFirst(ctx.error)
+        const args = this.getArguments(ctx.arguments)
+
+        return new RiseErrorStatementSymbol(nodePosition(location), error as BaseExpressionSymbol, args)
+    }
+
+    varStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const symbol = new VariableDefinitionSymbol(nodePosition(location));
+        symbol.vars = (ctx.Identifier as IToken[]).map((token: IToken) => new VariableSymbol(tokenPosition(token), token.image))
+        return symbol
+    }
+
+    // #region if statement
+    ifStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const brunches = this.visitAll(ctx.brunch)
+        const elseBrunch = this.visitFirst(ctx.elseBrunch)
+        return new IfStatementSymbol(nodePosition(location), brunches as IfBranchSymbol[], elseBrunch as ElseBranchSymbol)
+    }
+
+    ifBrunch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new IfBranchSymbol(nodePosition(location), this.visitFirst(ctx.condition) as BaseExpressionSymbol, this.getStatements(ctx.body))
+    }
+
+    elsifBrunch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new IfBranchSymbol(nodePosition(location),
+            this.visitFirst(ctx.condition) as BaseExpressionSymbol,
+            this.getStatements(ctx.body))
+    }
+
+    elseBrunch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new ElseBranchSymbol(nodePosition(location), this.getStatements(ctx.body))
+    }
+    // #endregion
+
+    whileStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new WhileStatementSymbol(nodePosition(location),
+            this.visitFirst(ctx.expression) as BaseExpressionSymbol,
+            this.getStatements(ctx.statements))
+    }
+
+    forStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new ForStatementSymbol(nodePosition(location),
+            createVariable(ctx.variable),
+            this.visitFirst(ctx.start) as BaseExpressionSymbol,
+            this.visitFirst(ctx.end) as BaseExpressionSymbol,
+            this.getStatements(ctx.statements))
+    }
+
+    forEachStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new ForEachStatementSymbol(nodePosition(location),
+            createVariable(ctx.variable),
+            this.visitFirst(ctx.collection) as BaseExpressionSymbol,
+            this.getStatements(ctx.statements))
+    }
+
+    continueStatement(_: CstChildrenDictionary, location: CstNodeLocation) {
+        return new ContinueStatementSymbol(nodePosition(location))
+    }
+
+    breakStatement(_: CstChildrenDictionary, location: CstNodeLocation) {
+        return new BreakStatementSymbol(nodePosition(location))
+    }
+
+    gotoStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const label = ctx.Identifier ? firstTokenText(ctx.Identifier) : ''
+        return new GotoStatementSymbol(nodePosition(location), label)
+    }
+
+    labelStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        const label = ctx.Identifier ? firstTokenText(ctx.Identifier) : ''
+        return new LabelStatementSymbol(nodePosition(location), label)
+    }
+
+    addHandlerStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new AddHandlerStatementSymbol(nodePosition(location),
+            this.visitFirst(ctx.event) as BaseExpressionSymbol,
+            this.visitFirst(ctx.handler) as BaseExpressionSymbol)
+    }
+
+    removeHandlerStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new RemoveHandlerStatementSymbol(nodePosition(location),
+            this.visitFirst(ctx.event) as BaseExpressionSymbol,
+            this.visitFirst(ctx.handler) as BaseExpressionSymbol)
+    }
+
+    awaitStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        return new AwaitStatementSymbol(nodePosition(location), this.visitFirst(ctx.expression) as BaseExpressionSymbol)
+    }
+    // #endregion
+
+    // #region preprocessor and annotations
+    preprocessor() { }
+    // #endregion
+
+    // #region expressions
     expression(ctx: CstChildrenDictionary) {
         if (ctx.constructorExpression) {
             return this.visitFirst(ctx.constructorExpression)
         } else if (ctx.logicalOrExpression) {
             return this.visitFirst(ctx.logicalOrExpression)
-        } else if (ctx.ternaryExpression) {
-            return this.visitFirst(ctx.ternaryExpression)
         }
     }
 
@@ -164,14 +312,19 @@ class CodeModelFactoryVisitor extends BslVisitor {
         return symbol
     }
 
+    // #endregion
+
     operand(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         let symbol: BaseSymbol | undefined
 
         if (ctx.literal) {
             symbol = this.visitFirst(ctx.literal)
-        }
-        if (ctx.qualifiedName) {
+        } else if (ctx.qualifiedName) {
             symbol = this.visitFirst(ctx.qualifiedName)
+        } else if (ctx.parenthesisExpression) {
+            symbol = this.visitFirst(ctx.parenthesisExpression)
+        } else if (ctx.ternaryExpression) {
+            return this.visitFirst(ctx.ternaryExpression)
         }
         let modifier: string | undefined;
         if (ctx.Minus) {
@@ -194,7 +347,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
         if (ctx.Number) {
             return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.number)
         } else if (ctx.Date) {
-            return new ConstSymbol(tokenPosition(token), trimChar(token.image, "'"), BaseTypes.date)
+            return new ConstSymbol(tokenPosition(token), trimChar(token.image, "'").replace(/\D/g, ''), BaseTypes.date)
         } else if (ctx.Undefined) {
             return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.undefined)
         } else if (ctx.String) {
@@ -214,7 +367,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
         let symbols: any[] = []
 
         if (ctx.variable) {
-            ctx.variable.forEach(s => symbols.push(createVariable(s as IToken)))
+            symbols.push(createVariable(ctx.variable))
         }
 
         if (ctx.methodCall) {
@@ -229,16 +382,18 @@ class CodeModelFactoryVisitor extends BslVisitor {
             symbols.push(...this.visitAll(ctx.indexAccess))
         }
 
+        const unclosed = ctx.UNCLOSED !== undefined
+
         if (symbols.length === 0) {
             return undefined
-        } else if (symbols.length === 1) {
+        } else if (symbols.length === 1 && !unclosed) {
             return symbols[0]
         }
 
         symbols = symbols.toSorted((s1: BaseSymbol, s2: BaseSymbol) => s1.startOffset - s2.startOffset)
         const symbol = new AccessSequenceSymbol(nodePosition(location))
         symbol.access = symbols
-
+        symbol.unclosed = unclosed
         return symbol
     }
 
@@ -246,10 +401,12 @@ class CodeModelFactoryVisitor extends BslVisitor {
         const name = firstTokenText(ctx.Identifier)
         const symbol = new MethodCallSymbol(nodePosition(location), name)
         if (ctx.arguments) {
-            symbol.arguments = (this.visitFirst(ctx.arguments) as any) as BaseSymbol[]
+            symbol.arguments = this.getArguments(ctx.arguments)
         }
         return symbol
     }
+
+    methodCall2 = this.methodCall
 
     indexAccess(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const symbol = new IndexAccessSymbol(nodePosition(location))
@@ -300,6 +457,7 @@ class CodeModelFactoryVisitor extends BslVisitor {
 
     createBinaryExpression(ctx: CstChildrenDictionary) {
         let result: BaseSymbol = this.visitFirst(ctx.lhs) as BaseSymbol
+        try{
         if (ctx.rhs) {
             const operators = ctx.operator
 
@@ -315,8 +473,16 @@ class CodeModelFactoryVisitor extends BslVisitor {
                 result = symbol
             })
         }
+    }catch(error){
+        console.error('binary expression error', ctx.lhs, error)
+    }
         return result
     }
+
+}
+
+function firstToken(tokens: CstElement[]) {
+    return tokens[0] as IToken
 }
 
 function firstTokenText(tokens: CstElement[]) {
@@ -327,7 +493,8 @@ function Properties(value: IToken[]): PropertySymbol[] {
     return value.map(token => new PropertySymbol(tokenPosition(token), token.image))
 }
 
-function createVariable(token: IToken) {
+function createVariable(tokens: CstElement[]) {
+    const token = firstToken(tokens)
     return new VariableSymbol(tokenPosition(token), token.image)
 }
 

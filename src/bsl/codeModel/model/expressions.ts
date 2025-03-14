@@ -1,6 +1,6 @@
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { BaseExpressionSymbol } from "./baseSymbols";
-import { CodeSymbol, CompositeSymbol, descendantByOffset, SymbolPosition } from "@/common/codeModel";
+import { CompositeSymbol, SymbolPosition } from "@/common/codeModel";
 
 export class BinaryExpressionSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol {
     left?: BaseExpressionSymbol
@@ -11,8 +11,8 @@ export class BinaryExpressionSymbol extends BaseExpressionSymbol implements Acce
         return visitor.visitBinaryExpressionSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, this.left, this.right)
+    getChildrenSymbols() {
+        return [this.left, this.right]
     }
 }
 
@@ -24,8 +24,8 @@ export class UnaryExpressionSymbol extends BaseExpressionSymbol implements Accep
         return visitor.visitUnaryExpressionSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, this.operand)
+    getChildrenSymbols() {
+        return [this.operand]
     }
 }
 
@@ -38,14 +38,14 @@ export class TernaryExpressionSymbol extends BaseExpressionSymbol implements Acc
         return visitor.visitTernaryExpressionSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, this.condition, this.consequence, this.alternative)
+    getChildrenSymbols() {
+        return [this.condition, this.consequence, this.alternative]
     }
+
 }
 
 export class ConstructorSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol {
     name: string | BaseExpressionSymbol
-
     arguments?: BaseExpressionSymbol[] | BaseExpressionSymbol
 
     constructor(position: SymbolPosition, name: string | BaseExpressionSymbol, type?: string) {
@@ -58,9 +58,12 @@ export class ConstructorSymbol extends BaseExpressionSymbol implements Acceptabl
         return visitor.visitConstructorSymbol(this)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return (this.arguments && Array.isArray(this.arguments) ? descendantByOffset(offset, ...this.arguments as BaseExpressionSymbol[]) : undefined) ??
-            descendantByOffset(offset, this.name instanceof BaseExpressionSymbol ? this.name : undefined, !Array.isArray(this.arguments) ? this.arguments : undefined)
+    getChildrenSymbols() {
+        const children = this.arguments ? (Array.isArray(this.arguments) ? this.arguments : [this.arguments]) : []
+        if (typeof this.name === 'object') {
+            children.push(this.name)
+        }
+        return children
     }
 }
 

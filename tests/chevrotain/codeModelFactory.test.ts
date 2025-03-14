@@ -1,18 +1,83 @@
 
 import {
     AccessSequenceSymbol,
+    AddHandlerStatementSymbol,
     AssignmentStatementSymbol,
+    AwaitStatementSymbol,
     BinaryExpressionSymbol,
+    BreakStatementSymbol,
     BslCodeModel,
     ConstructorSymbol,
+    ConstSymbol,
+    ContinueStatementSymbol,
+    ForEachStatementSymbol,
+    ForStatementSymbol,
     FunctionDefinitionSymbol,
+    GotoStatementSymbol,
+    IfStatementSymbol,
+    LabelStatementSymbol,
     MethodCallSymbol,
     ProcedureDefinitionSymbol,
+    RemoveHandlerStatementSymbol,
     TernaryExpressionSymbol,
-    UnaryExpressionSymbol
+    TryStatementSymbol,
+    UnaryExpressionSymbol,
+    VariableDefinitionSymbol,
+    WhileStatementSymbol
 } from '../../src/bsl/codeModel'
 import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain'
 import { describe, expect, test } from 'vitest'
+
+
+describe('Literals', () => {
+    test('Number', () => {
+        const exp = expression('1')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: '1', type: 'Число' })
+    })
+
+    test('String', () => {
+        const exp = expression('"1"')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: '1', type: 'Строка' })
+    })
+
+    test('String with quote', () => {
+        const exp = expression('"ru = \'Не удалось подключить внешнюю компоненту ""%1"" на сервере по причине:"')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: 'ru = \'Не удалось подключить внешнюю компоненту ""%1"" на сервере по причине:', type: 'Строка' })
+    })
+
+    test('Multiline string', () => {
+        const exp = expression('"1\n|2"')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: '1\n2', type: 'Строка' })
+    })
+
+    test('Date ', () => {
+        const exp = expression("'00010101'")
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: '00010101', type: 'Дата' })
+    })
+
+    test('Date with separators', () => {
+        const exp = expression("'0001-01-01'")
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: '00010101', type: 'Дата' })
+    })
+
+    test('Null', () => {
+        const exp = expression('null')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: 'null', type: 'Null' })
+    })
+
+    test('Undefined', () => {
+        const exp = expression('неопределено')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: 'неопределено', type: 'Неопределено' })
+    })
+})
 
 describe('AssignmentStatementSymbol', () => {
     test('constant', () => {
@@ -465,6 +530,16 @@ describe('Expression', () => {
             })
     })
 
+    test('Parenthesis expression', () => {
+        const exp = expression('Not(a)')
+        expect(exp).toBeInstanceOf(UnaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                operand: { name: 'a' },
+                operator: 'Not'
+            })
+    })
+
     test('Ternary expression', () => {
         const exp = expression('?(a >= 3, a, 2)')
         expect(exp).toBeInstanceOf(TernaryExpressionSymbol)
@@ -480,9 +555,177 @@ describe('Expression', () => {
             }
         )
     })
+    test('unclosed', () => {
+        const exp = expression('Выборка.')
+        expect(exp).not.toBeUndefined()
 
+        expect(exp).toBeInstanceOf(AccessSequenceSymbol)
+        expect(exp).toMatchObject({
+            access: [{ name: 'Выборка' }],
+            unclosed: true
+        })
+    })
 
 })
+
+describe('If statement', () => {
+    test('single', () => {
+        const exp = statement('if true then сообщить(1);endif')
+        expect(exp).toBeInstanceOf(IfStatementSymbol)
+        expect(exp).toMatchObject({
+            brunches: [
+                { condition: { value: 'true' }, body: [{ name: 'сообщить' }] }
+            ]
+        })
+    })
+    test('with elsif', () => {
+        const exp = statement('if true then a(1);b(1);elsif false then c(2);d(2);endif')
+        expect(exp).toBeInstanceOf(IfStatementSymbol)
+        expect(exp).toMatchObject({
+            brunches: [
+                { condition: { value: 'true' }, body: [{ name: 'a' }, { name: 'b' }] },
+                { condition: { value: 'false' }, body: [{ name: 'c' }, { name: 'd' }] }
+            ]
+        })
+    })
+    test('with else', () => {
+        const exp = statement('if true then a(1);b(1);else c(2);d(2);endif')
+        expect(exp).toBeInstanceOf(IfStatementSymbol)
+        expect(exp).toMatchObject({
+            brunches: [
+                { condition: { value: 'true' }, body: [{ name: 'a' }, { name: 'b' }] }
+            ],
+            elseBrunch: { body: [{ name: 'c' }, { name: 'd' }] }
+        })
+    })
+})
+
+describe('Try statement', () => {
+    test('base', () => {
+        const exp = statement('Попытка a(1);b(1); Исключение c(2);d(2);КонецПопытки')
+        expect(exp).toBeInstanceOf(TryStatementSymbol)
+        expect(exp).toMatchObject({
+            body: [{ name: 'a' }, { name: 'b' }],
+            handler: [{ name: 'c' }, { name: 'd' }]
+        })
+    })
+})
+
+describe('While statement', () => {
+    test('base', () => {
+        const exp = statement('Пока а < 10 Цикл a(); b = а%100;КонецЦикла')
+        expect(exp).toBeInstanceOf(WhileStatementSymbol)
+        expect(exp).toMatchObject({
+            condition: { left: { name: 'а' }, right: { value: '10' }, operator: '<' },
+            body: [{ name: 'a' }, { variable: { name: 'b' } }],
+        })
+    })
+})
+
+describe('For statement', () => {
+    test('base', () => {
+        const exp = statement('Для a = 0 По 10 Цикл a();b();КонецЦикла')
+        expect(exp).toBeInstanceOf(ForStatementSymbol)
+        expect(exp).toMatchObject({
+            variable: { name: 'a' },
+            start: { value: '0' },
+            end: { value: '10' },
+            body: [{ name: 'a' }, { name: 'b' }],
+        })
+    })
+})
+
+describe('For each statement', () => {
+    test('base', () => {
+        const exp = statement('Для каждого строка из список Цикл a(); b();КонецЦикла')
+        expect(exp).toBeInstanceOf(ForEachStatementSymbol)
+        expect(exp).toMatchObject({
+            variable: { name: 'строка' },
+            collection: { name: 'список' },
+            body: [{ name: 'a' }, { name: 'b' }],
+        })
+    })
+})
+
+describe('Continue statement', () => {
+    test('base', () => {
+        const exp = statement('Продолжить;')
+        expect(exp).toBeInstanceOf(ContinueStatementSymbol)
+    })
+})
+
+describe('Break statement', () => {
+    test('base', () => {
+        const exp = statement('Прервать;')
+        expect(exp).toBeInstanceOf(BreakStatementSymbol)
+    })
+})
+
+describe('Gogo statement', () => {
+    test('base', () => {
+        const exp = statement('Перейти ~ВыходИзДвойногоЦикла;')
+        expect(exp).toBeInstanceOf(GotoStatementSymbol)
+        expect(exp).toMatchObject({ label: 'ВыходИзДвойногоЦикла' })
+    })
+})
+
+describe('Label statement', () => {
+    test('base', () => {
+        const exp = statement('~ВыходИзДвойногоЦикла:')
+        expect(exp).toBeInstanceOf(LabelStatementSymbol)
+        expect(exp).toMatchObject({ label: 'ВыходИзДвойногоЦикла' })
+    })
+})
+
+describe('Add handler statement', () => {
+    test('base', () => {
+        const exp = statement('ДобавитьОбработчик Накладная.ПриЗаписи, Обработка.ПриЗаписиДокумента')
+        expect(exp).toBeInstanceOf(AddHandlerStatementSymbol)
+        expect(exp).toMatchObject({
+            event: { access: [{ name: 'Накладная' }, { name: 'ПриЗаписи' }] },
+            handler: { access: [{ name: 'Обработка' }, { name: 'ПриЗаписиДокумента' }] }
+        })
+    })
+})
+
+describe('Remote handler statement', () => {
+    test('base', () => {
+        const exp = statement('УдалитьОбработчик Накладная.ПриЗаписи, Обработка.ПриЗаписиДокумента')
+        expect(exp).toBeInstanceOf(RemoveHandlerStatementSymbol)
+        expect(exp).toMatchObject({
+            event: { access: [{ name: 'Накладная' }, { name: 'ПриЗаписи' }] },
+            handler: { access: [{ name: 'Обработка' }, { name: 'ПриЗаписиДокумента' }] }
+        })
+    })
+})
+
+describe('Await statement', () => {
+    test('base', () => {
+        const exp = statement('Ждать ВопросАсинх()')
+        expect(exp).toBeInstanceOf(AwaitStatementSymbol)
+        expect(exp).toMatchObject({
+            expression: { name: 'ВопросАсинх' }
+        })
+    })
+})
+
+describe('Var statement', () => {
+    test('one', () => {
+        const exp = statement('Перем П1')
+        expect(exp).toBeInstanceOf(VariableDefinitionSymbol)
+        expect(exp).toMatchObject({
+            vars: [{ name: 'П1' }]
+        })
+    })
+    test('many', () => {
+        const exp = statement('Перем П1, П2')
+        expect(exp).toBeInstanceOf(VariableDefinitionSymbol)
+        expect(exp).toMatchObject({
+            vars: [{ name: 'П1' }, { name: 'П2' }]
+        })
+    })
+})
+
 
 function buildModel(content: string) {
     return ChevrotainSitterCodeModelFactory.buildModel(content) as BslCodeModel

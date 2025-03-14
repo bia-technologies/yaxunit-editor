@@ -1,19 +1,20 @@
 import { ChevrotainSitterCodeModelFactory } from '../src/bsl/chevrotain'
 import { BslCodeModel } from '../src/bsl/codeModel'
-import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { descendantByOffset } from '../src/common/codeModel/utils'
+import { describe, expect, test } from 'vitest'
 
 describe('descendantByOffset', () => {
 
     test('start', () => {
         const model = buildModel('a = 2')
-        const symbol = model.descendantByOffset(0)
+        const symbol = descendantByOffset(0, model)
 
         expect(symbol).toMatchObject({ name: 'a' })
     })
 
     test('end', () => {
         const model = buildModel('a = 2')
-        const symbol = model.descendantByOffset(5)
+        const symbol = descendantByOffset(5, model)
 
         expect(symbol).toMatchObject({ value: '2' })
     })

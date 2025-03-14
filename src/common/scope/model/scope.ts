@@ -33,7 +33,6 @@ export class BaseScope extends AutoDisposable implements Scope {
     findMember(name: string): Member | undefined {
         this.beforeGetMembers()
         const member = this.membersHash[name.toLowerCase()]
-        console.debug('find member', name, 'in scope', this, 'result = ', member)
         return member
     }
 

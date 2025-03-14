@@ -1,4 +1,4 @@
-import { CstParser, Rule } from "chevrotain"
+import { CstParser, EMPTY_ALT, Rule } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 import { BSLLexer } from "./lexer";
 
@@ -71,8 +71,6 @@ export class BSLParser extends CstParser {
     }))
 
     private statement = [
-        () => this.SUBRULE(this.executeStatement),
-        () => this.SUBRULE(this.assignmentStatement),
         () => this.SUBRULE(this.constructorExpression),
         () => this.SUBRULE(this.constructorMethodExpression),
         () => this.SUBRULE(this.returnStatement),
@@ -91,6 +89,8 @@ export class BSLParser extends CstParser {
         () => this.SUBRULE(this.removeHandlerStatement),
         () => this.SUBRULE(this.preprocessor),
         () => this.SUBRULE(this.awaitStatement),
+        () => this.SUBRULE(this.executeStatement),
+        () => this.SUBRULE(this.assignmentStatement),
     ]
 
     private assignmentStatement = this.RULE("assignmentStatement", () => {
@@ -116,39 +116,54 @@ export class BSLParser extends CstParser {
         this.CONSUME(tokens.Try)
         this.SUBRULE(this.statements)
         this.CONSUME(tokens.Except)
-        this.SUBRULE1(this.statements)
+        this.SUBRULE1(this.statements, { LABEL: 'handler' })
         this.CONSUME(tokens.EndTry)
     })
 
     private riseErrorStatement = this.RULE("riseErrorStatement", () => {
         this.CONSUME(tokens.Raise)
         this.choice(
-            () => this.SUBRULE(this.expression),
-            () => this.SUBRULE(this.arguments)
+            () => this.SUBRULE(this.literal, { LABEL: 'error' }),
+            () => this.SUBRULE(this.qualifiedName, { LABEL: 'error' }),
+            () => this.SUBRULE(this.arguments),
+            EMPTY_ALT
         )
     })
 
     private ifStatement = this.RULE("ifStatement", () => {
-        this.CONSUME(tokens.If)
-        this.SUBRULE(this.expression)
-        this.CONSUME(tokens.Then)
-        this.SUBRULE(this.statements)
+        this.SUBRULE(this.ifBrunch, { LABEL: 'brunch' })
         this.MANY(() => {
-            this.CONSUME(tokens.Elsif)
-            this.SUBRULE1(this.expression)
-            this.CONSUME1(tokens.Then)
-            this.SUBRULE1(this.statements)
+            this.SUBRULE(this.elsifBrunch, { LABEL: 'brunch' })
         })
-        this.OPTION(() => {
-            this.CONSUME(tokens.Else)
-            this.SUBRULE2(this.expression)
-        })
+        this.OPTION(() => this.SUBRULE(this.elseBrunch))
         this.CONSUME(tokens.Endif)
+    })
+
+    private ifBrunch = this.RULE('ifBrunch', () => {
+        this.CONSUME(tokens.If)
+        this.SUBRULE(this.expression, { LABEL: 'condition' })
+        this.CONSUME(tokens.Then)
+        this.SUBRULE(this.statements, { LABEL: 'body' })
+    })
+
+    private elsifBrunch = this.RULE('elsifBrunch', () => {
+        this.CONSUME(tokens.Elsif)
+        this.SUBRULE1(this.expression, { LABEL: 'condition' })
+        this.CONSUME1(tokens.Then)
+        this.SUBRULE1(this.statements, { LABEL: 'body' })
+    })
+
+    private elseBrunch = this.RULE('elseBrunch', () => {
+        this.CONSUME(tokens.Else)
+        this.SUBRULE2(this.statements, { LABEL: 'body' })
     })
 
     private varStatement = this.RULE("varStatement", () => {
         this.CONSUME(tokens.Var)
-        this.CONSUME(tokens.Identifier)
+        this.MANY_SEP({
+            SEP: tokens.Comma,
+            DEF: () => this.CONSUME(tokens.Identifier)
+        })
     })
 
     private whileStatement = this.RULE("whileStatement", () => {
@@ -161,11 +176,11 @@ export class BSLParser extends CstParser {
 
     private forStatement = this.RULE("forStatement", () => {
         this.CONSUME(tokens.For)
-        this.CONSUME(tokens.Identifier, { LABEL: '' })
+        this.CONSUME(tokens.Identifier, { LABEL: 'variable' })
         this.CONSUME(tokens.Assign)
-        this.SUBRULE(this.expression)
+        this.SUBRULE(this.expression, { LABEL: 'start' })
         this.CONSUME(tokens.To)
-        this.SUBRULE1(this.expression)
+        this.SUBRULE1(this.expression, { LABEL: 'end' })
         this.CONSUME(tokens.Do)
         this.SUBRULE(this.statements)
         this.CONSUME(tokens.EndDo)
@@ -174,9 +189,9 @@ export class BSLParser extends CstParser {
     private forEachStatement = this.RULE("forEachStatement", () => {
         this.CONSUME(tokens.For)
         this.CONSUME(tokens.Each)
-        this.CONSUME(tokens.Identifier, { LABEL: '' })
+        this.CONSUME(tokens.Identifier, { LABEL: 'variable' })
         this.CONSUME(tokens.In)
-        this.SUBRULE(this.expression)
+        this.SUBRULE(this.expression, { LABEL: 'collection' })
         this.CONSUME(tokens.Do)
         this.SUBRULE(this.statements)
         this.CONSUME(tokens.EndDo)
@@ -193,27 +208,27 @@ export class BSLParser extends CstParser {
     private gotoStatement = this.RULE("gotoStatement", () => {
         this.CONSUME(tokens.Goto)
         this.CONSUME(tokens.Tilde)
-        this.CONSUME(tokens.Identifier, { LABEL: 'LABEL_NAME' })
+        this.CONSUME(tokens.Identifier)
     })
 
     private labelStatement = this.RULE("labelStatement", () => {
         this.CONSUME(tokens.Tilde)
-        this.CONSUME(tokens.Identifier, { LABEL: 'LABEL_NAME' })
+        this.CONSUME(tokens.Identifier)
         this.CONSUME(tokens.Сolon)
     })
 
     private addHandlerStatement = this.RULE("addHandlerStatement", () => {
         this.CONSUME(tokens.AddHandler)
-        this.SUBRULE(this.expression)
+        this.SUBRULE(this.expression, { LABEL: 'event' })
         this.CONSUME(tokens.Comma)
-        this.SUBRULE1(this.expression)
+        this.SUBRULE1(this.expression, { LABEL: 'handler' })
     })
 
     private removeHandlerStatement = this.RULE("removeHandlerStatement", () => {
         this.CONSUME(tokens.RemoveHandler)
-        this.SUBRULE(this.expression)
+        this.SUBRULE(this.expression, { LABEL: 'event' })
         this.CONSUME(tokens.Comma)
-        this.SUBRULE1(this.expression)
+        this.SUBRULE1(this.expression, { LABEL: 'handler' })
     })
 
     private preprocessor = this.RULE("preprocessor", () => this.choice(
@@ -236,7 +251,6 @@ export class BSLParser extends CstParser {
         () => this.SUBRULE(this.constructorExpression),
         () => this.SUBRULE(this.constructorMethodExpression),
         () => this.SUBRULE(this.logicalOrExpression),
-        () => this.SUBRULE(this.ternaryExpression),
     ))
 
 
@@ -247,8 +261,10 @@ export class BSLParser extends CstParser {
             () => this.CONSUME(tokens.Plus),
         ))
         this.choice1(
+            () => this.SUBRULE(this.ternaryExpression),
             () => this.SUBRULE(this.literal),
             () => this.SUBRULE(this.qualifiedName),
+            () => this.SUBRULE(this.parenthesisExpression),
         )
     })
 
@@ -274,10 +290,11 @@ export class BSLParser extends CstParser {
             () => this.CONSUME(tokens.Identifier, { LABEL: 'variable' }),
         )
         this.MANY(() => this.choice1(
-            () => { this.CONSUME2(tokens.Dot), this.SUBRULE3(this.methodCall) },
+            () => { this.CONSUME2(tokens.Dot), this.SUBRULE3(this.methodCall2, { LABEL: 'methodCall' }) },
             () => { this.CONSUME3(tokens.Dot), this.CONSUME1(tokens.Identifier) },
             () => this.SUBRULE(this.indexAccess),
         ))
+        this.OPTION(() => this.CONSUME(tokens.Dot, { LABEL: 'UNCLOSED' }))
     })
 
     private indexAccess = this.RULE('indexAccess', () => { this.CONSUME(tokens.LSquare), this.SUBRULE(this.expression, { LABEL: 'index' }), this.CONSUME(tokens.RSquare) }
@@ -295,6 +312,11 @@ export class BSLParser extends CstParser {
     ))
 
     private methodCall = this.RULE('methodCall', () => {
+        this.CONSUME(tokens.Identifier)
+        this.SUBRULE(this.arguments)
+    })
+
+    private methodCall2 = this.RULE('methodCall2', () => {
         this.choice(
             () => this.CONSUME(tokens.Execute, { LABEL: 'Identifier' }),
             () => this.CONSUME(tokens.Identifier)

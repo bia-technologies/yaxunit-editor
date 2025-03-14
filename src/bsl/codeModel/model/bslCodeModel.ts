@@ -1,4 +1,4 @@
-import { BaseSymbol, CodeSymbol, descendantByOffset, Method } from "@/common/codeModel";
+import { BaseSymbol, CompositeSymbol, Method } from "@/common/codeModel";
 import { VariablesScope } from "./interfaces";
 import { MethodsCalculator, ModelCalculator, TypesCalculator, VariablesCalculator } from "../calculators";
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitions";
@@ -7,7 +7,7 @@ import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslVariable } from "./variables";
 
-export class BslCodeModel extends AutoDisposable implements VariablesScope {
+export class BslCodeModel extends AutoDisposable implements VariablesScope, CompositeSymbol {
     calculators: ModelCalculator[] = [new ParentsCalculator(), new VariablesCalculator(), TypesCalculator.instance]
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
@@ -22,8 +22,8 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope {
         return this.methods.find(m => m.name === method.name)
     }
 
-    descendantByOffset(offset: number): CodeSymbol | undefined {
-        return descendantByOffset(offset, ...this.children)
+    getChildrenSymbols() {
+        return this.children
     }
 
     afterUpdate() {

@@ -18,7 +18,16 @@ import {
     VariableSymbol,
     UnaryExpressionSymbol,
     PreprocessorSymbol,
-    BslVariable
+    BslVariable,
+    ElseBranchSymbol,
+    IfBranchSymbol,
+    IfStatementSymbol,
+    WhileStatementSymbol,
+    ForStatementSymbol,
+    ForEachStatementSymbol,
+    ExecuteStatementSymbol,
+    TryStatementSymbol,
+    RiseErrorStatementSymbol
 } from "@/bsl/codeModel";
 import { Operators, isCompareOperator } from "../model/operators"
 import { CodeModelVisitor, isAcceptable } from "../visitor"
@@ -66,7 +75,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
         await this.acceptItems(model.children)
     }
 
-    // definitions
+    // #region definitions
     async visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
         this.initScope(symbol)
         await this.acceptItems(symbol.children)
@@ -80,8 +89,11 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     visitParameterDefinition(_: ParameterDefinitionSymbol): any { }
 
     visitModuleVariableDefinition(_: ModuleVariableDefinitionSymbol): any { }
+    // #endregion
 
-    // statements
+    // #region statements
+    visitVariableDefinition() { }
+
     async visitAssignmentStatement(symbol: AssignmentStatementSymbol) {
         if (!symbol.variable) {
             return
@@ -100,8 +112,68 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     async visitReturnStatement(symbol: ReturnStatementSymbol) {
-        this.accept(symbol.expression)
+        await this.accept(symbol.expression)
     }
+
+    async visitExecuteStatement(symbol: ExecuteStatementSymbol) {
+        await this.accept(symbol.text)
+    }
+
+    async visitTryStatement(symbol: TryStatementSymbol) {
+        await this.acceptItems(symbol.body)
+        await this.acceptItems(symbol.handler)
+    }
+
+    async visitRiseErrorStatement(symbol: RiseErrorStatementSymbol) {
+        await this.accept(symbol.error)
+        if (symbol.arguments) {
+            await this.acceptItems(symbol.arguments)
+        }
+    }
+
+    visitVarStatement(): any { }
+
+    async visitIfStatement(symbol: IfStatementSymbol) {
+        await this.acceptItems(symbol.brunches)
+        await this.accept(symbol.elseBrunch)
+    }
+
+    async visitIfBranch(symbol: IfBranchSymbol) {
+        await this.accept(symbol.condition)
+        await this.acceptItems(symbol.body)
+    }
+
+    async visitElseBrunch(symbol: ElseBranchSymbol) {
+        await this.acceptItems(symbol.body)
+    }
+
+    async visitWhileStatement(symbol: WhileStatementSymbol) {
+        await this.accept(symbol.condition)
+        await this.acceptItems(symbol.body)
+    }
+
+    async visitForStatement(symbol: ForStatementSymbol) {
+        if (!symbol.variable.type) {
+            symbol.variable.type = BaseTypes.number
+        }
+        await this.handleVariable(symbol.variable)
+        await this.acceptItems(symbol.body)
+    }
+    async visitForEachStatement(symbol: ForEachStatementSymbol) {
+        this.accept(symbol.variable)
+        this.accept(symbol.collection)
+        this.acceptItems(symbol.body)
+    }
+
+    visitBreakStatement() { }
+    visitContinueStatement() { }
+
+    visitLabelStatement() { }
+    visitGotoStatement() { }
+
+    visitAddHandlerStatement() { }
+    visitRemoveHandlerStatement() { }
+    // #endregion
 
     // basic
     async visitIndexAccessSymbol(symbol: IndexAccessSymbol) {
@@ -135,7 +207,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
                 parentType = item.type
             }
         }
-        symbol.type = parentType
+        symbol.type = parentType !== 'global' ? parentType : undefined // TODO
     }
 
     visitPropertySymbol(_: PropertySymbol): any { }
@@ -175,10 +247,12 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     async visitConstructorSymbol(symbol: ConstructorSymbol) {
-        if (Array.isArray(symbol.arguments)) {
-            await this.acceptItems(symbol.arguments)
-        } else {
-            await this.accept(symbol.arguments)
+        if (symbol.arguments) {
+            if (Array.isArray(symbol.arguments)) {
+                await this.acceptItems(symbol.arguments)
+            } else {
+                await this.accept(symbol.arguments)
+            }
         }
         if (typeof symbol.name === 'object') {
             await this.accept(symbol.name)
@@ -213,7 +287,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     protected async acceptItems(items: CodeSymbol[]) {
         for (const item of items) {
-            await this.accept(item)
+            if (item) await this.accept(item)
         }
     }
 
