@@ -1,15 +1,14 @@
 import { BaseSymbol, CodeSymbol, descendantByOffset, Method } from "@/common/codeModel";
 import { VariablesScope } from "./interfaces";
-import { MethodsCalculator, TypesCalculator, VariablesCalculator } from "../calculators";
+import { MethodsCalculator, ModelCalculator, TypesCalculator, VariablesCalculator } from "../calculators";
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitions";
 import { ParentsCalculator } from "../calculators";
 import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
-import { CodeModelVisitor } from "../visitor";
 import { BslVariable } from "./variables";
 
 export class BslCodeModel extends AutoDisposable implements VariablesScope {
-    calculators: CodeModelVisitor[] = [new ParentsCalculator(), new VariablesCalculator(), TypesCalculator.instance]
+    calculators: ModelCalculator[] = [new ParentsCalculator(), new VariablesCalculator(), TypesCalculator.instance]
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
 
@@ -28,7 +27,7 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope {
     }
 
     afterUpdate() {
-        this.calculators.forEach(c => c.visitModel(this))
+        this.calculators.forEach(c => c.calculate(this))
         this.onDidChangeModelEmitter.fire(this)
     }
 

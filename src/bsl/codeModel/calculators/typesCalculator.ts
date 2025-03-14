@@ -1,23 +1,33 @@
 import { BaseTypes } from "@/bsl/scope/baseTypes";
 import {
-    AccessSequenceSymbol,
     AssignmentStatementSymbol,
     BinaryExpressionSymbol,
     BslCodeModel,
-    BslVariable,
+    ConstSymbol,
+    ConstructorSymbol,
     FunctionDefinitionSymbol,
     IndexAccessSymbol,
     MethodCallSymbol,
+    ModuleVariableDefinitionSymbol,
+    ParameterDefinitionSymbol,
     ProcedureDefinitionSymbol,
-    VariableSymbol
-} from "../model";
+    AccessSequenceSymbol,
+    PropertySymbol,
+    ReturnStatementSymbol,
+    TernaryExpressionSymbol,
+    VariableSymbol,
+    UnaryExpressionSymbol,
+    PreprocessorSymbol,
+    BslVariable
+} from "@/bsl/codeModel";
 import { Operators, isCompareOperator } from "../model/operators"
-import { BaseCodeModelVisitor, isAcceptable } from "../visitor"
+import { CodeModelVisitor, isAcceptable } from "../visitor"
 import { BaseScope, GlobalScope, Scope, UnionScope } from "@/common/scope"
 import { BaseSymbol, CodeSymbol } from "@/common/codeModel"
 import { isVariablesScope, VariablesScope } from "../model/interfaces"
+import { ModelCalculator } from "./calculator";
 
-export class TypesCalculator extends BaseCodeModelVisitor {
+export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     static readonly instance: TypesCalculator = new TypesCalculator()
 
     private localScope?: BaseScope
@@ -56,6 +66,7 @@ export class TypesCalculator extends BaseCodeModelVisitor {
         await this.acceptItems(model.children)
     }
 
+    // definitions
     async visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
         this.initScope(symbol)
         await this.acceptItems(symbol.children)
@@ -66,11 +77,11 @@ export class TypesCalculator extends BaseCodeModelVisitor {
         await this.acceptItems(symbol.children)
     }
 
-    private initScope(symbol: VariablesScope) {
-        this.localScope = new BaseScope(symbol.vars)
-        this.fullScope.scopes = [this.localScope, ...GlobalScope.scopes]
-    }
+    visitParameterDefinition(_: ParameterDefinitionSymbol): any { }
 
+    visitModuleVariableDefinition(_: ModuleVariableDefinitionSymbol): any { }
+
+    // statements
     async visitAssignmentStatement(symbol: AssignmentStatementSymbol) {
         if (!symbol.variable) {
             return
@@ -88,26 +99,13 @@ export class TypesCalculator extends BaseCodeModelVisitor {
         }
     }
 
-    async visitVariableSymbol(symbol: VariableSymbol) {
-        const member = this.findVar(symbol.name)
-        if (member) {
-            symbol.type = await member.type
-            symbol.value = member.value
-        }
+    async visitReturnStatement(symbol: ReturnStatementSymbol) {
+        this.accept(symbol.expression)
     }
 
-    async visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol) {
-        await super.visitBinaryExpressionSymbol(symbol)
-
-        if (!symbol.left || !symbol.right || !symbol.operator) {
-            return
-        }
-
-        if (isCompareOperator(symbol.operator)) {
-            symbol.type = BaseTypes.boolean
-        } else if (symbol.operator === Operators.plus) {
-            symbol.type = symbol.left.type
-        }
+    // basic
+    async visitIndexAccessSymbol(symbol: IndexAccessSymbol) {
+        await this.accept(symbol.index)
     }
 
     async visitMethodCallSymbol(symbol: MethodCallSymbol) {
@@ -140,6 +138,59 @@ export class TypesCalculator extends BaseCodeModelVisitor {
         symbol.type = parentType
     }
 
+    visitPropertySymbol(_: PropertySymbol): any { }
+
+    async visitVariableSymbol(symbol: VariableSymbol) {
+        const member = this.findVar(symbol.name)
+        if (member) {
+            symbol.type = await member.type
+            symbol.value = member.value
+        }
+    }
+
+    // expression
+    async visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol) {
+        await this.accept(symbol.operand)
+    }
+
+    async visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol) {
+        if (!symbol.left || !symbol.right || !symbol.operator) {
+            return
+        }
+
+        await this.accept(symbol.left)
+        await this.accept(symbol.right)
+
+        if (isCompareOperator(symbol.operator)) {
+            symbol.type = BaseTypes.boolean
+        } else if (symbol.operator === Operators.plus) {
+            symbol.type = symbol.left.type
+        }
+    }
+
+    async visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol) {
+        await this.accept(symbol.condition)
+        await this.accept(symbol.condition)
+        await this.accept(symbol.alternative)
+    }
+
+    async visitConstructorSymbol(symbol: ConstructorSymbol) {
+        if (Array.isArray(symbol.arguments)) {
+            await this.acceptItems(symbol.arguments)
+        } else {
+            await this.accept(symbol.arguments)
+        }
+        if (typeof symbol.name === 'object') {
+            await this.accept(symbol.name)
+        }
+    }
+
+    visitConstSymbol(_: ConstSymbol): any { }
+
+    // preprocessor
+    visitPreprocessorSymbol(_: PreprocessorSymbol): any { }
+
+
     findVar(name: string) {
         return this.localScope?.findMember(name) as BslVariable
     }
@@ -153,6 +204,11 @@ export class TypesCalculator extends BaseCodeModelVisitor {
                 symbol.type = await symbol.member.type
             }
         }
+    }
+
+    private initScope(symbol: VariablesScope) {
+        this.localScope = new BaseScope(symbol.vars)
+        this.fullScope.scopes = [this.localScope, ...GlobalScope.scopes]
     }
 
     protected async acceptItems(items: CodeSymbol[]) {

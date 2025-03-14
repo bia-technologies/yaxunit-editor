@@ -96,7 +96,6 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     // statements
-
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): any {
         this.accept(symbol.variable)
         this.accept(symbol.expression)

@@ -15,9 +15,14 @@ import {
     BslCodeModel
 } from "../model";
 import { BaseSymbol } from "@/common/codeModel";
+import { ModelCalculator } from "./calculator";
 
-export class ParentsCalculator implements CodeModelVisitor {
+export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
 
+    calculate(model: BslCodeModel){
+        this.visitModel(model)
+    }
+    
     setParent(parent: BaseSymbol, symbol: BaseSymbol | undefined) {
         if (symbol) {
             symbol.parent = parent

@@ -377,28 +377,7 @@ export function parseModule(text: string) {
     parser.input = lexResult.tokens
     // any top level rule may be used as an entry point
     const cst = parser.module();
-    console.debug('parse by chevrotain time: ', performance.now() - start, 'ms')
-    // this would be a TypeScript compilation error because our parser now has a clear API.
-    // let value = parser.json_OopsTypo()
-
-    return {
-        // This is a pure grammar, the value will be undefined until we add embedded actions
-        // or enable automatic CST creation.
-        cst: cst,
-        lexErrors: lexResult.errors,
-        parseErrors: parser.errors,
-    };
-}
-
-export function parseExpression(text: string) {
-    const start = performance.now()
-
-    const lexResult = BSLLexer.tokenize(text);
-    // setting a new input will RESET the parser instance's state.
-    parser.input = lexResult.tokens;
-    // any top level rule may be used as an entry point
-    const cst = parser.expression();
-    console.debug('parse time: ', performance.now() - start, 'ms')
+    console.log('Parse by chevrotain time: ', performance.now() - start, 'ms')
     // this would be a TypeScript compilation error because our parser now has a clear API.
     // let value = parser.json_OopsTypo()
 

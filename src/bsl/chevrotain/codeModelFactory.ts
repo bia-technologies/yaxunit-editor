@@ -47,7 +47,7 @@ export const ChevrotainSitterCodeModelFactory = {
         } else if (children) {
             codeModel.children.push(children)
         }
-        console.debug('Build code model by chevrotain', performance.now() - start, 'ms')
+        console.log('Build code model by chevrotain', performance.now() - start, 'ms')
     }
 }
 

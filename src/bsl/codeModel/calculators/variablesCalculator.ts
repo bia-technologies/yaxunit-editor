@@ -9,8 +9,10 @@ import {
     VariableSymbol
 } from "../model";
 import { BslVariable } from "../model/variables";
+import { ModelCalculator } from "./calculator";
+import { VariablesScope } from "../model/interfaces";
 
-export class VariablesCalculator extends BaseCodeModelVisitor {
+export class VariablesCalculator extends BaseCodeModelVisitor  implements ModelCalculator{
     variablesMap: CaseInsensitiveMap<BslVariable> = new CaseInsensitiveMap()
     varScope: VariablesScope | undefined
 
