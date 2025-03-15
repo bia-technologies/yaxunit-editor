@@ -2,7 +2,6 @@ import { editor, IPosition } from "monaco-editor-core"
 import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import {
-    AccessSequenceSymbol,
     BaseExpressionSymbol,
     BslCodeModel,
     ConstructorSymbol,

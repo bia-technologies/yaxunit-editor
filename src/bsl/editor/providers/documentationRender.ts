@@ -72,7 +72,7 @@ class HoverVisitor extends BaseCodeModelVisitor {
     }
 
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
-        return fieldDescription(symbol, this.model)
+        return fieldDescription(symbol)
     }
 
     visitConstructorSymbol(symbol: ConstructorSymbol) {
