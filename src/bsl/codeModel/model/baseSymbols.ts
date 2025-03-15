@@ -58,7 +58,7 @@ export class IndexAccessSymbol extends BaseExpressionSymbol implements Acceptabl
 
 export class MethodCallSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol, NamedSymbol {
     name: string
-    arguments?: BaseSymbol[]
+    arguments?: BaseExpressionSymbol[]
     member?: Member
 
     constructor(position: SymbolPosition, name?: string) {

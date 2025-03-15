@@ -2,25 +2,32 @@ import { editor, languages, IPosition, CancellationToken } from 'monaco-editor-c
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { Member, MemberType, MethodMember, Signature, isPlatformMethod, GlobalScope } from '@/common/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'
-import { ArgumentInfo, ArgumentsOwner, Constructor, ExpressionType, MethodCall, isArgumentsOwner } from '../../expressions/expressions'
 import { getEditedPositionOffset } from '@/monaco/utils'
-import { EditorScope } from '@/bsl/scope/editorScope'
 import { ModuleModel } from '../../moduleModel'
+import { BaseExpressionSymbol, ConstructorSymbol, MethodCallSymbol } from '@/bsl/codeModel'
+import { BaseSymbol } from '@/common/codeModel'
+import { currentAccessSequence } from '@/bsl/codeModel/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
     signatureHelpRetriggerCharacters: [')'],
 
     async provideSignatureHelp(model: editor.ITextModel, position: IPosition, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
-        console.debug('Method context', context)
-        
         const positionOffset = getEditedPositionOffset(model, position)
         const moduleModel = model as ModuleModel
         const symbol = moduleModel.getEditingMethod(position)
 
-        if (context.isRetrigger && context.activeSignatureHelp) {
-            if (symbol && isArgumentsOwner(symbol)) {
-                setActiveParameter(context.activeSignatureHelp, (symbol as ArgumentsOwner).arguments, positionOffset)
+        let ars: BaseSymbol[] | undefined = {} = []
+
+        if (symbol instanceof MethodCallSymbol) {
+            ars = symbol.arguments
+        } else if (symbol instanceof ConstructorSymbol) {
+            ars = symbol.arguments as BaseExpressionSymbol[]
+        }
+
+        if (context.isRetrigger && context.activeSignatureHelp && (context.activeSignatureHelp as SignatureHelp).symbol === symbol) {
+            if (ars) {
+                setActiveParameter(context.activeSignatureHelp, ars, positionOffset)
             }
             return {
                 value: context.activeSignatureHelp,
@@ -31,16 +38,18 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         if (!symbol) {
             return undefined
         }
-        let signatures: languages.SignatureHelp | undefined
-        if (symbol.type === ExpressionType.ctor) {
-            signatures = await createConstructorSignatures(symbol as Constructor, model)
-        } else if (symbol.type === ExpressionType.methodCall) {
-            signatures = await createMethodSignatures(model, symbol as MethodCall)
+        let signatures: SignatureHelp | undefined
+        if (symbol instanceof ConstructorSymbol) {
+            signatures = await createConstructorSignatures(symbol)
+        } else if (symbol instanceof MethodCallSymbol) {
+            signatures = await createMethodSignatures(model, symbol)
         }
 
         if (signatures) {
-            setActiveSignature(signatures, symbol.arguments)
-            setActiveParameter(signatures, symbol.arguments, positionOffset)
+            setActiveSignature(signatures, ars)
+            setActiveParameter(signatures, ars, positionOffset)
+            signatures.symbol = symbol
+
             return {
                 value: signatures,
                 dispose: () => { }
@@ -50,10 +59,13 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     },
 }
 
-async function createConstructorSignatures(symbol: Constructor, model: editor.ITextModel): Promise<languages.SignatureHelp | undefined> {
-    const typeId = await symbol.getResultTypeId(EditorScope.getScope(model))
-    if (typeId) {
-        const ctor = GlobalScope.getConstructor(typeId)
+interface SignatureHelp extends languages.SignatureHelp {
+    symbol?: BaseSymbol
+}
+
+async function createConstructorSignatures(symbol: ConstructorSymbol): Promise<languages.SignatureHelp | undefined> {
+    if (symbol.type) {
+        const ctor = GlobalScope.getConstructor(symbol.type)
 
         if (ctor) {
             const sign = {
@@ -78,8 +90,9 @@ async function createConstructorSignatures(symbol: Constructor, model: editor.IT
     return undefined
 }
 
-async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCall): Promise<languages.SignatureHelp | undefined> {
-    const method = await scopeProvider.resolveSymbolMember(model, symbol as MethodCall)
+async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCallSymbol): Promise<languages.SignatureHelp | undefined> {
+    const seq = currentAccessSequence(symbol) ?? symbol
+    const method = await scopeProvider.resolveSymbolMember(model, seq)
     if (!method) {
         return undefined
     }
@@ -93,8 +106,8 @@ async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCa
     return sign
 }
 
-function setActiveSignature(signature: languages.SignatureHelp, args: ArgumentInfo[]) {
-    if (signature.signatures.length <= 1) {
+function setActiveSignature(signature: languages.SignatureHelp, args: BaseSymbol[] | undefined) {
+    if (signature.signatures.length <= 1 || !args) {
         return
     }
 
@@ -115,10 +128,14 @@ function setActiveSignature(signature: languages.SignatureHelp, args: ArgumentIn
     }
 }
 
-function setActiveParameter(signature: languages.SignatureHelp, args: ArgumentInfo[], position: number) {
+function setActiveParameter(signature: languages.SignatureHelp, args: BaseSymbol[] | undefined, position: number) {
+    if (!args) {
+        return
+    }
+
     for (let index = args.length - 1; index >= 0; index--) {
         const arg = args[index];
-        if (arg.startIndex <= position) {
+        if (arg && arg.startOffset <= position) { // TODO empty args support
             signature.activeParameter = index
             return
         }

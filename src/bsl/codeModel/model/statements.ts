@@ -1,4 +1,4 @@
-import { BaseSymbol, CodeSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel/base";
+import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel/base";
 import { AccessSequenceSymbol, VariableSymbol, Acceptable, CodeModelVisitor, BaseExpressionSymbol } from "@/bsl/codeModel";
 
 export class AssignmentStatementSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
@@ -283,7 +283,7 @@ export class AwaitStatementSymbol extends BaseSymbol implements Acceptable, Comp
         this.expression = expression
     }
 
-    accept(visitor: CodeModelVisitor): any {
+    accept(_: CodeModelVisitor): any {
         //return visitor.visitAwaitStatement(this)
     }
 

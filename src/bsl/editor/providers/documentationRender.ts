@@ -68,7 +68,7 @@ class HoverVisitor extends BaseCodeModelVisitor {
     }
 
     visitVariableSymbol(symbol: VariableSymbol) {
-        return variableDescription(symbol, this.model)
+        return variableDescription(symbol)
     }
 
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
@@ -88,7 +88,7 @@ class HoverVisitor extends BaseCodeModelVisitor {
     }
 
     visitMethodCallSymbol(symbol: MethodCallSymbol) {
-        return methodDescription(symbol, this.model)
+        return methodDescription(symbol)
     }
 
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
@@ -189,7 +189,7 @@ function memberDescription(member: Member, isVar: boolean) {
     return memberDescription
 }
 
-async function fieldDescription(symbol: AccessSequenceSymbol, model: ModuleModel) {
+async function fieldDescription(symbol: AccessSequenceSymbol) {
     if (!symbol) {
         return 'Неизвестно'
     }

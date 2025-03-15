@@ -2,7 +2,6 @@ import { editor, IPosition } from "monaco-editor-core"
 import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import {
-    AccessProperty,
     AccessSequenceSymbol,
     BaseExpressionSymbol,
     BslCodeModel,
@@ -12,7 +11,8 @@ import {
 } from "@/bsl/codeModel";
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
-import { CodeSymbol, descendantByOffset } from "@/common/codeModel";
+import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
+import { currentAccessSequence, descendantByOffset } from "../codeModel/utils";
 
 export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
 
@@ -86,24 +86,16 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        return descendantByOffset(position, this.codeModel) as MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol
-    }
-}
+        let symbol: BaseSymbol | undefined = descendantByOffset(position, this.codeModel) as BaseSymbol
 
-function currentAccessSequence(symbol: AccessProperty) {
-    if (symbol.parent instanceof AccessSequenceSymbol) {
-        const seq = new AccessSequenceSymbol(symbol.parent.position)
-        seq.parent = symbol.parent.parent
-
-        seq.access = [...symbol.parent.access]
-        for (let index = seq.access.length; index > 0; index--) {
-            if (symbol === seq.access[index - 1]) {
-                seq.access.length = index
-                break
+        while (symbol) {
+            if (symbol instanceof MethodCallSymbol || symbol instanceof ConstructorSymbol) {
+                return symbol
+            } else {
+                symbol = symbol.parent
             }
         }
-        seq.type = seq.access[seq.accept.length - 1].type
-        return seq
+        return symbol
     }
 }
 
