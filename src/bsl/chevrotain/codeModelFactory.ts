@@ -40,6 +40,7 @@ import {
 import { CstChildrenDictionary, CstElement, CstNode, CstNodeLocation, IToken } from "chevrotain"
 import { BaseSymbol, SymbolPosition } from "@/common/codeModel"
 import { BaseTypes } from "../scope/baseTypes"
+import { editor, MarkerSeverity } from "monaco-editor-core"
 
 export const ChevrotainSitterCodeModelFactory = {
     buildModel(model: ModuleModel | string): BslCodeModel {
@@ -57,6 +58,10 @@ export const ChevrotainSitterCodeModelFactory = {
         tree.lexErrors.forEach(e => console.error('lexError', e))
         tree.parseErrors.forEach(e => console.error('parseError', e.token, e))
 
+        if (isModel(model)) {
+            const markers = convertErrorsToMarkers(tree.lexErrors, tree.parseErrors, model);
+            editor.setModelMarkers(model, 'chevrotain', markers);
+        }
         const visitor = new CodeModelFactoryVisitor()
         const children = visitor.visit(tree.cst)
 
@@ -457,25 +462,25 @@ class CodeModelFactoryVisitor extends BslVisitor {
 
     createBinaryExpression(ctx: CstChildrenDictionary) {
         let result: BaseSymbol = this.visitFirst(ctx.lhs) as BaseSymbol
-        try{
-        if (ctx.rhs) {
-            const operators = ctx.operator
+        try {
+            if (ctx.rhs) {
+                const operators = ctx.operator
 
-            ctx.rhs.forEach((rhsOperand, idx) => {
-                // there will be one operator for each rhs operand
-                let rhsValue = this.visit(rhsOperand as CstNode)
-                let operator = operators[idx]
+                ctx.rhs.forEach((rhsOperand, idx) => {
+                    // there will be one operator for each rhs operand
+                    let rhsValue = this.visit(rhsOperand as CstNode)
+                    let operator = operators[idx]
 
-                const symbol = new BinaryExpressionSymbol({ startOffset: result.startOffset, endOffset: rhsValue.endOffset })
-                symbol.left = result
-                symbol.right = rhsValue
-                symbol.operator = (operator as IToken).image
-                result = symbol
-            })
+                    const symbol = new BinaryExpressionSymbol({ startOffset: result.startOffset, endOffset: rhsValue.endOffset })
+                    symbol.left = result
+                    symbol.right = rhsValue
+                    symbol.operator = (operator as IToken).image
+                    result = symbol
+                })
+            }
+        } catch (error) {
+            console.error('binary expression error', ctx.lhs, error)
         }
-    }catch(error){
-        console.error('binary expression error', ctx.lhs, error)
-    }
         return result
     }
 
@@ -532,4 +537,44 @@ function multilineStringContent(value: string): string {
         }
     }
     return lines.join('\n')
+}
+
+// Функция для конвертации ошибок Chevrotain в маркеры Monaco
+function convertErrorsToMarkers(lexErrors: any[], parseErrors: any[], model: editor.ITextModel): editor.IMarkerData[] {
+    const markers: editor.IMarkerData[] = [];
+
+    // Обработка лексических ошибок
+    for (const error of lexErrors) {
+        const startPosition = model.getPositionAt(error.offset);
+        const endPosition = model.getPositionAt(error.offset + (error.length || 1));
+
+        markers.push({
+            severity: MarkerSeverity.Error,
+            message: `Лексическая ошибка: ${error.message || 'Неизвестная ошибка'}`,
+            startLineNumber: startPosition.lineNumber,
+            startColumn: startPosition.column,
+            endLineNumber: endPosition.lineNumber,
+            endColumn: endPosition.column,
+            source: 'chevrotain-lexer'
+        });
+    }
+
+    // Обработка синтаксических ошибок
+    for (const error of parseErrors) {
+        const token = error.token;
+        const startPosition = model.getPositionAt(token.startOffset);
+        const endPosition = model.getPositionAt((token.endOffset || token.startOffset) + 1);
+
+        markers.push({
+            severity: MarkerSeverity.Error,
+            message: `Синтаксическая ошибка: ${error.message}`,
+            startLineNumber: startPosition.lineNumber,
+            startColumn: startPosition.column,
+            endLineNumber: endPosition.lineNumber,
+            endColumn: endPosition.column,
+            source: 'chevrotain-parser'
+        });
+    }
+
+    return markers;
 }

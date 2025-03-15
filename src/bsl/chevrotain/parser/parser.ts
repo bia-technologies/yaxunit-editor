@@ -1,6 +1,6 @@
 import { CstParser, EMPTY_ALT, Rule } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
-import { BSLLexer } from "./lexer";
+import { BSLLexer } from "./lexer"
 
 export class BSLParser extends CstParser {
     constructor() {

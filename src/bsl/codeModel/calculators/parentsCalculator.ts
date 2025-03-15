@@ -43,7 +43,7 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
             }
         }
     }
-    setParentItems(parent: BaseSymbol, items: BaseSymbol[] | undefined) {
+    setParentItems(parent: BaseSymbol, items: (BaseSymbol | undefined)[] | undefined) {
         if (items) {
             items.forEach(i => { if (i) this.setParent(parent, i) })
         }
@@ -96,8 +96,7 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     visitRiseErrorStatement(symbol: RiseErrorStatementSymbol): any {
-        this.setParent(symbol, symbol.error)
-        this.setParentItems(symbol, symbol.arguments)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitIfStatement(symbol: IfStatementSymbol) {
@@ -138,12 +137,10 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
     visitGotoStatement() { }
 
     visitAddHandlerStatement(symbol: AddHandlerStatementSymbol) {
-        this.setParent(symbol, symbol.event)
-        this.setParent(symbol, symbol.handler)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
     visitRemoveHandlerStatement(symbol: RemoveHandlerStatementSymbol) {
-        this.setParent(symbol, symbol.event)
-        this.setParent(symbol, symbol.handler)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
     // #endregion
 
@@ -154,13 +151,11 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     visitMethodCallSymbol(symbol: MethodCallSymbol): any {
-        if (symbol.arguments) {
-            this.setParentItems(symbol, symbol.arguments)
-        }
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): any {
-        this.setParentItems(symbol, symbol.access)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitPropertySymbol(_: any): any { }
@@ -169,29 +164,19 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
 
     // expression
     visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): any {
-        this.setParent(symbol, symbol.operand)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): any {
-        this.setParent(symbol, symbol.left)
-        this.setParent(symbol, symbol.right)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): any {
-        this.setParent(symbol, symbol.condition)
-        this.setParent(symbol, symbol.consequence)
-        this.setParent(symbol, symbol.alternative)
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitConstructorSymbol(symbol: ConstructorSymbol): any {
-        if (Array.isArray(symbol.arguments)) {
-            this.setParentItems(symbol, symbol.arguments)
-        } else {
-            this.setParent(symbol, symbol.arguments)
-        }
-        if (typeof symbol.name === 'object') {
-            this.setParent(symbol, symbol.name)
-        }
+        this.setParentItems(symbol, symbol.getChildrenSymbols())
     }
 
     visitConstSymbol(_: any): any { }

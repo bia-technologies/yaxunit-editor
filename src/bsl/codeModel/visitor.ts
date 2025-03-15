@@ -100,17 +100,12 @@ export interface CodeModelVisitor {
 
 export class BaseCodeModelVisitor implements CodeModelVisitor {
 
-    protected acceptItems(items: CodeSymbol[] | undefined) {
-        try {
-            if (items) {
-                items
-                    .filter(item => item && isAcceptable(item))
-                    .forEach((a: any) => (<Acceptable>a).accept(this))
-            }
-        } catch (error) {
-            console.error(items, ' visit error', error)
+    protected acceptItems(items: (CodeSymbol | undefined)[] | undefined) {
+        if (items) {
+            items
+                .filter(item => item && isAcceptable(item))
+                .forEach((a: any) => (<Acceptable>a).accept(this))
         }
-
     }
 
     protected accept(symbol: CodeSymbol | undefined) {
@@ -126,7 +121,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     // #region definitions
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol): any {
         this.acceptItems(symbol.params)
-        this.acceptItems(symbol.children)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol): any {
@@ -147,8 +142,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     visitAssignmentStatement(symbol: AssignmentStatementSymbol): any {
-        this.accept(symbol.variable)
-        this.accept(symbol.expression)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitReturnStatement(symbol: ReturnStatementSymbol): any {
@@ -165,8 +159,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     visitRiseErrorStatement(symbol: RiseErrorStatementSymbol): any {
-        this.accept(symbol.error)
-        this.acceptItems(symbol.arguments)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitIfStatement(symbol: IfStatementSymbol) {
@@ -217,13 +210,11 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     visitMethodCallSymbol(symbol: MethodCallSymbol): any {
-        if (symbol.arguments) {
-            this.acceptItems(symbol.arguments)
-        }
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol): any {
-        this.acceptItems(symbol.access)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitPropertySymbol(_: PropertySymbol): any {
@@ -236,31 +227,19 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
 
     // expression
     visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol): any {
-        this.accept(symbol.operand)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol): any {
-        this.accept(symbol.left)
-        this.accept(symbol.right)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): any {
-        this.accept(symbol.condition)
-        this.accept(symbol.consequence)
-        this.accept(symbol.alternative)
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitConstructorSymbol(symbol: ConstructorSymbol): any {
-        if (symbol.arguments) {
-            if (Array.isArray(symbol.arguments)) {
-                this.acceptItems(symbol.arguments)
-            } else {
-                this.accept(symbol.arguments)
-            }
-        }
-        if (typeof symbol.name === 'object') {
-            this.accept(symbol.name)
-        }
+        this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitConstSymbol(_: ConstSymbol): any {

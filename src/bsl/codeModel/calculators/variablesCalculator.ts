@@ -3,6 +3,8 @@ import { BaseCodeModelVisitor, isAcceptable } from "../visitor";
 import {
     AssignmentStatementSymbol,
     BslCodeModel,
+    ForEachStatementSymbol,
+    ForStatementSymbol,
     FunctionDefinitionSymbol,
     ModuleVariableDefinitionSymbol,
     ProcedureDefinitionSymbol,
@@ -53,6 +55,20 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
             this.handleVar(symbol.variable)
         }
         super.visitAssignmentStatement(symbol)
+    }
+
+    visitForStatement(symbol: ForStatementSymbol): void {
+        if (symbol.variable) {
+            this.handleVar(symbol.variable)
+        }
+        super.visitForStatement(symbol)
+    }
+
+    visitForEachStatement(symbol: ForEachStatementSymbol): void {
+        if (symbol.variable) {
+            this.handleVar(symbol.variable)
+        }
+        super.visitForEachStatement(symbol)
     }
     // #endregion
 

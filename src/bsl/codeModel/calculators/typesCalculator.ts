@@ -72,7 +72,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     async visitModel(model: BslCodeModel) {
         this.initScope(model)
-        await this.acceptItems(model.children)
+        await this.acceptItems(model.getChildrenSymbols())
     }
 
     // #region definitions
@@ -125,10 +125,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     async visitRiseErrorStatement(symbol: RiseErrorStatementSymbol) {
-        await this.accept(symbol.error)
-        if (symbol.arguments) {
-            await this.acceptItems(symbol.arguments)
-        }
+        await this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitVarStatement(): any { }
@@ -160,9 +157,9 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
         await this.acceptItems(symbol.body)
     }
     async visitForEachStatement(symbol: ForEachStatementSymbol) {
-        this.accept(symbol.variable)
-        this.accept(symbol.collection)
-        this.acceptItems(symbol.body)
+        await this.accept(symbol.variable)
+        await this.accept(symbol.collection)
+        await this.acceptItems(symbol.body)
     }
 
     visitBreakStatement() { }
@@ -181,10 +178,13 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     async visitMethodCallSymbol(symbol: MethodCallSymbol) {
-        symbol.member = GlobalScope.findMember(symbol.name)
-        if (symbol.member?.type) {
-            symbol.type = await symbol.member.type
+        if (!symbol.member) {
+            symbol.member = GlobalScope.findMember(symbol.name)
+            if (symbol.member?.type) {
+                symbol.type = await symbol.member.type
+            }
         }
+        await this.acceptItems(symbol.arguments)
     }
 
     async visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
@@ -208,6 +208,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
             }
         }
         symbol.type = parentType !== 'global' ? parentType : undefined // TODO
+        await this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitPropertySymbol(_: PropertySymbol): any { }
@@ -230,8 +231,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
             return
         }
 
-        await this.accept(symbol.left)
-        await this.accept(symbol.right)
+        await this.acceptItems(symbol.getChildrenSymbols())
 
         if (isCompareOperator(symbol.operator)) {
             symbol.type = BaseTypes.boolean
@@ -241,22 +241,11 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     async visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol) {
-        await this.accept(symbol.condition)
-        await this.accept(symbol.consequence)
-        await this.accept(symbol.alternative)
+        await this.acceptItems(symbol.getChildrenSymbols())
     }
 
     async visitConstructorSymbol(symbol: ConstructorSymbol) {
-        if (symbol.arguments) {
-            if (Array.isArray(symbol.arguments)) {
-                await this.acceptItems(symbol.arguments)
-            } else {
-                await this.accept(symbol.arguments)
-            }
-        }
-        if (typeof symbol.name === 'object') {
-            await this.accept(symbol.name)
-        }
+        await this.acceptItems(symbol.getChildrenSymbols())
     }
 
     visitConstSymbol(_: ConstSymbol): any { }
@@ -274,8 +263,10 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
             symbol.member.setTypeValue(symbol)
         } else {
             symbol.member = GlobalScope.findMember(symbol.name)
-            if (symbol.member) {
+            if (symbol.member?.type) {
                 symbol.type = await symbol.member.type
+            } else if (symbol.type && symbol.member && symbol.member instanceof BslVariable) {
+                symbol.member.setTypeValue(symbol)
             }
         }
     }
@@ -285,9 +276,11 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
         this.fullScope.scopes = [this.localScope, ...GlobalScope.scopes]
     }
 
-    protected async acceptItems(items: CodeSymbol[]) {
-        for (const item of items) {
-            if (item) await this.accept(item)
+    protected async acceptItems(items: (CodeSymbol | undefined)[] | undefined) {
+        if (items) {
+            for (const item of items) {
+                if (item) await this.accept(item)
+            }
         }
     }
 
