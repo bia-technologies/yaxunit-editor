@@ -2,11 +2,10 @@ import './styles/style.css';
 import './polyfill .js';
 
 import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
-import '@/bsl/language/contribution.js'
+import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope'
 import { YAxUnitEditor } from '@/yaxunit'
-import { useTreeSitterBsl } from '@/bsl/tree-sitter/index.js';
 
 (self as any).MonacoEnvironment = {
   getWorker(): Worker {
@@ -52,12 +51,10 @@ const content: string =
 
 #КонецОбласти`;
 
-useTreeSitterBsl().then(() => {
-  const bslEditor = new YAxUnitEditor();
-  (window as any).bslEditor = bslEditor;
-  bslEditor.content = content;
-  setDemoData(bslEditor)
-})
+const bslEditor = new YAxUnitEditor();
+(window as any).bslEditor = bslEditor;
+bslEditor.content = content;
+setDemoData(bslEditor)
 
 function setDemoData(bslEditor: YAxUnitEditor) {
   bslEditor.testsModel.loadReport([{

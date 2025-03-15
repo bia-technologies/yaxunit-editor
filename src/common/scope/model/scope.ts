@@ -9,11 +9,15 @@ export interface Scope {
 }
 
 export class BaseScope extends AutoDisposable implements Scope {
-    members: Member[]
+    private members: Member[]
+    membersHash: {
+        [key: string]: Member
+    } = {}
 
     constructor(members: Member[]) {
         super()
         this.members = members
+        members.forEach(m => this.membersHash[m.name.toLowerCase()] = m)
     }
 
     getMembers(): Member[] {
@@ -28,8 +32,7 @@ export class BaseScope extends AutoDisposable implements Scope {
 
     findMember(name: string): Member | undefined {
         this.beforeGetMembers()
-        const member = this.members.find(s => s.name.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0)
-        console.debug('find member', name, 'in scope', this, 'result = ', member)
+        const member = this.membersHash[name.toLowerCase()]
         return member
     }
 

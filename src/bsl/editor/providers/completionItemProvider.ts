@@ -1,15 +1,17 @@
-import { editor, languages, Position, Range } from 'monaco-editor-core';
-import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope';
-import { scopeProvider } from '@/bsl/scopeProvider';
-import { Expression, ExpressionType, isAccessible, resolveSymbol } from '@/bsl/tree-sitter';
-import { getEditedPositionOffset } from '@/monaco/utils';
-import { EditorScope } from '@/bsl/scope/editorScope';
+import { editor, languages, IPosition, Range } from 'monaco-editor-core'
+import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope'
+import { scopeProvider } from '@/bsl/scopeProvider'
+import { ModuleModel } from '@/bsl/moduleModel'
+import { EditorScope } from '@/bsl/scope/editorScope'
+import { AccessSequenceSymbol, ConstructorSymbol } from '@/bsl/codeModel'
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
 
-    async provideCompletionItems(model: editor.ITextModel, position: Position): Promise<languages.CompletionList | undefined> {
-        const symbol = currentSymbol(model, position)
+    async provideCompletionItems(model: editor.ITextModel, position: IPosition): Promise<languages.CompletionList | undefined> {
+        const moduleModel = model as ModuleModel
+
+        const symbol = moduleModel.getEditingExpression(position)
         console.debug('symbol: ', symbol)
 
         let scope: Scope | undefined
@@ -18,11 +20,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
         const editorScope = EditorScope.getScope(model)
 
-        if (!symbol || symbol.type === ExpressionType.none) {
-            scope = editorScope
-        } else if (isAccessible(symbol)) {
-            scope = symbol.path.length ? await scopeProvider.resolveExpressionType(editorScope, symbol.path) : editorScope
-        } else if (symbol.type === ExpressionType.ctor) {
+        if (symbol instanceof ConstructorSymbol) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {
                     return {
@@ -33,6 +31,12 @@ const completionItemProvider: languages.CompletionItemProvider = {
                     }
                 })
             }
+        }
+
+        if (symbol instanceof AccessSequenceSymbol) {
+            scope = await scopeProvider.resolveSymbolParentScope(editorScope, symbol)
+        } else {
+            scope = editorScope
         }
 
         console.debug('completion scope: ', scope)
@@ -50,16 +54,6 @@ const completionItemProvider: languages.CompletionItemProvider = {
             suggestions: suggestions
         }
     },
-}
-
-function currentSymbol(model: editor.ITextModel, position: Position): Expression | undefined {
-    const positionOffset = getEditedPositionOffset(model, position)
-
-    const scope = EditorScope.getScope(model)
-    const node = scope.getAst().getCurrentEditingNode(positionOffset)
-    if (node) {
-        return resolveSymbol(node, positionOffset)
-    }
 }
 
 function newCompletionItem(symbol: Member, range: Range): languages.CompletionItem {

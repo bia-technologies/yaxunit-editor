@@ -1,58 +1,72 @@
-import { LocalModuleScope } from "@/common/scope/localModuleScope";
-import { BslParser } from "@/bsl/tree-sitter";
-import { editor } from "monaco-editor-core";
-import { Member, MemberType, MethodScope } from "@/common/scope";
-import { Method, Variable } from "@/common/codeModel";
+import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
+import { BaseSymbol, Method } from "@/common/codeModel"
+import { ModuleModel } from '@/bsl/moduleModel'
+import { IPosition } from 'monaco-editor-core'
+import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
+import { VariablesCalculator } from '../codeModel/calculators'
 
-export class BslModuleScope extends LocalModuleScope {
-    parser: BslParser
+export class BslModuleScope extends BaseScope {
+    protected readonly model: ModuleModel
 
-    constructor(model: editor.ITextModel) {
-        super(model)
-        this._disposables.push(this.parser = new BslParser(model))
+    private modelVersionId: number = 0
+
+    constructor(model: ModuleModel) {
+        super([])
+        this.model = model
     }
 
-    didUpdateMembers() {
-        this.module.methods = this.parser.methods()
-        this.module.vars = this.parser.vars()
-        this.members.length = 0
-
-        for (let i = 0; i < this.module.methods.length; i++) {
-            this.members.push({
-                kind: MemberType.function,
-                name: this.module.methods[i].name
-            })
-        }
-        for (let i = 0; i < this.module.vars.length; i++) {
-            this.members.push({
-                kind: MemberType.property,
-                name: this.module.vars[i].name
-            })
+    beforeGetMembers() {
+        if (this.model.getVersionId() != this.modelVersionId) {
+            this.updateMembers()
         }
     }
 
-    protected createMethodScope(method: Method): MethodScope {
-        const members: Member[] = []
-
-        if (!method.vars) {
-            method.vars = []
-            const iter = this.parser.getMethodVars(method)
-            let variable: IteratorResult<Variable>
-            while (!(variable = iter.next()).done) {
-                method.vars.push(variable.value)
+    collectScopeAtPosition(position: IPosition): Scope | undefined {
+        let symbol = this.model.getCurrentExpression(position) as BaseSymbol
+        let method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined
+        while (symbol && symbol.parent) {
+            symbol = symbol.parent
+            if (symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol) {
+                method = symbol
+                break
             }
         }
+
+        if (!method) {
+            return undefined
+        }
+        return this.createMethodScope(method)
+    }
+
+    updateMembers(): void {
+        this.modelVersionId = this.model.getVersionId()
+        this.didUpdateMembers()
+    }
+
+    getMethods(): Method[] {
+        return this.model.getCodeModel()?.methods ?? []
+    }
+
+    protected createMethodScope(method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol): MethodScope {
+        const members: Member[] = []
+
+        new VariablesCalculator().calculate(method)
 
         method.vars.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
             type: v.type
         }))
+
         method.params.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
         }))
 
         return new MethodScope(members)
+    }
+
+    protected didUpdateMembers(): void {
+        this.model.updateCodeModel()
     }
 }

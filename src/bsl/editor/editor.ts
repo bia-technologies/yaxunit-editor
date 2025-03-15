@@ -1,5 +1,7 @@
 import { editor } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
+import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
+import { ModuleModel } from '../moduleModel'
 
 let activeEditor: BslEditor | undefined
 
@@ -10,6 +12,7 @@ export class BslEditor {
     commands: {
         runTest?: string
     } = {}
+
     constructor() {
         activeEditor = this
         const container = document.getElementById('container')
@@ -36,7 +39,8 @@ export class BslEditor {
             // fontFamily: 'Courier New',
             // fontSize: 12,
             fontLigatures: true,
-            wordBasedSuggestions: false
+            wordBasedSuggestions: false,
+            model: this.createModel()
         });
 
         tuneEditor(this.editor)
@@ -48,17 +52,28 @@ export class BslEditor {
         })
     }
 
-    set content(value:string){
+    set content(value: string) {
         this.editor.setValue(value)
     }
 
-    get content(){
+    get content() {
         return this.editor.getValue()
     }
 
     getText(): string {
         const model = this.editor.getModel()
         return model ? model.getValue() : ''
+    }
+
+    getModel(): ModuleModel {
+        return this.editor.getModel() as ModuleModel
+    }
+
+    createModel() {
+
+        const model = editor.createModel('', 'bsl');
+
+        return ChevrotainModuleModel.create(model)
     }
 }
 

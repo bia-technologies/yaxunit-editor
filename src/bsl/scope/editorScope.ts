@@ -1,7 +1,8 @@
 import { Scope, UnionScope, GlobalScope } from '@/common/scope'
-import { editor } from 'monaco-editor-core'
+import { IPosition, editor } from 'monaco-editor-core'
 import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
+import { ModuleModel } from '../moduleModel'
 import { BslModuleScope } from './bslModuleScope'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
@@ -15,28 +16,24 @@ function getModel(value: editor.ITextModel | editor.IStandaloneCodeEditor): edit
 }
 
 export class EditorScope extends UnionScope {
-    localScope: BslModuleScope
+    moduleScope: BslModuleScope
     editor: editor.IStandaloneCodeEditor
     modelVersionId: number = 0
 
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
-        this.localScope = new BslModuleScope(model)
+        this.moduleScope = (model as ModuleModel).getScope()
         this.editor = editor
 
-        this.scopes.push(this.localScope)
+        this.scopes.push(this.moduleScope)
         this.scopes.push(GlobalScope)
     }
 
-    getAst() {
-        return this.localScope.parser;
-    }
-
-    getScopesAtLine(line: number | undefined): Scope[] {
-        if (!line) {
+    getScopesAtPosition(position: IPosition | null): Scope[] {
+        if (!position) {
             return this.scopes;
         }
-        const method = this.localScope.getMethodScope(line)
+        const method = this.moduleScope.collectScopeAtPosition(position)
         if (!method) {
             return this.scopes;
         } else {
@@ -45,18 +42,18 @@ export class EditorScope extends UnionScope {
     }
 
     getScopes(): Scope[] {
-        return this.getScopesAtLine(this.editor.getPosition()?.lineNumber)
+        return this.getScopesAtPosition(this.editor.getPosition())
     }
 
     getMethods(): Method[] {
-        return this.localScope.getMethods()
+        return this.moduleScope.getMethods()
     }
 
     update() {
         const currentVersionId = this.editor.getModel()?.getVersionId()
         if (currentVersionId != this.modelVersionId) {
             this.modelVersionId = currentVersionId ?? 0
-            this.localScope.updateMembers()
+            this.moduleScope.updateMembers()
         }
     }
 

@@ -35,7 +35,7 @@ export interface Signature {
 export interface Parameter {
     name: string,
     type: string,
-    description: string
+    description?: string
 }
 
 export function isPlatformMethod(member: Member): member is PlatformMethodSymbol {

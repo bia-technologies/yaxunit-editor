@@ -25,7 +25,7 @@ export class YAxUnitEditor extends BslEditor {
 
         this.testsResolver = new TestsResolver(this, this.testsModel)
 
-        this.editor.getModel()?.onDidChangeContent(e => {
+        this.getModel().getCodeModel().onDidChangeModel(e => {
             this.testsResolver.onDidChangeContent(e)
         })
     }

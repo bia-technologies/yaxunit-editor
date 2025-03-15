@@ -1,9 +1,9 @@
-import { Symbol } from "./symbol"
-
-export interface Variable extends Symbol {
+export interface Variable {
     type?: string | Promise<string | undefined>
+    name: string
 }
 
-export interface ModuleVariable extends Variable {
+export interface ModuleVariable {
     isExport: boolean
+    name: string
 }

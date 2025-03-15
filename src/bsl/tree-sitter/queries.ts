@@ -3,21 +3,12 @@ import { Query } from "web-tree-sitter";
 import { createQuery } from "./bslParser";
 
 export class Queries implements IDisposable {
-    private methodDefinitions?: Query
     private assignments?: Query
     private varDefinitions?: Query
     private missing?: Query
     private error?: Query
     private createdQueries: Query[] = []
 
-    methodDefinitionsQuery() {
-        if (!this.methodDefinitions) {
-            this.methodDefinitions = this.createQuery(
-                `[(function_definition name: (identifier) @name parameters: (parameters) @parameters (EXPORT_KEYWORD) @export) (function_definition name: (identifier) @name parameters: (parameters) @parameters)] @function
-[(procedure_definition name: (identifier) @name parameters: (parameters) @parameters (EXPORT_KEYWORD) @export) (procedure_definition name: (identifier) @name parameters: (parameters) @parameters )] @procedure`)
-        }
-        return this.methodDefinitions
-    }
     varDefinitionsQuery() {
         if (!this.varDefinitions) {
             this.varDefinitions = this.createQuery(

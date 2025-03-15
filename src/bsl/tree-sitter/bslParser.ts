@@ -1,13 +1,13 @@
-import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter';
+import { Parser, Language, Tree, Point, Node, Query, } from 'web-tree-sitter'
 import bslURL from '/assets/tree-sitter-bsl.wasm?url'
-import { editor, Position } from 'monaco-editor-core';
-import { Method, ModuleVariable, Variable } from '@/common/codeModel';
-import { Queries } from './queries';
-import { isModel } from '@/monaco/utils';
-import { createSymbolForNode } from './symbols';
-import { Scope } from '@/common/scope';
-import { EditorScope } from '@/bsl/scope/editorScope';
-import { AutoDisposable } from '@/common/utils/autodisposable';
+import { editor, IPosition } from 'monaco-editor-core'
+import { Method, ModuleVariable, SymbolPosition, Variable } from '@/common/codeModel'
+import { Queries } from './queries'
+import { isModel } from '@/monaco/utils'
+import { Scope } from '@/common/scope'
+import { EditorScope } from '@/bsl/scope/editorScope'
+import { AutoDisposable } from '@/common/utils/autodisposable'
+import { createSymbolForNode } from '.'
 
 let bslLanguage: Language | undefined = undefined
 
@@ -122,41 +122,6 @@ export class BslParser extends AutoDisposable {
         return undefined
     }
 
-    methods(): Method[] {
-        const start = performance.now()
-        const captures = this.queries.methodDefinitionsQuery().captures(this.getRootNode())
-
-        const methods: Method[] = []
-        let currentMethod: Method | undefined
-        for (const { name, node } of captures) {
-            if (name === 'function') {
-                currentMethod = {
-                    name: '',
-                    params: [],
-                    isProc: false,
-                    isExport: false,
-                    ...symbolPosition(node)
-                }
-                methods.push(currentMethod)
-            } else if (name === 'procedure') {
-                currentMethod = {
-                    name: '',
-                    params: [],
-                    isProc: true,
-                    isExport: false,
-                    ...symbolPosition(node)
-                }
-                methods.push(currentMethod)
-            } else if (name === 'name' && currentMethod) {
-                currentMethod.name = node.text
-            } else if (name === 'export' && currentMethod) {
-                currentMethod.isExport = true
-            }
-        }
-        console.log('get methods', performance.now() - start, 'ms')
-        return methods.filter(m => m.name)
-    }
-
     vars(): ModuleVariable[] {
         const start = performance.now()
         const captures = this.queries.varDefinitionsQuery().captures(this.getRootNode())
@@ -185,10 +150,7 @@ export class BslParser extends AutoDisposable {
     }
 
     *getMethodVars(method: Method) {
-        const captures = this.queries.methodVarsQuery().captures(this.getRootNode(), {
-            startPosition: { row: method.startLine - 1, column: method.startColumn - 1 },
-            endPosition: { row: method.endLine - 1, column: method.endColumn - 1 }
-        })
+        const captures = this.queries.methodVarsQuery().captures(this.getRootNode(), { startIndex: method.startOffset, endIndex: method.endOffset })
 
         const vars: Variable[] = []
         let currentVar: Variable | undefined
@@ -275,7 +237,7 @@ function monacoOffsetToPoint(model: editor.ITextModel, offset: number): Point {
     return monacoPositionToPoint(model.getPositionAt(offset))
 }
 
-function monacoPositionToPoint(position: Position): Point {
+function monacoPositionToPoint(position: IPosition): Point {
     return { row: position.lineNumber - 1, column: position.column - 1 };
 }
 
@@ -294,12 +256,10 @@ export async function useTreeSitterBsl(): Promise<void> {
     }
 }
 
-function symbolPosition(node: Node) {
+function symbolPosition(node: Node): SymbolPosition {
     return {
-        startLine: node.startPosition.row + 1,
-        startColumn: node.startPosition.column + 1,
-        endLine: node.endPosition.row + 1,
-        endColumn: node.endPosition.column + 1,
+        startOffset: node.startIndex,
+        endOffset: node.endIndex
     }
 }
 
