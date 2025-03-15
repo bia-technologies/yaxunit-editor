@@ -190,22 +190,22 @@ class CodeModelFactoryVisitor extends BslVisitor {
 
     // #region if statement
     ifStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const brunches = this.visitAll(ctx.brunch)
-        const elseBrunch = this.visitFirst(ctx.elseBrunch)
-        return new IfStatementSymbol(nodePosition(location), brunches as IfBranchSymbol[], elseBrunch as ElseBranchSymbol)
+        const branches = this.visitAll(ctx.branch)
+        const elseBranch = this.visitFirst(ctx.elseBranch)
+        return new IfStatementSymbol(nodePosition(location), branches as IfBranchSymbol[], elseBranch as ElseBranchSymbol)
     }
 
-    ifBrunch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+    ifBranch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         return new IfBranchSymbol(nodePosition(location), this.visitFirst(ctx.condition) as BaseExpressionSymbol, this.getStatements(ctx.body))
     }
 
-    elsifBrunch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+    elsifBranch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         return new IfBranchSymbol(nodePosition(location),
             this.visitFirst(ctx.condition) as BaseExpressionSymbol,
             this.getStatements(ctx.body))
     }
 
-    elseBrunch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+    elseBranch(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         return new ElseBranchSymbol(nodePosition(location), this.getStatements(ctx.body))
     }
     // #endregion

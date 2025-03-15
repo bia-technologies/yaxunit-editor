@@ -101,8 +101,8 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     visitIfStatement(symbol: IfStatementSymbol) {
-        this.setParentItems(symbol, symbol.brunches)
-        this.setParent(symbol, symbol.elseBrunch)
+        this.setParentItems(symbol, symbol.branches)
+        this.setParent(symbol, symbol.elseBranch)
     }
 
     visitIfBranch(symbol: IfBranchSymbol) {
@@ -110,7 +110,7 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
         this.setParentItems(symbol, symbol.body)
     }
 
-    visitElseBrunch(symbol: ElseBranchSymbol) {
+    visitElseBranch(symbol: ElseBranchSymbol) {
         this.setParentItems(symbol, symbol.body)
     }
 
@@ -179,7 +179,7 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
 
     visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): any {
         this.setParent(symbol, symbol.condition)
-        this.setParent(symbol, symbol.condition)
+        this.setParent(symbol, symbol.consequence)
         this.setParent(symbol, symbol.alternative)
     }
 

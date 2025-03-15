@@ -17,17 +17,11 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         const moduleModel = model as ModuleModel
         const symbol = moduleModel.getEditingMethod(position)
 
-        let ars: BaseSymbol[] | undefined = {} = []
-
-        if (symbol instanceof MethodCallSymbol) {
-            ars = symbol.arguments
-        } else if (symbol instanceof ConstructorSymbol) {
-            ars = symbol.arguments as BaseExpressionSymbol[]
-        }
+        let args = symbol?.arguments as BaseExpressionSymbol[]
 
         if (context.isRetrigger && context.activeSignatureHelp && (context.activeSignatureHelp as SignatureHelp).symbol === symbol) {
-            if (ars) {
-                setActiveParameter(context.activeSignatureHelp, ars, positionOffset)
+            if (args) {
+                setActiveParameter(context.activeSignatureHelp, args, positionOffset)
             }
             return {
                 value: context.activeSignatureHelp,
@@ -46,8 +40,8 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
         }
 
         if (signatures) {
-            setActiveSignature(signatures, ars)
-            setActiveParameter(signatures, ars, positionOffset)
+            setActiveSignature(signatures, args)
+            setActiveParameter(signatures, args, positionOffset)
             signatures.symbol = symbol
 
             return {

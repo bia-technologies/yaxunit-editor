@@ -64,7 +64,7 @@ export interface CodeModelVisitor {
 
     visitIfStatement(symbol: IfStatementSymbol): any
     visitIfBranch(symbol: IfBranchSymbol): any
-    visitElseBrunch(symbol: ElseBranchSymbol): any
+    visitElseBranch(symbol: ElseBranchSymbol): any
 
     visitWhileStatement(symbol: WhileStatementSymbol): any
     visitForStatement(symbol: ForStatementSymbol): any
@@ -170,8 +170,8 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
     }
 
     visitIfStatement(symbol: IfStatementSymbol) {
-        this.acceptItems(symbol.brunches)
-        this.accept(symbol.elseBrunch)
+        this.acceptItems(symbol.branches)
+        this.accept(symbol.elseBranch)
     }
 
     visitIfBranch(symbol: IfBranchSymbol) {
@@ -179,7 +179,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
         this.acceptItems(symbol.body)
     }
 
-    visitElseBrunch(symbol: ElseBranchSymbol) {
+    visitElseBranch(symbol: ElseBranchSymbol) {
         this.acceptItems(symbol.body)
     }
 
@@ -246,7 +246,7 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
 
     visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol): any {
         this.accept(symbol.condition)
-        this.accept(symbol.condition)
+        this.accept(symbol.consequence)
         this.accept(symbol.alternative)
     }
 

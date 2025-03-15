@@ -29,7 +29,7 @@ const scopeProvider = {
         let scope: Scope | undefined = isModel(model) ? EditorScope.getScope(model) : model
 
         if (symbol instanceof AccessSequenceSymbol) {
-            const lastSymbol = symbol.unclosed ? symbol.access[symbol.access.length - 1] : symbol.access[symbol.access.length - 2]
+            const lastSymbol = symbol.unclosed ? symbol.last : symbol.access[symbol.access.length - 2]
             if (lastSymbol && lastSymbol.type) {
                 return await GlobalScope.resolveType(lastSymbol.type)
             }

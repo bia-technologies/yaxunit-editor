@@ -106,7 +106,7 @@ export const tokens = {
     RParen: createToken({ name: 'RParen', pattern: ')' }),
     Dot: createToken({ name: 'Dot', pattern: /\./ }),
     Semicolon: createToken({ name: 'Semicolon', pattern: ';' }),
-    Сolon: createToken({ name: 'Сolon', pattern: ':' }),
+    Colon: createToken({ name: 'Colon', pattern: ':' }),
     Comma: createToken({ name: 'Comma', pattern: ',' }),
     Tilde: createToken({ name: 'Tilde', pattern: '~' }),
 

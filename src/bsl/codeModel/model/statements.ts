@@ -81,13 +81,13 @@ export class RiseErrorStatementSymbol extends BaseSymbol implements Acceptable, 
 }
 
 export class IfStatementSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
-    brunches: IfBranchSymbol[] = []
-    elseBrunch?: ElseBranchSymbol
+    branches: IfBranchSymbol[] = []
+    elseBranch?: ElseBranchSymbol
 
-    constructor(position: SymbolPosition, brunches: IfBranchSymbol[], elseBrunch?: ElseBranchSymbol) {
+    constructor(position: SymbolPosition, branches: IfBranchSymbol[], elseBranch?: ElseBranchSymbol) {
         super(position)
-        this.brunches = brunches
-        this.elseBrunch = elseBrunch
+        this.branches = branches
+        this.elseBranch = elseBranch
     }
 
     accept(visitor: CodeModelVisitor): any {
@@ -95,7 +95,7 @@ export class IfStatementSymbol extends BaseSymbol implements Acceptable, Composi
     }
 
     getChildrenSymbols(): (BaseSymbol | undefined)[] {
-        return [...this.brunches, this.elseBrunch]
+        return [...this.branches, this.elseBranch]
     }
 }
 
@@ -127,7 +127,7 @@ export class ElseBranchSymbol extends BaseSymbol implements Acceptable, Composit
     }
 
     accept(visitor: CodeModelVisitor): any {
-        return visitor.visitElseBrunch(this)
+        return visitor.visitElseBranch(this)
     }
 
     getChildrenSymbols(): (BaseSymbol | undefined)[] {

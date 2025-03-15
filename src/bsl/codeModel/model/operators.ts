@@ -15,13 +15,15 @@ export enum Operators {
     mod = '%'
 }
 
-export function isCompareOperator(operator: string) {
-    return operator in [
-        Operators.equal,
-        Operators.not,
-        Operators.great,
-        Operators.greatOrEqual,
-        Operators.less,
-        Operators.lessOrEqual
-    ]
+const compareOperators: string[] = [
+    Operators.equal,
+    Operators.not,
+    Operators.great,
+    Operators.greatOrEqual,
+    Operators.less,
+    Operators.lessOrEqual
+]
+
+export function isCompareOperator(operator: string) { // TODO поддержка различного формата написания (регистр, язык)
+    return compareOperators.includes(operator)
 }

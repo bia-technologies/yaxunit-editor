@@ -197,7 +197,7 @@ async function fieldDescription(symbol: AccessSequenceSymbol) {
         await TypesCalculator.instance.calculate(symbol)
     }
 
-    const last = symbol.access[symbol.access.length - 1]
+    const last = symbol.last
     if (last instanceof VariableSymbol) {
         return variableDescription(last)
     } else if (last instanceof MethodCallSymbol) {

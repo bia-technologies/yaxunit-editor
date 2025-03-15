@@ -134,8 +134,8 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     visitVarStatement(): any { }
 
     async visitIfStatement(symbol: IfStatementSymbol) {
-        await this.acceptItems(symbol.brunches)
-        await this.accept(symbol.elseBrunch)
+        await this.acceptItems(symbol.branches)
+        await this.accept(symbol.elseBranch)
     }
 
     async visitIfBranch(symbol: IfBranchSymbol) {
@@ -143,7 +143,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
         await this.acceptItems(symbol.body)
     }
 
-    async visitElseBrunch(symbol: ElseBranchSymbol) {
+    async visitElseBranch(symbol: ElseBranchSymbol) {
         await this.acceptItems(symbol.body)
     }
 
@@ -242,7 +242,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     async visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol) {
         await this.accept(symbol.condition)
-        await this.accept(symbol.condition)
+        await this.accept(symbol.consequence)
         await this.accept(symbol.alternative)
     }
 

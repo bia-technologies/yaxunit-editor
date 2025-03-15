@@ -96,4 +96,8 @@ export class AccessSequenceSymbol extends BaseExpressionSymbol implements Accept
     getChildrenSymbols() {
         return this.access
     }
+
+    get last(){
+        return this.access[this.access.length - 1]
+    }
 }

@@ -131,29 +131,29 @@ export class BSLParser extends CstParser {
     })
 
     private ifStatement = this.RULE("ifStatement", () => {
-        this.SUBRULE(this.ifBrunch, { LABEL: 'brunch' })
+        this.SUBRULE(this.ifBranch, { LABEL: 'branch' })
         this.MANY(() => {
-            this.SUBRULE(this.elsifBrunch, { LABEL: 'brunch' })
+            this.SUBRULE(this.elsifBranch, { LABEL: 'branch' })
         })
-        this.OPTION(() => this.SUBRULE(this.elseBrunch))
+        this.OPTION(() => this.SUBRULE(this.elseBranch))
         this.CONSUME(tokens.Endif)
     })
 
-    private ifBrunch = this.RULE('ifBrunch', () => {
+    private ifBranch = this.RULE('ifBranch', () => {
         this.CONSUME(tokens.If)
         this.SUBRULE(this.expression, { LABEL: 'condition' })
         this.CONSUME(tokens.Then)
         this.SUBRULE(this.statements, { LABEL: 'body' })
     })
 
-    private elsifBrunch = this.RULE('elsifBrunch', () => {
+    private elsifBranch = this.RULE('elsifBranch', () => {
         this.CONSUME(tokens.Elsif)
         this.SUBRULE1(this.expression, { LABEL: 'condition' })
         this.CONSUME1(tokens.Then)
         this.SUBRULE1(this.statements, { LABEL: 'body' })
     })
 
-    private elseBrunch = this.RULE('elseBrunch', () => {
+    private elseBranch = this.RULE('elseBranch', () => {
         this.CONSUME(tokens.Else)
         this.SUBRULE2(this.statements, { LABEL: 'body' })
     })
@@ -214,7 +214,7 @@ export class BSLParser extends CstParser {
     private labelStatement = this.RULE("labelStatement", () => {
         this.CONSUME(tokens.Tilde)
         this.CONSUME(tokens.Identifier)
-        this.CONSUME(tokens.Сolon)
+        this.CONSUME(tokens.Colon)
     })
 
     private addHandlerStatement = this.RULE("addHandlerStatement", () => {

@@ -3,11 +3,11 @@ import { BslCodeModel } from "./codeModel";
 import { BslModuleScope } from "./scope/bslModuleScope";
 import { IPosition } from "monaco-editor-core";
 import { CodeSymbol } from "@/common/codeModel";
-import { AccessSequenceSymbol, ConstructorSymbol, MethodCallSymbol } from "@/bsl/codeModel";
+import { ConstructorSymbol, MethodCallSymbol } from "@/bsl/codeModel";
 
 export interface ExpressionProvider {
     getEditingExpression(position: IPosition): CodeSymbol | undefined,
-    getEditingMethod(position: IPosition): MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol | undefined,
+    getEditingMethod(position: IPosition): MethodCallSymbol | ConstructorSymbol  | undefined,
     getCurrentExpression(position: IPosition): CodeSymbol | undefined
 }
 

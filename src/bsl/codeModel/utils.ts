@@ -14,7 +14,7 @@ export function currentAccessSequence(symbol: AccessProperty | MethodCallSymbol)
                 break
             }
         }
-        seq.type = seq.access[seq.accept.length - 1].type
+        seq.type = seq.last.type
         return seq
     }
 }

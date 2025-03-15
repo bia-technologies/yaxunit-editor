@@ -77,12 +77,12 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         const current = this.getCurrentExpression(position)
         if (current instanceof BaseExpressionSymbol) {
             return current
-        } else {
+        } else if (position > 0) {
             return this.getCurrentExpression(position - 1)
         }
     }
 
-    getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | AccessSequenceSymbol | undefined {
+    getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | undefined {
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }

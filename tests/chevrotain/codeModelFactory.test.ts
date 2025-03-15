@@ -208,7 +208,7 @@ describe('MethodCallSymbol', () => {
         expect(model.children[0]).toBeInstanceOf(MethodCallSymbol)
         expect(model.children[0]).toMatchObject({
             name: 'Сообщить',
-            arguments: undefined
+            arguments: []
         })
     })
 
@@ -245,7 +245,7 @@ describe('MethodCallSymbol', () => {
         expect(model.children[0]).toMatchObject({
             access: [
                 { name: 'ОбщегоНазначения' },
-                { name: 'Сообщить', arguments: [{ name: 'ТекущаяДата', arguments: undefined }] }]
+                { name: 'Сообщить', arguments: [{ name: 'ТекущаяДата', arguments: [] }] }]
         })
     })
 
@@ -573,7 +573,7 @@ describe('If statement', () => {
         const exp = statement('if true then сообщить(1);endif')
         expect(exp).toBeInstanceOf(IfStatementSymbol)
         expect(exp).toMatchObject({
-            brunches: [
+            branches: [
                 { condition: { value: 'true' }, body: [{ name: 'сообщить' }] }
             ]
         })
@@ -582,7 +582,7 @@ describe('If statement', () => {
         const exp = statement('if true then a(1);b(1);elsif false then c(2);d(2);endif')
         expect(exp).toBeInstanceOf(IfStatementSymbol)
         expect(exp).toMatchObject({
-            brunches: [
+            branches: [
                 { condition: { value: 'true' }, body: [{ name: 'a' }, { name: 'b' }] },
                 { condition: { value: 'false' }, body: [{ name: 'c' }, { name: 'd' }] }
             ]
@@ -592,10 +592,10 @@ describe('If statement', () => {
         const exp = statement('if true then a(1);b(1);else c(2);d(2);endif')
         expect(exp).toBeInstanceOf(IfStatementSymbol)
         expect(exp).toMatchObject({
-            brunches: [
+            branches: [
                 { condition: { value: 'true' }, body: [{ name: 'a' }, { name: 'b' }] }
             ],
-            elseBrunch: { body: [{ name: 'c' }, { name: 'd' }] }
+            elseBranch: { body: [{ name: 'c' }, { name: 'd' }] }
         })
     })
 })
