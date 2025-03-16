@@ -1,6 +1,6 @@
 import { isModel } from "@/monaco/utils"
 import { ModuleModel } from "../moduleModel"
-import { parseModule, BslVisitor } from "./parser"
+import { BslVisitor, BSLParser } from "./parser"
 import {
     AccessSequenceSymbol,
     AddHandlerStatementSymbol,
@@ -41,19 +41,21 @@ import { CstChildrenDictionary, CstElement, CstNode, CstNodeLocation, IToken } f
 import { BaseSymbol, SymbolPosition } from "@/common/codeModel"
 import { BaseTypes } from "../scope/baseTypes"
 import { editor, MarkerSeverity } from "monaco-editor-core"
+import { AutoDisposable } from "@/common/utils/autodisposable"
 
-export const ChevrotainSitterCodeModelFactory = {
+export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
+    parser = new BSLParser()
+
     buildModel(model: ModuleModel | string): BslCodeModel {
         const codeModel = new BslCodeModel()
-        this.updateModel(codeModel, model)
+        this.reBuildModel(codeModel, model)
         return codeModel
-    },
+    }
 
-    updateModel(codeModel: BslCodeModel, model: ModuleModel | string): void {
+    reBuildModel(codeModel: BslCodeModel, model: ModuleModel | string) {
         const start = performance.now()
-
-        codeModel.children.length = 0 // Clear
-        const tree = parseModule(isModel(model) ? model.getValue() : model)
+        const text = isModel(model) ? model.getValue() : model
+        const tree = this.parser.parseModule(text)
 
         tree.lexErrors.forEach(e => console.error('lexError', e))
         tree.parseErrors.forEach(e => console.error('parseError', e.token, e))
@@ -62,16 +64,32 @@ export const ChevrotainSitterCodeModelFactory = {
             const markers = convertErrorsToMarkers(tree.lexErrors, tree.parseErrors, model);
             editor.setModelMarkers(model, 'chevrotain', markers);
         }
+        const visitorStart = performance.now()
         const visitor = new CodeModelFactoryVisitor()
         const children = visitor.visit(tree.cst)
 
+        codeModel.children.length = 0
         if (Array.isArray(children)) {
             codeModel.children.push(...children)
         } else if (children) {
             codeModel.children.push(children)
         }
-        console.log('Build code model by chevrotain', performance.now() - start, 'ms')
+        const end = performance.now()
+        console.log('Build code model by chevrotain. Parse:', visitorStart - start, 'ms; model build:', end - visitorStart, '; full:', end - start)
     }
+
+    updateModel(codeModel: BslCodeModel, changes: editor.IModelContentChange[]): void {
+        if(!codeModel.children.length){
+            this.reBuildModel(codeModel, changes[0].text)
+        }
+        this.parser.updateTokens(changes)
+        // for (const change of changes) {
+        //     const startIndex = change.rangeOffset;
+        //     const oldEndIndex = change.rangeOffset + change.rangeLength;
+        //     const newEndIndex = change.rangeOffset + change.text.length;
+        // }
+    }
+
 }
 
 class CodeModelFactoryVisitor extends BslVisitor {

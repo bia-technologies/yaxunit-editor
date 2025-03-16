@@ -40,7 +40,7 @@ export class BslModuleScope extends BaseScope {
 
     updateMembers(): void {
         this.modelVersionId = this.model.getVersionId()
-        this.didUpdateMembers()
+        // this.didUpdateMembers()
     }
 
     getMethods(): Method[] {
