@@ -21,22 +21,17 @@ export class BaseScope extends AutoDisposable implements Scope {
     }
 
     getMembers(): Member[] {
-        this.beforeGetMembers()
         return this.members
     }
 
     forEachMembers(callbackfn: (value: Member, index: number, array: Member[]) => void): void {
-        this.beforeGetMembers()
         this.members.forEach(callbackfn)
     }
 
     findMember(name: string): Member | undefined {
-        this.beforeGetMembers()
         const member = this.membersHash[name.toLowerCase()]
         return member
     }
-
-    protected beforeGetMembers() { }
 }
 
 export class UnionScope implements Scope {

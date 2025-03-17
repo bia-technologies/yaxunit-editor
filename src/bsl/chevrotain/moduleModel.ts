@@ -11,7 +11,8 @@ import {
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
 import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
-import { currentAccessSequence, descendantByOffset } from "../codeModel/utils";
+import { currentAccessSequence } from "../codeModel/utils";
+import { descendantByOffset } from "./utils";
 
 export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
 
@@ -24,21 +25,33 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         (editorModel as ModuleModel).getEditingMethod = moduleModelImpl.getEditingMethod.bind(moduleModelImpl);
         (editorModel as ModuleModel).getCodeModel = moduleModelImpl.getCodeModel.bind(moduleModelImpl);
         (editorModel as ModuleModel).updateCodeModel = moduleModelImpl.updateCodeModel.bind(moduleModelImpl);
-
+        const baseDispose = editorModel.dispose
+        editorModel.dispose = () => {
+            baseDispose()
+            moduleModelImpl.dispose()
+        }
         return editorModel as ModuleModel
     }
 
     codeModel: BslCodeModel
     editorModel: ModuleModel
     scope: BslModuleScope
+    codeModelFactory = new ChevrotainSitterCodeModelFactory()
 
     constructor(model: editor.ITextModel) {
         super()
+
+        this._disposables.push(this.codeModelFactory)
+
         this.editorModel = model as ModuleModel
         this.scope = new BslModuleScope(this.editorModel)
 
-        this.codeModel = new BslCodeModel()
-        this.updateCodeModel()
+        this.codeModel = this.codeModelFactory.buildModel(this.editorModel)
+        model.onDidChangeContent(e => {
+            if (!this.codeModelFactory.updateModel(this.codeModel, e.changes)) {
+                this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
+            }
+        })
     }
 
     getScope() {
@@ -50,8 +63,8 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
     }
 
     updateCodeModel() {
-        ChevrotainSitterCodeModelFactory.updateModel(this.codeModel, this.editorModel)
-        this.codeModel.afterUpdate()
+        // this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
+        // this.codeModel.afterUpdate()
     }
 
     getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {

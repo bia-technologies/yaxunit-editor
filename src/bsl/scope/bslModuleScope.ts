@@ -4,33 +4,19 @@ import { ModuleModel } from '@/bsl/moduleModel'
 import { IPosition } from 'monaco-editor-core'
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
 import { VariablesCalculator } from '../codeModel/calculators'
+import { getParentMethodDefinition } from '../chevrotain/utils'
 
 export class BslModuleScope extends BaseScope {
     protected readonly model: ModuleModel
-
-    private modelVersionId: number = 0
 
     constructor(model: ModuleModel) {
         super([])
         this.model = model
     }
 
-    beforeGetMembers() {
-        if (this.model.getVersionId() != this.modelVersionId) {
-            this.updateMembers()
-        }
-    }
-
     collectScopeAtPosition(position: IPosition): Scope | undefined {
         let symbol = this.model.getCurrentExpression(position) as BaseSymbol
-        let method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined
-        while (symbol && symbol.parent) {
-            symbol = symbol.parent
-            if (symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol) {
-                method = symbol
-                break
-            }
-        }
+        let method = getParentMethodDefinition(symbol)
 
         if (!method) {
             return undefined
@@ -39,8 +25,7 @@ export class BslModuleScope extends BaseScope {
     }
 
     updateMembers(): void {
-        this.modelVersionId = this.model.getVersionId()
-        this.didUpdateMembers()
+        // this.model.updateCodeModel()
     }
 
     getMethods(): Method[] {
@@ -50,7 +35,9 @@ export class BslModuleScope extends BaseScope {
     protected createMethodScope(method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol): MethodScope {
         const members: Member[] = []
 
-        new VariablesCalculator().calculate(method)
+        if (!method.vars) {
+            new VariablesCalculator().calculate(method)
+        }
 
         method.vars.forEach(v => members.push({
             name: v.name,
@@ -64,9 +51,5 @@ export class BslModuleScope extends BaseScope {
         }))
 
         return new MethodScope(members)
-    }
-
-    protected didUpdateMembers(): void {
-        this.model.updateCodeModel()
     }
 }

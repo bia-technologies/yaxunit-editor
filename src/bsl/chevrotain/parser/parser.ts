@@ -1,8 +1,9 @@
-import { CstParser, EMPTY_ALT, Rule } from "chevrotain"
+import { CstNode, CstParser, EMPTY_ALT, IToken } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 import { BSLLexer } from "./lexer"
 
 export class BSLParser extends CstParser {
+    moduleTokens: IToken[] = []
     constructor() {
         super(allTokens, {
             nodeLocationTracking: "onlyOffset",
@@ -11,11 +12,88 @@ export class BSLParser extends CstParser {
         this.performSelfAnalysis();
     }
 
-    // In TypeScript the parsing rules are explicitly defined as class instance properties
-    // This allows for using access control (public/private/protected) and more importantly "informs" the TypeScript compiler
-    // about the API of our Parser, so referencing an invalid rule name (this.SUBRULE(this.oopsType);)
-    // is now a TypeScript compilation error.
-    public module = this.RULE("module", () => {
+    public parseModule(text: string) {
+        const start = performance.now()
+
+        const lexResult = BSLLexer.tokenize(text);
+        this.input = this.moduleTokens = lexResult.tokens
+        const cst = this.module();
+
+        const end = performance.now()
+        console.log('Parse time: ', end - start, 'ms')
+
+        return {
+            cst: cst,
+            lexErrors: lexResult.errors,
+            parseErrors: this.errors,
+        };
+    }
+
+    public updateTokens(changes: IModelContentChange[]) {
+        const ranges: { start: number, end: number, diff: number }[] = []
+        for (const change of changes) {
+            let start = change.rangeOffset
+            let end = change.rangeLength + start
+            const offsetDiff = change.text.length - change.rangeLength
+            let { startIndex, endIndex, includeStart, includeEnd } = findTokens(this.moduleTokens, start, end)
+
+            let text = change.text
+
+            if (includeStart || includeEnd) {
+                const startToken = this.moduleTokens[startIndex]
+                const endToken = this.moduleTokens[endIndex]
+
+                const leftText = includeStart ? startToken.image.substring(0, start - startToken.startOffset) : ''
+                const rightText = includeEnd ? endToken.image.substring(end - endToken.startOffset) : ''
+                text = leftText + change.text + rightText
+                if (includeStart) {
+                    start = startToken.startOffset
+                }
+                if (includeEnd) {
+                    end = endToken.endOffset as number
+                }
+            }
+
+            const lexingResult = (!text || text.trim() === '') ? undefined : BSLLexer.tokenize(text)
+            const textTokens = lexingResult?.tokens ?? []
+
+            textTokens.forEach(t => { t.startOffset += start; (t.endOffset as number) += start })
+            if (!includeStart && startIndex === this.moduleTokens.length - 1) {
+                this.moduleTokens = this.moduleTokens.concat(textTokens)
+            } else {
+                
+                this.moduleTokens.splice(startIndex + (!includeStart ? 1 : 0), endIndex - startIndex + (includeStart ? 1 : 0), ...textTokens)
+                if (offsetDiff) {
+                    const startMove = startIndex + textTokens.length + (!includeStart ? 1 : 0)
+                    for (let index = startMove; index < this.moduleTokens.length; index++) {
+                        const token = this.moduleTokens[index];
+                        token.startOffset += offsetDiff;
+                        (token.endOffset as number) += offsetDiff
+                    }
+                } else {
+                    console.log('no offset')
+                }
+            }
+            ranges.push({
+                start,
+                end,
+                diff: offsetDiff
+
+            })
+
+        }
+        return ranges
+    }
+
+    public parseChanges(rule: string, startOffset: number, endOffset: number) {
+        let { startIndex, endIndex } = findTokens(this.moduleTokens, startOffset, endOffset)
+        this.input = this.moduleTokens.slice(startIndex, endIndex + 1)
+        const ruleMethod = (this as any)[rule] as (() => CstNode)
+        const result = ruleMethod.bind(this)()
+        return result
+    }
+
+    private module = this.RULE("module", () => {
         this.MANY(() => {
             this.choice(
                 () => this.SUBRULE(this.procedure),
@@ -26,7 +104,7 @@ export class BSLParser extends CstParser {
     });
 
     // #region definitions
-    procedure = this.RULE('procedure', () => {
+    private procedure = this.RULE('procedure', () => {
         this.OPTION(() => this.CONSUME(tokens.Async))
         this.CONSUME(tokens.Procedure)
         this.CONSUME(tokens.Identifier, { LABEL: 'name' })
@@ -41,7 +119,7 @@ export class BSLParser extends CstParser {
         this.CONSUME(tokens.EndProcedure)
     })
 
-    function = this.RULE('function', () => {
+    private function = this.RULE('function', () => {
         this.OPTION(() => this.CONSUME(tokens.Async))
         this.CONSUME(tokens.Function)
         this.CONSUME(tokens.Identifier, { LABEL: 'name' })
@@ -56,7 +134,7 @@ export class BSLParser extends CstParser {
         this.CONSUME(tokens.EndFunction)
     })
 
-    parameter = this.RULE('parameter', () => {
+    private parameter = this.RULE('parameter', () => {
         this.OPTION(() => this.CONSUME(tokens.Val))
         this.CONSUME(tokens.Identifier, { LABEL: 'name' })
         this.OPTION1(() => { this.CONSUME(tokens.Assign), this.SUBRULE(this.literal, { LABEL: 'default' }) })
@@ -65,7 +143,7 @@ export class BSLParser extends CstParser {
     // #endregion
 
     // #region statements
-    statements = this.RULE('statements', () => this.MANY(() => {
+    private statements = this.RULE('statements', () => this.MANY(() => {
         this.choice(...this.statement)
         this.OPTION(() => this.CONSUME(tokens.Semicolon))
     }))
@@ -247,7 +325,7 @@ export class BSLParser extends CstParser {
     // #endregion
 
     // #region Expressions
-    public expression = this.RULE("expression", () => this.choice(
+    private expression = this.RULE("expression", () => this.choice(
         () => this.SUBRULE(this.constructorExpression),
         () => this.SUBRULE(this.constructorMethodExpression),
         () => this.SUBRULE(this.logicalOrExpression),
@@ -268,17 +346,17 @@ export class BSLParser extends CstParser {
         )
     })
 
-    multiplicationExpression = this.RULE("multiplicationExpression", this.binaryExpression(this.operand, tokens.MultiplicationOperator))
+    private multiplicationExpression = this.RULE("multiplicationExpression", this.binaryExpression(this.operand, tokens.MultiplicationOperator))
 
-    additionExpression = this.RULE("additionExpression", this.binaryExpression(this.multiplicationExpression, tokens.AdditionOperator))
+    private additionExpression = this.RULE("additionExpression", this.binaryExpression(this.multiplicationExpression, tokens.AdditionOperator))
 
-    compareExpression = this.RULE("compareExpression", this.binaryExpression(this.additionExpression, tokens.CompareOperator))
+    private compareExpression = this.RULE("compareExpression", this.binaryExpression(this.additionExpression, tokens.CompareOperator))
 
-    logicalAndExpression = this.RULE("logicalAndExpression", this.binaryExpression(this.compareExpression, tokens.And))
+    private logicalAndExpression = this.RULE("logicalAndExpression", this.binaryExpression(this.compareExpression, tokens.And))
 
-    logicalOrExpression = this.RULE("logicalOrExpression", this.binaryExpression(this.logicalAndExpression, tokens.Or))
+    private logicalOrExpression = this.RULE("logicalOrExpression", this.binaryExpression(this.logicalAndExpression, tokens.Or))
 
-    parenthesisExpression = this.RULE("parenthesisExpression", () => {
+    private parenthesisExpression = this.RULE("parenthesisExpression", () => {
         this.CONSUME(tokens.LParen)
         this.SUBRULE(this.expression)
         this.CONSUME(tokens.RParen)
@@ -370,12 +448,13 @@ export class BSLParser extends CstParser {
         const items = tokens.map(t => { return { ALT: t } })
         this.OR(items)
     }
+
     private choice1(...tokens: (() => any)[]) {
         const items = tokens.map(t => { return { ALT: t } })
         this.OR1(items)
     }
 
-    binaryExpression(operand: any, operator: any) {
+    private binaryExpression(operand: any, operator: any) {
         return () => {
             this.SUBRULE(operand, { LABEL: "lhs" })
             this.MANY(() => {
@@ -386,28 +465,67 @@ export class BSLParser extends CstParser {
     }
 }
 
-// reuse the same parser instance.
-const parser = new BSLParser();
+function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
+    let startIndex = -1, endIndex = -1
+    let includeStart = false, includeEnd = false
 
-export const productions: Record<string, Rule> = parser.getGAstProductions();
+    let lo = 0, hi = tokens.length - 1, mid = 0, token
 
-export function parseModule(text: string) {
-    const start = performance.now()
+    if (tokens[hi].endOffset as number + 1 < startOffset) {
+        return { startIndex: hi, endIndex: hi, includeStart, includeEnd }
+    }
+    while (lo <= hi) {
+        mid = Math.floor((lo + hi) / 2)
+        token = tokens[mid]
+        if (token.startOffset > startOffset)
+            hi = mid - 1
+        else if (token.endOffset as number + 1 < startOffset)
+            lo = mid + 1
+        else {
+            startIndex = mid
+            includeStart = true
+            break
+        }
+    }
 
-    const lexResult = BSLLexer.tokenize(text);
-    // setting a new input will RESET the parser instance's state.
-    parser.input = lexResult.tokens
-    // any top level rule may be used as an entry point
-    const cst = parser.module();
-    console.log('Parse by chevrotain time: ', performance.now() - start, 'ms')
-    // this would be a TypeScript compilation error because our parser now has a clear API.
-    // let value = parser.json_OopsTypo()
+    if (startIndex === -1) {
+        startIndex = mid - 1
+    }
 
-    return {
-        // This is a pure grammar, the value will be undefined until we add embedded actions
-        // or enable automatic CST creation.
-        cst: cst,
-        lexErrors: lexResult.errors,
-        parseErrors: parser.errors,
-    };
+    if (startOffset === endOffset) {
+        return { startIndex, endIndex: startIndex, includeStart, includeEnd: includeStart }
+    }
+
+    hi = tokens.length - 1
+    while (lo <= hi) {
+        mid = Math.floor((lo + hi) / 2)
+        if (tokens[mid].startOffset >= endOffset)
+            hi = mid - 1
+        else if (tokens[mid].endOffset as number < endOffset)
+            lo = mid + 1
+        else {
+            endIndex = mid
+            includeEnd = true
+            break
+        }
+    }
+    if (endIndex === -1) {
+        endIndex = tokens[mid].startOffset >= endOffset ? mid - 1 : mid
+    }
+    return { startIndex, endIndex, includeStart, includeEnd }
+}
+
+export interface IModelContentChange {
+    /**
+     * The offset of the range that got replaced.
+     */
+    readonly rangeOffset: number;
+    /**
+     * The length of the range that got replaced.
+     */
+    readonly rangeLength: number;
+    /**
+     * The new text for the range.
+     */
+    readonly text: string;
 }

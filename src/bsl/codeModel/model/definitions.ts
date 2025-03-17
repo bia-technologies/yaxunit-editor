@@ -14,6 +14,10 @@ import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
 import { BslVariable } from "./variables";
 
+export function isMethodDefinition(symbol:any){
+    return symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol 
+}
+
 export abstract class MethodDefinition extends BaseSymbol implements Signature, VariablesScope, NamedSymbol, CompositeSymbol {
     name: string
     isExport: boolean = false

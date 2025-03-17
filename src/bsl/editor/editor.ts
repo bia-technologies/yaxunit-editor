@@ -47,7 +47,7 @@ export class BslEditor {
 
         this.scope = EditorScope.createScope(this.editor)
 
-        this.editor.getModel()?.onDidChangeContent(e => {
+        this.getModel().onDidChangeContent(e => {
             this.scope.onDidChangeContent(e)
         })
     }

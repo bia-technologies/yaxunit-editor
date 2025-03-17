@@ -20,11 +20,13 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
     varScope: VariablesScope | undefined
 
     calculate(model: VariablesScope) {
+        const start = performance.now()
         if (model instanceof BslCodeModel) {
             this.visitModel(model)
         } else if (isAcceptable(model)) {
             model.accept(this)
         }
+        console.log('Calculate variables', performance.now() - start, 'ms')
     }
 
     visitModel(model: BslCodeModel) {
@@ -88,10 +90,21 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
     handleVar(symbol: VariableSymbol) {
         let variable = this.variablesMap.get(symbol.name)
         if (!variable && this.varScope) {
+            variable = findInScope(this.varScope, symbol.name)
+            if (variable) {
+                this.varScope.vars.push(variable)
+            }
+        }
+        if (!variable && this.varScope) {
             variable = new BslVariable(symbol.name)
             this.variablesMap.set(variable.name, variable)
             this.varScope.vars.push(variable)
         }
         symbol.member = variable
     }
+
+}
+
+function findInScope(varScope: VariablesScope, name: string) {
+    return varScope.vars.find(v => name.localeCompare(v.name, undefined, { sensitivity: "accent" }) === 0)
 }

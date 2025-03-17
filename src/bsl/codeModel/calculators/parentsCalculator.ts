@@ -31,8 +31,14 @@ import { ModelCalculator } from "./calculator";
 
 export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
 
-    calculate(model: BslCodeModel) {
-        this.visitModel(model)
+    calculate(symbol: BslCodeModel | BaseSymbol) {
+        const start = performance.now()
+        if (symbol instanceof BslCodeModel) {
+            this.visitModel(symbol)
+        } else if (isAcceptable(symbol)) {
+            symbol.accept(this)
+        }
+        console.log('Calculate parents', performance.now() - start, 'ms')
     }
 
     setParent(parent: BaseSymbol, symbol: BaseSymbol | undefined) {

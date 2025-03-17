@@ -28,6 +28,7 @@ import {
 import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain'
 import { describe, expect, test } from 'vitest'
 
+const codeModelFactory = new ChevrotainSitterCodeModelFactory()
 
 describe('Literals', () => {
     test('Number', () => {
@@ -728,15 +729,15 @@ describe('Var statement', () => {
 
 
 function buildModel(content: string) {
-    return ChevrotainSitterCodeModelFactory.buildModel(content) as BslCodeModel
+    return codeModelFactory.buildModel(content) as BslCodeModel
 }
 
 function statement(content: string) {
-    const model = ChevrotainSitterCodeModelFactory.buildModel(content) as BslCodeModel
+    const model = codeModelFactory.buildModel(content) as BslCodeModel
     return model.children[0]
 }
 
 function expression(content: string) {
-    const model = ChevrotainSitterCodeModelFactory.buildModel('a=' + content) as BslCodeModel
+    const model = codeModelFactory.buildModel('a=' + content) as BslCodeModel
     return model.children[0].expression
 }
