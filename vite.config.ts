@@ -19,12 +19,6 @@ export default defineConfig(api => {
     plugins: [
       viteSingleFile()
     ],
-    optimizeDeps: {
-      exclude: [
-        "web-tree-sitter"
-      ]
-    },
-      assetsInclude: ['/assets/*.wasm'],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, "./src"),

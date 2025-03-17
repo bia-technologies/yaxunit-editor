@@ -17,11 +17,11 @@ export class TestDefinition {
     method: string
     duration: number = 0
     lineNumber: number
-    errors?:Error[]
+    errors?: Error[]
 
-    constructor(method: Method) {
+    constructor(method: Method, lineNumber: number) {
         this.method = method.name
-        this.lineNumber = method.startLine
+        this.lineNumber = lineNumber
         this.present = this.method
     }
 
