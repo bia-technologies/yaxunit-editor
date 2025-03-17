@@ -3,7 +3,7 @@ import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } fr
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { ModuleModel } from '@/bsl/moduleModel'
 import { EditorScope } from '@/bsl/scope/editorScope'
-import { AccessSequenceSymbol, ConstructorSymbol } from '@/bsl/codeModel'
+import { AccessSequenceSymbol, ConstructorSymbol, ConstSymbol } from '@/bsl/codeModel'
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.', '"', ' ', '&'],
@@ -20,6 +20,11 @@ const completionItemProvider: languages.CompletionItemProvider = {
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
         const editorScope = EditorScope.getScope(model)
 
+        if (symbol instanceof ConstSymbol) {
+            return {
+                suggestions: [], incomplete: true
+            }
+        }
         if (symbol instanceof ConstructorSymbol) {
             return {
                 suggestions: GlobalScope.getConstructors().map(c => {

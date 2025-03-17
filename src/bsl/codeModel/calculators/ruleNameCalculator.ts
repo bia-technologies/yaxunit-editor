@@ -24,7 +24,8 @@ export class RuleNameCalculator implements CodeModelVisitor {
         return undefined
     }
     visitConstSymbol() {
-        return 'literal'
+        // Для корректной обработки незакрытой кавычки строки
+        return undefined // 'literal'
     }
     visitConstructorSymbol() {
         return 'constructorExpression'
@@ -57,7 +58,7 @@ export class RuleNameCalculator implements CodeModelVisitor {
         return 'ifStatement'
     }
     visitIndexAccessSymbol() {
-
+        return undefined
     }
     visitLabelStatement() {
         return 'labelStatement'

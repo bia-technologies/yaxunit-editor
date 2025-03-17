@@ -46,9 +46,9 @@ export function findNodeByOffset(nodes: (BaseSymbol | undefined)[], offset: numb
     while (lo <= hi) {
         mid = Math.floor((lo + hi) / 2)
         node = nodes[mid]
-        if (!node || node.startOffset >= offset)
+        if (!node || node.startOffset > offset)
             hi = mid - 1
-        else if (node.endOffset <= offset)
+        else if (node.endOffset < offset)
             lo = mid + 1
         else {
             return { node, index: mid }
@@ -57,6 +57,9 @@ export function findNodeByOffset(nodes: (BaseSymbol | undefined)[], offset: numb
 }
 
 export function getParentMethodDefinition(symbol: BaseSymbol) {
+    if (isMethodDefinition(symbol)) {
+        return symbol
+    }
     let parent = symbol.parent
     while (parent && !isMethodDefinition(parent)) {
         parent = parent.parent

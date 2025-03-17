@@ -2,8 +2,9 @@ import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scop
 import { BaseSymbol, Method } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
 import { IPosition } from 'monaco-editor-core'
-import { FunctionDefinitionSymbol, isMethodDefinition, ProcedureDefinitionSymbol } from '../codeModel'
+import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
 import { VariablesCalculator } from '../codeModel/calculators'
+import { getParentMethodDefinition } from '../chevrotain/utils'
 
 export class BslModuleScope extends BaseScope {
     protected readonly model: ModuleModel
@@ -15,14 +16,7 @@ export class BslModuleScope extends BaseScope {
 
     collectScopeAtPosition(position: IPosition): Scope | undefined {
         let symbol = this.model.getCurrentExpression(position) as BaseSymbol
-        let method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined
-        while (symbol && symbol.parent) {
-            symbol = symbol.parent
-            if (isMethodDefinition(symbol)) {
-                method = symbol
-                break
-            }
-        }
+        let method = getParentMethodDefinition(symbol)
 
         if (!method) {
             return undefined
@@ -41,7 +35,9 @@ export class BslModuleScope extends BaseScope {
     protected createMethodScope(method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol): MethodScope {
         const members: Member[] = []
 
-        new VariablesCalculator().calculate(method)
+        if (!method.vars) {
+            new VariablesCalculator().calculate(method)
+        }
 
         method.vars.forEach(v => members.push({
             name: v.name,

@@ -18,7 +18,7 @@ export class BSLParser extends CstParser {
         const lexResult = BSLLexer.tokenize(text);
         this.input = this.moduleTokens = lexResult.tokens
         const cst = this.module();
-        
+
         const end = performance.now()
         console.log('Parse time: ', end - start, 'ms')
 
@@ -30,7 +30,6 @@ export class BSLParser extends CstParser {
     }
 
     public updateTokens(changes: IModelContentChange[]) {
-        const startTime = performance.now()
         const ranges: { start: number, end: number, diff: number }[] = []
         for (const change of changes) {
             let start = change.rangeOffset
@@ -55,21 +54,24 @@ export class BSLParser extends CstParser {
                 }
             }
 
-            const tokens = !text || text.trim() === '' ? [] : BSLLexer.tokenize(text).tokens
+            const lexingResult = (!text || text.trim() === '') ? undefined : BSLLexer.tokenize(text)
+            const textTokens = lexingResult?.tokens ?? []
 
-            tokens.forEach(t => { t.startOffset += start; (t.endOffset as number) += start })
+            textTokens.forEach(t => { t.startOffset += start; (t.endOffset as number) += start })
             if (!includeStart && startIndex === this.moduleTokens.length - 1) {
-                this.moduleTokens = this.moduleTokens.concat(tokens)
+                this.moduleTokens = this.moduleTokens.concat(textTokens)
             } else {
-
-                this.moduleTokens.splice(startIndex, endIndex - startIndex + (includeStart ? 1 : 0), ...tokens)
+                
+                this.moduleTokens.splice(startIndex + (!includeStart ? 1 : 0), endIndex - startIndex + (includeStart ? 1 : 0), ...textTokens)
                 if (offsetDiff) {
-                    const startMove = startIndex + tokens.length
+                    const startMove = startIndex + textTokens.length + (!includeStart ? 1 : 0)
                     for (let index = startMove; index < this.moduleTokens.length; index++) {
                         const token = this.moduleTokens[index];
                         token.startOffset += offsetDiff;
                         (token.endOffset as number) += offsetDiff
                     }
+                } else {
+                    console.log('no offset')
                 }
             }
             ranges.push({
@@ -508,7 +510,7 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
         }
     }
     if (endIndex === -1) {
-        endIndex = mid
+        endIndex = tokens[mid].startOffset >= endOffset ? mid - 1 : mid
     }
     return { startIndex, endIndex, includeStart, includeEnd }
 }

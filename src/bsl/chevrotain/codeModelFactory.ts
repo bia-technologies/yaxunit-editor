@@ -3,9 +3,11 @@ import { ModuleModel } from "../moduleModel"
 import { BSLParser } from "./parser"
 import {
     BslCodeModel,
+    FunctionDefinitionSymbol,
     isAcceptable,
     isMethodDefinition,
     MethodDefinition,
+    ProcedureDefinitionSymbol,
 } from "../codeModel"
 import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
 import { editor, MarkerSeverity } from "monaco-editor-core"
@@ -74,9 +76,15 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
                 const position = getSymbolPosition(symbol)
                 const newNode = this.parser.parseChanges(rule as string, position.startOffset, position.endOffset + range.diff)
                 const newSymbol = this.visitor.visit(newNode) as BaseSymbol
+                if (!newSymbol) {
+                    throw 'Не удалось проанализировать новый символ'
+                }
                 const changedItem = replaceNode(codeModel, symbol, newSymbol)
-                moveMethodChildren(newSymbol, range.diff)
-
+                if (!changedItem) {
+                    throw 'New node not inserted'
+                }
+                const method = moveMethodChildren(newSymbol, range.diff)
+                moveLowerMethods(codeModel, method, range.diff)
                 codeModel.afterUpdate(changedItem)
             } else {
                 return false
@@ -87,7 +95,21 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
     }
 }
 
+function moveLowerMethods(codeModel: BslCodeModel, method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined, diff: number) {
+    if (!method) {
+        return
+    }
+    for (let index = codeModel.children.indexOf(method) + 1; index < codeModel.children.length; index++) {
+        const node = codeModel.children[index];
+        node.position.startOffset += diff
+        node.position.endOffset += diff
+    }
+}
+
 function getSymbolPosition(symbol: BaseSymbol): SymbolPosition {
+    if(isMethodDefinition(symbol)){
+        return symbol.position
+    }
     const method = getParentMethodDefinition(symbol)
     return method ? {
         startOffset: method.startOffset + symbol.startOffset,
@@ -98,13 +120,14 @@ function getSymbolPosition(symbol: BaseSymbol): SymbolPosition {
 function moveMethodChildren(symbol: BaseSymbol, diff: number) {
     if (isMethodDefinition(symbol)) {
         updateMethodChildrenOffset(symbol)
-        return
+        return symbol
     }
     let method = getParentMethodDefinition(symbol)
     if (method) {
         updateOffset([symbol], -method.startOffset)
         moveRightChildren(symbol, method, diff)
     }
+    return method
 }
 
 function moveRightChildren(symbol: BaseSymbol, stopSymbol: BaseSymbol, diff: number) {
@@ -133,14 +156,20 @@ function replaceNode(model: BslCodeModel, oldSymbol: BaseSymbol, newSymbol: Base
     } else {
         const parent: any = oldSymbol.parent
         for (const key in oldSymbol.parent) {
-            if (parent[key] === oldSymbol) {
+            const value = parent[key]
+            if (value === oldSymbol) {
                 parent[key] = newSymbol
                 newSymbol.parent = parent
-                break
+                return parent
+            } else if (Array.isArray(value)) {
+                const index = value.indexOf(oldSymbol)
+                if (index !== -1) {
+                    value[index] = newSymbol
+                    newSymbol.parent = parent
+                    return parent
+                }
             }
         }
-
-        return parent
     }
 }
 

@@ -6,6 +6,7 @@ import { ParentsCalculator } from "../calculators";
 import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslVariable } from "./variables";
+import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";
 
 export class BslCodeModel extends AutoDisposable implements VariablesScope, CompositeSymbol {
     calculators = {
@@ -36,9 +37,12 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
             this.calculators.variables.calculate(this)
             await this.calculators.types.calculate(this)
         } else {
-            this.calculators.parents.calculate(this)
-            // this.calculators.variables.calculate(this)
-            // await this.calculators.types.calculate(this)
+            this.calculators.parents.calculate(symbol)
+            const method = getParentMethodDefinition(symbol)
+            if (method) {
+                this.calculators.variables.calculate(method)
+            }
+            await this.calculators.types.calculate(method ?? symbol)
         }
         this.onDidChangeModelEmitter.fire(this)
     }
