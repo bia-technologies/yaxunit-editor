@@ -10,7 +10,7 @@ export const hoverProvider: languages.HoverProvider = {
         const symbol = moduleModel.getCurrentExpression(position)
         const content = symbol ? await hoverSymbolDescription(symbol, model as ModuleModel) : undefined
 
-        console.log('hover', symbol, performance.now() - start, 'ms')
+        console.debug('hover', symbol, performance.now() - start, 'ms')
 
         return content ? { contents: content } : undefined
     },

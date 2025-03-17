@@ -1,11 +1,18 @@
 import { isModel } from "@/monaco/utils"
 import { ModuleModel } from "../moduleModel"
 import { BSLParser } from "./parser"
-import { AccessSequenceSymbol, BinaryExpressionSymbol, BslCodeModel, ConstructorSymbol, ConstSymbol, FunctionDefinitionSymbol, MethodCallSymbol, ParameterDefinitionSymbol, ProcedureDefinitionSymbol, TernaryExpressionSymbol, VariableDefinitionSymbol } from "../codeModel"
-import { BaseSymbol, isCompositeSymbol } from "@/common/codeModel"
+import {
+    BslCodeModel,
+    isAcceptable,
+    isMethodDefinition,
+    MethodDefinition,
+} from "../codeModel"
+import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
 import { editor, MarkerSeverity } from "monaco-editor-core"
 import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
+import { descendantByRange, getParentMethodDefinition, updateOffset } from "./utils"
+import { RuleNameCalculator } from "../codeModel/calculators/ruleNameCalculator"
 
 export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
     parser = new BSLParser()
@@ -41,38 +48,99 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         const end = performance.now()
         console.log('Build code model by chevrotain. Parse:', visitorStart - start, 'ms; model build:', end - visitorStart, '; full:', end - start)
 
+        codeModel.children
+            .filter(isMethodDefinition)
+            .forEach(updateMethodChildrenOffset)
+
         codeModel.afterUpdate(codeModel)
     }
 
     updateModel(codeModel: BslCodeModel, changes: editor.IModelContentChange[]): boolean {
-        const start = performance.now()
         if (!codeModel.children.length || isReplace(codeModel, changes)) {
             this.reBuildModel(codeModel, changes[0].text)
             return true
         }
 
+        const start = performance.now()
         const ranges = this.parser.updateTokens(changes)
 
         for (const range of ranges) {
-            let node: BaseSymbol | undefined = findNode(codeModel.children, range.start, range.end)
-            console.log(node, range)
+            let symbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
             let rule
-            while (node && (rule = getSymbolRule(node)) === undefined) {
-                node = node?.parent
+            while (symbol && (rule = getSymbolRule(symbol)) === undefined) {
+                symbol = symbol?.parent
             }
-            if (node) {
-                const newNode = this.parser.parseChanges(rule as string, node.startOffset, node.endOffset + range.diff)
-                if (!node.parent) {
-                    const index = codeModel.children.indexOf(node)
-                    codeModel.children[index] = this.visitor.visit(newNode) as BaseSymbol
-                    codeModel.afterUpdate(codeModel.children[index])
-                }
+            if (symbol) {
+                const position = getSymbolPosition(symbol)
+                const newNode = this.parser.parseChanges(rule as string, position.startOffset, position.endOffset + range.diff)
+                const newSymbol = this.visitor.visit(newNode) as BaseSymbol
+                const changedItem = replaceNode(codeModel, symbol, newSymbol)
+                moveMethodChildren(newSymbol, range.diff)
+
+                codeModel.afterUpdate(changedItem)
             } else {
                 return false
             }
         }
         console.log('Increment update changes', changes, performance.now() - start, 'ms')
         return true
+    }
+}
+
+function getSymbolPosition(symbol: BaseSymbol): SymbolPosition {
+    const method = getParentMethodDefinition(symbol)
+    return method ? {
+        startOffset: method.startOffset + symbol.startOffset,
+        endOffset: method.startOffset + symbol.endOffset
+    } : symbol.position
+}
+
+function moveMethodChildren(symbol: BaseSymbol, diff: number) {
+    if (isMethodDefinition(symbol)) {
+        updateMethodChildrenOffset(symbol)
+        return
+    }
+    let method = getParentMethodDefinition(symbol)
+    if (method) {
+        updateOffset([symbol], -method.startOffset)
+        moveRightChildren(symbol, method, diff)
+    }
+}
+
+function moveRightChildren(symbol: BaseSymbol, stopSymbol: BaseSymbol, diff: number) {
+    let parent: any | undefined = symbol
+    do {
+        parent = parent.parent
+        if (!parent) {
+            break
+        }
+        const symbols = (parent as CompositeSymbol).getChildrenSymbols().filter(s => s && s.startOffset > symbol.startOffset)
+        updateOffset(symbols, diff);
+        (parent as BaseSymbol).position.endOffset += diff
+    } while (parent != stopSymbol)
+}
+
+function updateMethodChildrenOffset(method: MethodDefinition) {
+    updateOffset(method.params, -method.position.startOffset)
+    updateOffset(method.children, -method.position.startOffset)
+}
+
+function replaceNode(model: BslCodeModel, oldSymbol: BaseSymbol, newSymbol: BaseSymbol) {
+    if (!oldSymbol.parent) { // model children
+        const index = model.children.indexOf(oldSymbol)
+        model.children[index] = newSymbol
+        return model.children[index]
+    } else {
+        const parent: any = oldSymbol.parent
+        for (const key in oldSymbol.parent) {
+            if (parent[key] === oldSymbol) {
+                parent[key] = newSymbol
+                newSymbol.parent = parent
+                break
+            }
+        }
+
+        return parent
     }
 }
 
@@ -88,40 +156,7 @@ function isReplace(codeModel: BslCodeModel, changes: editor.IModelContentChange[
 }
 
 function getSymbolRule(symbol: BaseSymbol) {
-    if (symbol instanceof MethodCallSymbol) {
-        return symbol.parent instanceof AccessSequenceSymbol ? undefined : 'methodCall'
-    } else if (symbol instanceof AccessSequenceSymbol) {
-        return 'qualifiedName'
-    } else if (symbol instanceof ParameterDefinitionSymbol) {
-        return 'parameter'
-    } else if (symbol instanceof ProcedureDefinitionSymbol) {
-        return 'procedure'
-    } else if (symbol instanceof FunctionDefinitionSymbol) {
-        return 'function'
-    } else if (symbol instanceof VariableDefinitionSymbol) {
-        return 'varStatement'
-    } else if (symbol instanceof BinaryExpressionSymbol) {
-        return symbol.parent instanceof BinaryExpressionSymbol ? undefined : 'expression'
-    } else if (symbol instanceof TernaryExpressionSymbol) {
-        return 'ternaryExpression'
-    } else if (symbol instanceof ConstructorSymbol) {
-        return 'constructorExpression'
-    } else if (symbol instanceof ConstSymbol) {
-        return 'literal'
-    }
-}
-function findNode(nodes: (BaseSymbol | undefined)[], start: number, end: number): BaseSymbol | undefined {
-    for (const node of nodes) {
-        if (node && node.position.startOffset <= start && node.position.endOffset >= end) {
-            const sub = isCompositeSymbol(node) ? findNode(node.getChildrenSymbols(), start, end) : undefined
-            if (sub) {
-                return sub
-            } else {
-                return node
-            }
-        }
-    }
-    return undefined
+    return isAcceptable(symbol) ? symbol.accept(RuleNameCalculator.instance) : undefined
 }
 
 // Функция для конвертации ошибок Chevrotain в маркеры Monaco

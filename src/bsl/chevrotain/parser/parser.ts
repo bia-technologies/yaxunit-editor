@@ -3,6 +3,7 @@ import { tokens, allTokens, keywords } from './tokens'
 import { BSLLexer } from "./lexer"
 
 export class BSLParser extends CstParser {
+    moduleTokens: IToken[] = []
     constructor() {
         super(allTokens, {
             nodeLocationTracking: "onlyOffset",
@@ -15,15 +16,11 @@ export class BSLParser extends CstParser {
         const start = performance.now()
 
         const lexResult = BSLLexer.tokenize(text);
-        // setting a new input will RESET the parser instance's state.
-        this.input = lexResult.tokens
-        const lexerFinish = performance.now()
-        // any top level rule may be used as an entry point
+        this.input = this.moduleTokens = lexResult.tokens
         const cst = this.module();
+        
         const end = performance.now()
-        console.log('Lexer time: ', lexerFinish - start, 'ms')
-        console.log('Parser time: ', end - lexerFinish, 'ms')
-        console.log('Full time: ', end - start, 'ms')
+        console.log('Parse time: ', end - start, 'ms')
 
         return {
             cst: cst,
@@ -39,13 +36,13 @@ export class BSLParser extends CstParser {
             let start = change.rangeOffset
             let end = change.rangeLength + start
             const offsetDiff = change.text.length - change.rangeLength
-            let { startIndex, endIndex, includeStart, includeEnd } = findTokens(this.input, start, end)
+            let { startIndex, endIndex, includeStart, includeEnd } = findTokens(this.moduleTokens, start, end)
 
             let text = change.text
 
             if (includeStart || includeEnd) {
-                const startToken = this.input[startIndex]
-                const endToken = this.input[endIndex]
+                const startToken = this.moduleTokens[startIndex]
+                const endToken = this.moduleTokens[endIndex]
 
                 const leftText = includeStart ? startToken.image.substring(0, start - startToken.startOffset) : ''
                 const rightText = includeEnd ? endToken.image.substring(end - endToken.startOffset) : ''
@@ -61,15 +58,15 @@ export class BSLParser extends CstParser {
             const tokens = !text || text.trim() === '' ? [] : BSLLexer.tokenize(text).tokens
 
             tokens.forEach(t => { t.startOffset += start; (t.endOffset as number) += start })
-            if (!includeStart && startIndex === this.input.length - 1) {
-                this.input = this.input.concat(tokens)
+            if (!includeStart && startIndex === this.moduleTokens.length - 1) {
+                this.moduleTokens = this.moduleTokens.concat(tokens)
             } else {
 
-                this.input.splice(startIndex, endIndex - startIndex + (includeStart ? 1 : 0), ...tokens)
+                this.moduleTokens.splice(startIndex, endIndex - startIndex + (includeStart ? 1 : 0), ...tokens)
                 if (offsetDiff) {
                     const startMove = startIndex + tokens.length
-                    for (let index = startMove; index < this.input.length; index++) {
-                        const token = this.input[index];
+                    for (let index = startMove; index < this.moduleTokens.length; index++) {
+                        const token = this.moduleTokens[index];
                         token.startOffset += offsetDiff;
                         (token.endOffset as number) += offsetDiff
                     }
@@ -83,21 +80,15 @@ export class BSLParser extends CstParser {
             })
 
         }
-        console.log('updateTokens', performance.now() - startTime, 'ms')
         return ranges
     }
 
     public parseChanges(rule: string, startOffset: number, endOffset: number) {
-        let { startIndex, endIndex } = findTokens(this.input, startOffset, endOffset)
-        const oldInput = this.input
-        try {
-            this.input = this.input.slice(startIndex, endIndex + 1)
-            const ruleMethod = (this as any)[rule] as (() => CstNode)
-            const result = ruleMethod.bind(this)()
-            return result
-        } finally {
-            this.input = oldInput
-        }
+        let { startIndex, endIndex } = findTokens(this.moduleTokens, startOffset, endOffset)
+        this.input = this.moduleTokens.slice(startIndex, endIndex + 1)
+        const ruleMethod = (this as any)[rule] as (() => CstNode)
+        const result = ruleMethod.bind(this)()
+        return result
     }
 
     private module = this.RULE("module", () => {

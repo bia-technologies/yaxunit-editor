@@ -11,7 +11,8 @@ import {
 import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
 import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
-import { currentAccessSequence, descendantByOffset } from "../codeModel/utils";
+import { currentAccessSequence } from "../codeModel/utils";
+import { descendantByOffset } from "./utils";
 
 export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
 

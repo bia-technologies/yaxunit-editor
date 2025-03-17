@@ -35,7 +35,7 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
             this.calculators.parents.calculate(this)
             this.calculators.variables.calculate(this)
             await this.calculators.types.calculate(this)
-        }else{
+        } else {
             this.calculators.parents.calculate(this)
             // this.calculators.variables.calculate(this)
             // await this.calculators.types.calculate(this)

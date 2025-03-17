@@ -2,7 +2,7 @@ import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scop
 import { BaseSymbol, Method } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
 import { IPosition } from 'monaco-editor-core'
-import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
+import { FunctionDefinitionSymbol, isMethodDefinition, ProcedureDefinitionSymbol } from '../codeModel'
 import { VariablesCalculator } from '../codeModel/calculators'
 
 export class BslModuleScope extends BaseScope {
@@ -18,7 +18,7 @@ export class BslModuleScope extends BaseScope {
         let method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined
         while (symbol && symbol.parent) {
             symbol = symbol.parent
-            if (symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol) {
+            if (isMethodDefinition(symbol)) {
                 method = symbol
                 break
             }
