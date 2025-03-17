@@ -39,15 +39,17 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
 
     constructor(model: editor.ITextModel) {
         super()
-        
+
         this._disposables.push(this.codeModelFactory)
 
         this.editorModel = model as ModuleModel
         this.scope = new BslModuleScope(this.editorModel)
 
         this.codeModel = this.codeModelFactory.buildModel(this.editorModel)
-        model.onDidChangeContent(e=>{
-            this.codeModelFactory.updateModel(this.codeModel, e.changes)
+        model.onDidChangeContent(e => {
+            if (!this.codeModelFactory.updateModel(this.codeModel, e.changes)) {
+                this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
+            }
         })
     }
 

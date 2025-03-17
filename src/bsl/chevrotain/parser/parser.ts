@@ -1,4 +1,4 @@
-import { CstParser, EMPTY_ALT, IToken } from "chevrotain"
+import { CstNode, CstParser, EMPTY_ALT, IToken } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 import { BSLLexer } from "./lexer"
 
@@ -34,14 +34,14 @@ export class BSLParser extends CstParser {
 
     public updateTokens(changes: IModelContentChange[]) {
         const startTime = performance.now()
+        const ranges: { start: number, end: number, diff: number }[] = []
         for (const change of changes) {
-            const start = change.rangeOffset
-            const end = change.rangeLength + start
+            let start = change.rangeOffset
+            let end = change.rangeLength + start
             const offsetDiff = change.text.length - change.rangeLength
             let { startIndex, endIndex, includeStart, includeEnd } = findTokens(this.input, start, end)
 
             let text = change.text
-            let tokensOffset = start
 
             if (includeStart || includeEnd) {
                 const startToken = this.input[startIndex]
@@ -50,13 +50,17 @@ export class BSLParser extends CstParser {
                 const leftText = includeStart ? startToken.image.substring(0, start - startToken.startOffset) : ''
                 const rightText = includeEnd ? endToken.image.substring(end - endToken.startOffset) : ''
                 text = leftText + change.text + rightText
-                tokensOffset = includeStart ? startToken.startOffset : start
+                if (includeStart) {
+                    start = startToken.startOffset
+                }
+                if (includeEnd) {
+                    end = endToken.endOffset as number
+                }
             }
 
             const tokens = !text || text.trim() === '' ? [] : BSLLexer.tokenize(text).tokens
 
-            tokens.forEach(t => { t.startOffset += tokensOffset; (t.endOffset as number) += tokensOffset })
-
+            tokens.forEach(t => { t.startOffset += start; (t.endOffset as number) += start })
             if (!includeStart && startIndex === this.input.length - 1) {
                 this.input = this.input.concat(tokens)
             } else {
@@ -71,8 +75,29 @@ export class BSLParser extends CstParser {
                     }
                 }
             }
+            ranges.push({
+                start,
+                end,
+                diff: offsetDiff
+
+            })
+
         }
         console.log('updateTokens', performance.now() - startTime, 'ms')
+        return ranges
+    }
+
+    public parseChanges(rule: string, startOffset: number, endOffset: number) {
+        let { startIndex, endIndex } = findTokens(this.input, startOffset, endOffset)
+        const oldInput = this.input
+        try {
+            this.input = this.input.slice(startIndex, endIndex + 1)
+            const ruleMethod = (this as any)[rule] as (() => CstNode)
+            const result = ruleMethod.bind(this)()
+            return result
+        } finally {
+            this.input = oldInput
+        }
     }
 
     private module = this.RULE("module", () => {

@@ -41,7 +41,6 @@ export class TernaryExpressionSymbol extends BaseExpressionSymbol implements Acc
     getChildrenSymbols() {
         return [this.condition, this.consequence, this.alternative]
     }
-
 }
 
 export class ConstructorSymbol extends BaseExpressionSymbol implements Acceptable, CompositeSymbol {

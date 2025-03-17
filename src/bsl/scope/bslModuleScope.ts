@@ -8,17 +8,9 @@ import { VariablesCalculator } from '../codeModel/calculators'
 export class BslModuleScope extends BaseScope {
     protected readonly model: ModuleModel
 
-    private modelVersionId: number = 0
-
     constructor(model: ModuleModel) {
         super([])
         this.model = model
-    }
-
-    beforeGetMembers() {
-        if (this.model.getVersionId() != this.modelVersionId) {
-            this.updateMembers()
-        }
     }
 
     collectScopeAtPosition(position: IPosition): Scope | undefined {
@@ -39,8 +31,7 @@ export class BslModuleScope extends BaseScope {
     }
 
     updateMembers(): void {
-        this.modelVersionId = this.model.getVersionId()
-        // this.didUpdateMembers()
+        // this.model.updateCodeModel()
     }
 
     getMethods(): Method[] {
@@ -64,9 +55,5 @@ export class BslModuleScope extends BaseScope {
         }))
 
         return new MethodScope(members)
-    }
-
-    protected didUpdateMembers(): void {
-        this.model.updateCodeModel()
     }
 }
