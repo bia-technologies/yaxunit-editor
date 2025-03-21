@@ -111,7 +111,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     // #region statements
     statements(ctx: CstChildrenDictionary) {
-        return Object.values(ctx).flatMap(nodes => this.visitAll(nodes))
+        const result:BaseSymbol[] = []
+        Object.values(ctx).forEach(nodes=>result.push(...this.visitAll(nodes)))
+        return result
     }
 
     assignmentStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
@@ -360,7 +362,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
             return symbols[0]
         }
 
-        symbols = symbols.toSorted((s1: BaseSymbol, s2: BaseSymbol) => s1.startOffset - s2.startOffset)
+        symbols = symbols.sort((s1: BaseSymbol, s2: BaseSymbol) => s1.startOffset - s2.startOffset)
         const symbol = new AccessSequenceSymbol(nodePosition(location))
         symbol.access = symbols
         symbol.unclosed = unclosed

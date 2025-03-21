@@ -3,8 +3,8 @@ import { createToken, Lexer } from "chevrotain"
 const Identifier = createToken({ name: 'Identifier', pattern: /[\wа-я_][\wа-я_0-9]*/i })
 
 const keyword = (name: string, ...words: string[]) => {
-    words.push(name)
-    return createToken({ name, pattern: new RegExp(words.join('|'), 'i'), longer_alt: Identifier })
+    words.push(name.toLowerCase())
+    return createToken({ name, pattern: new RegExp('(' + words.join('|') + ')', 'i'), longer_alt: Identifier })
 }
 
 const preproc_keyword = (name: string, ...words: string[]) => {
@@ -37,8 +37,8 @@ export const keywords = {
     // Exceptions
     EndTry: keyword('EndTry', 'конецпопытки'),
     Try: keyword('Try', 'попытка'),
-    Except: keyword('Except', 'исключение'),
     Raise: keyword('Raise', 'вызватьисключение'),
+    Except: keyword('Except', 'исключение'),
 
     // Declarations
     Procedure: keyword('Procedure', 'процедура'),
@@ -86,8 +86,8 @@ export const keywords = {
 
     // Operators
     Or: keyword('Or', 'или'),
-    And: keyword('And', 'и'),
     Not: keyword('Not', 'не'),
+    And: keyword('And', 'и'),
 
     // NULL
     Null: keyword('Null'),
