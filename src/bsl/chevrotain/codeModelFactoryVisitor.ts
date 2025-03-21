@@ -111,8 +111,8 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     // #region statements
     statements(ctx: CstChildrenDictionary) {
-        const result:BaseSymbol[] = []
-        Object.values(ctx).forEach(nodes=>result.push(...this.visitAll(nodes)))
+        const result: BaseSymbol[] = []
+        Object.values(ctx).forEach(nodes => result.push(...this.visitAll(nodes)))
         return result
     }
 
@@ -387,7 +387,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     constructorExpression(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const name = firstTokenText(ctx.Identifier)
+        const name = ctx.Identifier ? firstTokenText(ctx.Identifier) : ''
         const symbol = new ConstructorSymbol(nodePosition(location), name, name)
         if (ctx.arguments) {
             symbol.arguments = this.visitFirst(ctx.arguments)
@@ -436,9 +436,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
                 ctx.rhs.forEach((rhsOperand, idx) => {
                     // there will be one operator for each rhs operand
                     let rhsValue = this.visit(rhsOperand as CstNode)
-                    let operator = operators[idx]
+                    let operator = operators[idx] as IToken
 
-                    const symbol = new BinaryExpressionSymbol({ startOffset: result.startOffset, endOffset: rhsValue.endOffset })
+                    const symbol = new BinaryExpressionSymbol({ startOffset: result.startOffset, endOffset: rhsValue?.endOffset ?? operator.endOffset })
                     symbol.left = result
                     symbol.right = rhsValue
                     symbol.operator = (operator as IToken).image

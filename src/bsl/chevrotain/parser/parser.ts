@@ -1,4 +1,4 @@
-import { CstNode, CstParser, EMPTY_ALT, IToken } from "chevrotain"
+import { CstNode, CstParser, EMPTY_ALT, ILexingError, IToken } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 import { BSLLexer } from "./lexer"
 
@@ -30,7 +30,7 @@ export class BSLParser extends CstParser {
     }
 
     public updateTokens(changes: IModelContentChange[]) {
-        const ranges: { start: number, end: number, diff: number }[] = []
+        const ranges: { start: number, end: number, diff: number, errors?:ILexingError[] }[] = []
         for (const change of changes) {
             let start = change.rangeOffset
             let end = change.rangeLength + start
@@ -77,6 +77,7 @@ export class BSLParser extends CstParser {
             ranges.push({
                 start,
                 end,
+                errors:lexingResult?.errors,
                 diff: offsetDiff
 
             })
@@ -169,6 +170,7 @@ export class BSLParser extends CstParser {
         () => this.SUBRULE(this.awaitStatement),
         () => this.SUBRULE(this.executeStatement),
         () => this.SUBRULE(this.assignmentStatement),
+        EMPTY_ALT,
     ]
 
     private assignmentStatement = this.RULE("assignmentStatement", () => {

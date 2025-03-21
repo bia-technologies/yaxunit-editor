@@ -57,7 +57,7 @@ export function findNodeByOffset(nodes: (BaseSymbol | undefined)[], offset: numb
 }
 
 export function getParentMethodDefinition(symbol: BaseSymbol) {
-    if (isMethodDefinition(symbol)) {
+    if (!symbol || isMethodDefinition(symbol)) {
         return symbol
     }
     let parent = symbol.parent

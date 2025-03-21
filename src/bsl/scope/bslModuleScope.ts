@@ -16,7 +16,7 @@ export class BslModuleScope extends BaseScope {
 
     collectScopeAtPosition(position: IPosition): Scope | undefined {
         let symbol = this.model.getCurrentExpression(position) as BaseSymbol
-        let method = getParentMethodDefinition(symbol)
+        let method = symbol ? getParentMethodDefinition(symbol) : undefined
 
         if (!method) {
             return undefined
