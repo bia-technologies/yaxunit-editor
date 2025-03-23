@@ -38,6 +38,10 @@ export class UnionScope implements Scope {
 
     scopes: Scope[] = []
 
+    constructor(scopes?: Scope[]) {
+        this.scopes = scopes ?? []
+    }
+    
     getScopes(): Scope[] {
         return this.scopes
     }

@@ -32,17 +32,21 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
     visitModel(model: BslCodeModel) {
         this.setVarScope(model)
         super.visitModel(model)
+        this.clearOldVars(model)
     }
 
     // #region definitions
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
         this.setVarScope(symbol)
         super.visitProcedureDefinition(symbol)
+        this.clearOldVars(symbol)
+
     }
 
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol) {
         this.setVarScope(symbol)
         super.visitFunctionDefinition(symbol)
+        this.clearOldVars(symbol)
     }
     // #endregion
 
@@ -87,12 +91,22 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
         this.variablesMap.clear()
     }
 
-    handleVar(symbol: VariableSymbol) {
+    private clearOldVars(varScope: VariablesScope) {
+        for (let index = varScope.vars.length - 1; index >= 0; index--) {
+            const variable = varScope.vars[index];
+            if (!this.variablesMap.has(variable.name)) {
+                varScope.vars.splice(index, 1)
+            }
+        }
+        this.variablesMap.clear()
+    }
+
+    private handleVar(symbol: VariableSymbol) {
         let variable = this.variablesMap.get(symbol.name)
         if (!variable && this.varScope) {
             variable = findInScope(this.varScope, symbol.name)
             if (variable) {
-                this.varScope.vars.push(variable)
+                this.variablesMap.set(variable.name, variable)
             }
         }
         if (!variable && this.varScope) {

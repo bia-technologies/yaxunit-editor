@@ -20,7 +20,7 @@ import { ILexingError, IRecognitionException } from "chevrotain"
 export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
     parser = new BSLParser()
     visitor = new CodeModelFactoryVisitor()
-    errors:ErrorInfo[] = []
+    errors: ErrorInfo[] = []
 
     buildModel(model: ModuleModel | string): BslCodeModel {
         const codeModel = new BslCodeModel()
@@ -191,7 +191,7 @@ function getSymbolRule(symbol: BaseSymbol) {
 
 // Функция для конвертации ошибок Chevrotain в маркеры Monaco
 function convertErrorsToMarkers(errors: ErrorInfo[], model: editor.ITextModel): editor.IMarkerData[] {
-    return errors.map(error=>{
+    return errors.map(error => {
         const startPosition = model.getPositionAt(error.startOffset);
         const endPosition = model.getPositionAt(error.endOffset);
         return {
@@ -221,11 +221,11 @@ function handleErrors(lexErrors: ILexingError[], parseErrors: IRecognitionExcept
             startOffset: error.offset,
             endOffset: error.offset + error.length
         }
-    }).concat(parseErrors.map(error=>{
+    }).concat(parseErrors.map(error => {
         return {
             message: `Синтаксическая ошибка: ${error.message}`,
-            startOffset:error.token.startOffset,
-            endOffset: (error.token.endOffset??error.token.startOffset) + 1
+            startOffset: error.token.startOffset,
+            endOffset: (error.token.endOffset ?? error.token.startOffset) + 1
         }
     }))
 }

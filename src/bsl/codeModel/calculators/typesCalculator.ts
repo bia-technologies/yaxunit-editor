@@ -207,7 +207,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
                 parentType = item.type
             }
         }
-        symbol.type = parentType !== 'global' ? parentType : undefined // TODO
+        symbol.type = symbol.last.type
         await this.acceptItems(symbol.getChildrenSymbols())
     }
 

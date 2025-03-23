@@ -141,8 +141,10 @@ async function methodDescription(symbol: MethodCallSymbol) {
 async function variableDescription(symbol: VariableSymbol) {
     const content: string[] = []
 
-    if (!symbol.type) {
+    let type = symbol.member?.type || symbol.type
+    if (!type) {
         await TypesCalculator.instance.calculate(symbol)
+        type = symbol.member?.type || symbol.type
     }
 
     if (symbol.member) {
