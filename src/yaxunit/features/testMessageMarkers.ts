@@ -6,7 +6,7 @@ import { Error } from '../test-model/report'
 
 export class TestMessageMarkersProvider implements TestModelRender {
     editor: editor.IStandaloneCodeEditor
-    decorationsIds: editor.IEditorDecorationsCollection | undefined
+
     constructor(editor: editor.IStandaloneCodeEditor) {
         this.editor = editor
     }

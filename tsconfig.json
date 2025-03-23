@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "useDefineForClassFields": true,
     "module": "CommonJS",
     "lib": [
       "ESNext",
@@ -20,6 +19,7 @@
     "noEmit": true,
     /* Linting */
     "strict": true,
+    "useDefineForClassFields": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
