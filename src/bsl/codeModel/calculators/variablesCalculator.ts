@@ -7,6 +7,7 @@ import {
     ForStatementSymbol,
     FunctionDefinitionSymbol,
     ModuleVariableDefinitionSymbol,
+    ParameterDefinitionSymbol,
     ProcedureDefinitionSymbol,
     VariableDefinitionSymbol,
     VariableSymbol
@@ -47,6 +48,10 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
         this.setVarScope(symbol)
         super.visitFunctionDefinition(symbol)
         this.clearOldVars(symbol)
+    }
+
+    visitParameterDefinition(symbol: ParameterDefinitionSymbol) {
+        this.handleVar(symbol)
     }
     // #endregion
 
@@ -101,22 +106,32 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
         this.variablesMap.clear()
     }
 
-    private handleVar(symbol: VariableSymbol) {
+    private handleVar(symbol: VariableSymbol | ParameterDefinitionSymbol) {
         let variable = this.variablesMap.get(symbol.name)
-        if (!variable && this.varScope) {
-            variable = findInScope(this.varScope, symbol.name)
-            if (variable) {
-                this.variablesMap.set(variable.name, variable)
-            }
+
+        if (!variable && this.varScope && (variable = findInScope(this.varScope, symbol.name))) {
+            this.variablesMap.set(variable.name, variable)
         }
         if (!variable && this.varScope) {
-            variable = new BslVariable(symbol.name)
-            this.variablesMap.set(variable.name, variable)
+            variable = this.createVariable(symbol)
             this.varScope.vars.push(variable)
+            this.variablesMap.set(variable.name, variable)
         }
         symbol.member = variable
     }
 
+    private createVariable(symbol: VariableSymbol | ParameterDefinitionSymbol) {
+        const variable = new BslVariable(symbol.name)
+
+        if (symbol instanceof VariableSymbol) {
+            variable.description = `Локальная переменная \`${symbol.name}\``
+        } else {
+            variable.description = `Параметр \`${symbol.name}\``
+            variable.value = symbol.default
+        }
+
+        return variable
+    }
 }
 
 function findInScope(varScope: VariablesScope, name: string) {

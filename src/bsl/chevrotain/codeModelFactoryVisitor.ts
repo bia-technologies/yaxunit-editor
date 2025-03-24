@@ -56,13 +56,18 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     getStatements(nodes: CstElement[] | CstElement): BaseSymbol[] {
+        let statements: BaseSymbol[]
         if (Array.isArray(nodes)) {
-            return this.statements((nodes[0] as CstNode).children).filter(s => s)
+            statements = this.statements((nodes[0] as CstNode).children).filter(s => s)
         } else if (nodes) {
-            return this.statements((nodes as CstNode).children).filter(s => s)
+            statements = this.statements((nodes as CstNode).children).filter(s => s)
         } else {
-            return []
+            statements = []
         }
+        statements.sort((s1, s2) => {
+            return s1.startOffset - s2.startOffset
+        })
+        return statements
     }
 
     getArguments(nodes: CstElement[] | CstElement): BaseSymbol[] {

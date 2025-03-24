@@ -42,6 +42,7 @@ export class ParameterDefinitionSymbol extends BaseSymbol implements Parameter, 
     byVal: boolean = false
     type: string = ''
     defaultValue?: ConstSymbol
+    member?: Member
 
     get default() {
         return this.defaultValue?.value
