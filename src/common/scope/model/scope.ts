@@ -9,7 +9,7 @@ export interface Scope {
 }
 
 export class BaseScope extends AutoDisposable implements Scope {
-    private members: Member[]
+    protected members: Member[]
     membersHash: {
         [key: string]: Member
     } = {}
@@ -37,6 +37,10 @@ export class BaseScope extends AutoDisposable implements Scope {
 export class UnionScope implements Scope {
 
     scopes: Scope[] = []
+
+    constructor(scopes?: Scope[]) {
+        this.scopes = scopes ?? []
+    }
 
     getScopes(): Scope[] {
         return this.scopes

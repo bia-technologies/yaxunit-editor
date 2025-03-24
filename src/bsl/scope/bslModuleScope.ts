@@ -16,7 +16,7 @@ export class BslModuleScope extends BaseScope {
 
     collectScopeAtPosition(position: IPosition): Scope | undefined {
         let symbol = this.model.getCurrentExpression(position) as BaseSymbol
-        let method = getParentMethodDefinition(symbol)
+        let method = symbol ? getParentMethodDefinition(symbol) : undefined
 
         if (!method) {
             return undefined
@@ -25,7 +25,13 @@ export class BslModuleScope extends BaseScope {
     }
 
     updateMembers(): void {
-        // this.model.updateCodeModel()
+        this.members = this.getMethods().map(m => {
+            return {
+                kind: m.isProc ? MemberType.procedure : MemberType.function,
+                name: m.name,
+                description: m.description,
+            }
+        })
     }
 
     getMethods(): Method[] {
@@ -42,12 +48,8 @@ export class BslModuleScope extends BaseScope {
         method.vars.forEach(v => members.push({
             name: v.name,
             kind: MemberType.variable,
-            type: v.type
-        }))
-
-        method.params.forEach(v => members.push({
-            name: v.name,
-            kind: MemberType.variable,
+            type: v.type,
+            description: v.description
         }))
 
         return new MethodScope(members)

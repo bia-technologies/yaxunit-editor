@@ -141,18 +141,20 @@ async function methodDescription(symbol: MethodCallSymbol) {
 async function variableDescription(symbol: VariableSymbol) {
     const content: string[] = []
 
-    if (!symbol.type) {
+    let type = symbol.member?.type || symbol.type
+    if (!type) {
         await TypesCalculator.instance.calculate(symbol)
+        type = symbol.member?.type || symbol.type
     }
 
     if (symbol.member) {
         if (symbol.member instanceof BslVariable) {
-            content.push(`Локальная переменная \`${symbol.name}\``)
+            content.push(symbol.member.description ?? `Локальная переменная \`${symbol.name}\``)
         } else {
             content.push(memberDescription(symbol.member, true))
-        }
-        if (symbol.member.description) {
-            content.push(symbol.member.description)
+            if (symbol.member.description) {
+                content.push(symbol.member.description)
+            }
         }
     } else {
         content.push(`Глобальная переменная \`${symbol.name}\``)

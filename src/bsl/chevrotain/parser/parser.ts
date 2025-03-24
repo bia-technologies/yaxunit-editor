@@ -1,4 +1,4 @@
-import { CstNode, CstParser, EMPTY_ALT, IToken } from "chevrotain"
+import { CstNode, CstParser, EMPTY_ALT, ILexingError, IToken } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 import { BSLLexer } from "./lexer"
 
@@ -30,7 +30,7 @@ export class BSLParser extends CstParser {
     }
 
     public updateTokens(changes: IModelContentChange[]) {
-        const ranges: { start: number, end: number, diff: number }[] = []
+        const ranges: { start: number, end: number, diff: number, errors?: ILexingError[] }[] = []
         for (const change of changes) {
             let start = change.rangeOffset
             let end = change.rangeLength + start
@@ -61,7 +61,7 @@ export class BSLParser extends CstParser {
             if (!includeStart && startIndex === this.moduleTokens.length - 1) {
                 this.moduleTokens = this.moduleTokens.concat(textTokens)
             } else {
-                
+
                 this.moduleTokens.splice(startIndex + (!includeStart ? 1 : 0), endIndex - startIndex + (includeStart ? 1 : 0), ...textTokens)
                 if (offsetDiff) {
                     const startMove = startIndex + textTokens.length + (!includeStart ? 1 : 0)
@@ -77,6 +77,7 @@ export class BSLParser extends CstParser {
             ranges.push({
                 start,
                 end,
+                errors: lexingResult?.errors,
                 diff: offsetDiff
 
             })
@@ -169,6 +170,7 @@ export class BSLParser extends CstParser {
         () => this.SUBRULE(this.awaitStatement),
         () => this.SUBRULE(this.executeStatement),
         () => this.SUBRULE(this.assignmentStatement),
+        EMPTY_ALT,
     ]
 
     private assignmentStatement = this.RULE("assignmentStatement", () => {
@@ -176,8 +178,7 @@ export class BSLParser extends CstParser {
         this.OPTION(() => {
             this.CONSUME(tokens.Assign)
             this.SUBRULE(this.expression)
-        }
-        )
+        })
     })
 
     private returnStatement = this.RULE("returnStatement", () => {
@@ -200,12 +201,7 @@ export class BSLParser extends CstParser {
 
     private riseErrorStatement = this.RULE("riseErrorStatement", () => {
         this.CONSUME(tokens.Raise)
-        this.choice(
-            () => this.SUBRULE(this.literal, { LABEL: 'error' }),
-            () => this.SUBRULE(this.qualifiedName, { LABEL: 'error' }),
-            () => this.SUBRULE(this.arguments),
-            EMPTY_ALT
-        )
+        this.SUBRULE(this.expression) // TODO support raise as method
     })
 
     private ifStatement = this.RULE("ifStatement", () => {

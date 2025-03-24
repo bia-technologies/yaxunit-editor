@@ -40,7 +40,7 @@ export async function loadScope(): Promise<Scope> {
     const genericTypes = types.filter(t => t.id.match(filterPattern))
 
     const scope = new PlatformScope(members, types.concat(enumTypes), constructors)
-    genericTypes.forEach(t => scope.genericTypes[t.id.toLocaleLowerCase().replaceAll(replacePattern, '<?>')] = t)
+    genericTypes.forEach(t => scope.genericTypes[t.id.toLowerCase().replace(replacePattern, '<?>')] = t)
 
     return scope
 }

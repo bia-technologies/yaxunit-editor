@@ -7,6 +7,7 @@ import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslVariable } from "./variables";
 import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";
+import { GlobalScope } from "@/common/scope";
 
 export class BslCodeModel extends AutoDisposable implements VariablesScope, CompositeSymbol {
     calculators = {
@@ -17,6 +18,10 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
 
+    constructor() {
+        super()
+        GlobalScope.onLoaded(() => this.calculators.types.calculate(this))
+    }
     private onDidChangeModelEmitter: Emitter<BslCodeModel> = new Emitter()
 
     get methods() {

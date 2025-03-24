@@ -1,5 +1,4 @@
-import { Lexer } from "chevrotain";
-import { allTokens } from "./tokens";
+import { Lexer } from "chevrotain"
+import { allTokens } from "./tokens"
 
-export const BSLLexer = new Lexer(allTokens, { ensureOptimizations: true, positionTracking: "full" });
-
+export const BSLLexer = new Lexer(allTokens, { ensureOptimizations: true, positionTracking: "full" })

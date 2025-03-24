@@ -56,13 +56,18 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     getStatements(nodes: CstElement[] | CstElement): BaseSymbol[] {
+        let statements: BaseSymbol[]
         if (Array.isArray(nodes)) {
-            return this.statements((nodes[0] as CstNode).children).filter(s => s)
+            statements = this.statements((nodes[0] as CstNode).children).filter(s => s)
         } else if (nodes) {
-            return this.statements((nodes as CstNode).children).filter(s => s)
+            statements = this.statements((nodes as CstNode).children).filter(s => s)
         } else {
-            return []
+            statements = []
         }
+        statements.sort((s1, s2) => {
+            return s1.startOffset - s2.startOffset
+        })
+        return statements
     }
 
     getArguments(nodes: CstElement[] | CstElement): BaseSymbol[] {
@@ -111,7 +116,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     // #region statements
     statements(ctx: CstChildrenDictionary) {
-        return Object.values(ctx).flatMap(nodes => this.visitAll(nodes))
+        const result: BaseSymbol[] = []
+        Object.values(ctx).forEach(nodes => result.push(...this.visitAll(nodes)))
+        return result
     }
 
     assignmentStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
@@ -360,7 +367,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
             return symbols[0]
         }
 
-        symbols = symbols.toSorted((s1: BaseSymbol, s2: BaseSymbol) => s1.startOffset - s2.startOffset)
+        symbols = symbols.sort((s1: BaseSymbol, s2: BaseSymbol) => s1.startOffset - s2.startOffset)
         const symbol = new AccessSequenceSymbol(nodePosition(location))
         symbol.access = symbols
         symbol.unclosed = unclosed
@@ -385,7 +392,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     constructorExpression(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const name = firstTokenText(ctx.Identifier)
+        const name = ctx.Identifier ? firstTokenText(ctx.Identifier) : ''
         const symbol = new ConstructorSymbol(nodePosition(location), name, name)
         if (ctx.arguments) {
             symbol.arguments = this.visitFirst(ctx.arguments)
@@ -434,9 +441,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
                 ctx.rhs.forEach((rhsOperand, idx) => {
                     // there will be one operator for each rhs operand
                     let rhsValue = this.visit(rhsOperand as CstNode)
-                    let operator = operators[idx]
+                    let operator = operators[idx] as IToken
 
-                    const symbol = new BinaryExpressionSymbol({ startOffset: result.startOffset, endOffset: rhsValue.endOffset })
+                    const symbol = new BinaryExpressionSymbol({ startOffset: result.startOffset, endOffset: rhsValue?.endOffset ?? operator.endOffset })
                     symbol.left = result
                     symbol.right = rhsValue
                     symbol.operator = (operator as IToken).image

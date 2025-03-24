@@ -15,10 +15,12 @@ import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
 import { descendantByRange, getParentMethodDefinition, updateOffset } from "./utils"
 import { RuleNameCalculator } from "../codeModel/calculators/ruleNameCalculator"
+import { ILexingError, IRecognitionException } from "chevrotain"
 
 export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
     parser = new BSLParser()
     visitor = new CodeModelFactoryVisitor()
+    errors: ErrorInfo[] = []
 
     buildModel(model: ModuleModel | string): BslCodeModel {
         const codeModel = new BslCodeModel()
@@ -31,11 +33,10 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         const text = isModel(model) ? model.getValue() : model
         const tree = this.parser.parseModule(text)
 
-        tree.lexErrors.forEach(e => console.error('lexError', e))
-        tree.parseErrors.forEach(e => console.error('parseError', e.token, e))
+        this.errors = handleErrors(tree.lexErrors, tree.parseErrors)
 
         if (isModel(model)) {
-            const markers = convertErrorsToMarkers(tree.lexErrors, tree.parseErrors, model);
+            const markers = convertErrorsToMarkers(this.errors, model);
             editor.setModelMarkers(model, 'chevrotain', markers);
         }
         const visitorStart = performance.now()
@@ -59,8 +60,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
 
     updateModel(codeModel: BslCodeModel, changes: editor.IModelContentChange[]): boolean {
         if (!codeModel.children.length || isReplace(codeModel, changes)) {
-            this.reBuildModel(codeModel, changes[0].text)
-            return true
+            return false
         }
 
         const start = performance.now()
@@ -86,6 +86,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
                 const method = moveMethodChildren(newSymbol, range.diff)
                 moveLowerMethods(codeModel, method, range.diff)
                 codeModel.afterUpdate(changedItem)
+                console.debug('update ', symbol, 'to', newSymbol)
             } else {
                 return false
             }
@@ -107,7 +108,7 @@ function moveLowerMethods(codeModel: BslCodeModel, method: ProcedureDefinitionSy
 }
 
 function getSymbolPosition(symbol: BaseSymbol): SymbolPosition {
-    if(isMethodDefinition(symbol)){
+    if (isMethodDefinition(symbol)) {
         return symbol.position
     }
     const method = getParentMethodDefinition(symbol)
@@ -189,41 +190,43 @@ function getSymbolRule(symbol: BaseSymbol) {
 }
 
 // Функция для конвертации ошибок Chevrotain в маркеры Monaco
-function convertErrorsToMarkers(lexErrors: any[], parseErrors: any[], model: editor.ITextModel): editor.IMarkerData[] {
-    const markers: editor.IMarkerData[] = [];
-
-    // Обработка лексических ошибок
-    for (const error of lexErrors) {
-        const startPosition = model.getPositionAt(error.offset);
-        const endPosition = model.getPositionAt(error.offset + (error.length || 1));
-
-        markers.push({
+function convertErrorsToMarkers(errors: ErrorInfo[], model: editor.ITextModel): editor.IMarkerData[] {
+    return errors.map(error => {
+        const startPosition = model.getPositionAt(error.startOffset);
+        const endPosition = model.getPositionAt(error.endOffset);
+        return {
             severity: MarkerSeverity.Error,
-            message: `Лексическая ошибка: ${error.message || 'Неизвестная ошибка'}`,
+            message: error.message,
             startLineNumber: startPosition.lineNumber,
             startColumn: startPosition.column,
             endLineNumber: endPosition.lineNumber,
             endColumn: endPosition.column,
-            source: 'chevrotain-lexer'
-        });
-    }
+            source: 'chevrotain'
 
-    // Обработка синтаксических ошибок
-    for (const error of parseErrors) {
-        const token = error.token;
-        const startPosition = model.getPositionAt(token.startOffset);
-        const endPosition = model.getPositionAt((token.endOffset || token.startOffset) + 1);
-
-        markers.push({
-            severity: MarkerSeverity.Error,
-            message: `Синтаксическая ошибка: ${error.message}`,
-            startLineNumber: startPosition.lineNumber,
-            startColumn: startPosition.column,
-            endLineNumber: endPosition.lineNumber,
-            endColumn: endPosition.column,
-            source: 'chevrotain-parser'
-        });
-    }
-
-    return markers;
+        }
+    })
 }
+
+interface ErrorInfo {
+    message: string
+    startOffset: number
+    endOffset: number
+}
+function handleErrors(lexErrors: ILexingError[], parseErrors: IRecognitionException[]): ErrorInfo[] {
+    lexErrors.forEach(e => console.error('lexError', e))
+    parseErrors.forEach(e => console.error('parseError', e.token, e))
+    return lexErrors.map(error => {
+        return {
+            message: `Лексическая ошибка: ${error.message || 'Неизвестная ошибка'}`,
+            startOffset: error.offset,
+            endOffset: error.offset + error.length
+        }
+    }).concat(parseErrors.map(error => {
+        return {
+            message: `Синтаксическая ошибка: ${error.message}`,
+            startOffset: error.token.startOffset,
+            endOffset: (error.token.endOffset ?? error.token.startOffset) + 1
+        }
+    }))
+}
+

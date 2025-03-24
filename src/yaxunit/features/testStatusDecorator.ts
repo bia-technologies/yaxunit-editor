@@ -5,12 +5,12 @@ import { TestModelRender } from '../interfaces'
 
 export class TestStatusDecorator implements TestModelRender{
     editor: editor.IStandaloneCodeEditor
-    decorationsIds: editor.IEditorDecorationsCollection | undefined
+    decorations:string[] = [];
     constructor(editor: editor.IStandaloneCodeEditor) {
         this.editor = editor
     }
     update(model: TestsModel): void {
-        const decorations = model.getTests().map(t => {
+        const newDecorations = model.getTests().map(t => {
             return {
                 range: new Range(t.lineNumber, 1, t.lineNumber, 1),
                 options: {
@@ -22,13 +22,8 @@ export class TestStatusDecorator implements TestModelRender{
                 }
             }
         })
-        if (this.decorationsIds) {
-            console.debug('update decorations', decorations)
-            this.decorationsIds.set(decorations)
-        } else {
-            console.debug('new decorations', decorations)
-            this.decorationsIds = this.editor.createDecorationsCollection(decorations)
-        }
+
+        this.decorations = this.editor.deltaDecorations( this.decorations, newDecorations)
     }
 }
 

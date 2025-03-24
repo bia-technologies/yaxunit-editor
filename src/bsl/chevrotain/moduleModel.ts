@@ -107,7 +107,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
                 symbol = symbol.parent
             }
         }
-        return symbol
+        return symbol as MethodCallSymbol | ConstructorSymbol
     }
 }
 

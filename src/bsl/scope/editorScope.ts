@@ -90,4 +90,9 @@ export class EditorScope extends UnionScope {
             return res
         }
     }
+
+    static getActiveScope(value: editor.ITextModel | editor.IStandaloneCodeEditor, position: IPosition): Scope {
+        const scope = this.getScope(value)
+        return new UnionScope(scope.getScopesAtPosition(position))
+    }
 }

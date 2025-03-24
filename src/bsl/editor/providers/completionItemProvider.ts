@@ -6,11 +6,10 @@ import { EditorScope } from '@/bsl/scope/editorScope'
 import { AccessSequenceSymbol, ConstructorSymbol, ConstSymbol } from '@/bsl/codeModel'
 
 const completionItemProvider: languages.CompletionItemProvider = {
-    triggerCharacters: ['.', '"', ' ', '&'],
+    triggerCharacters: ['.'],
 
     async provideCompletionItems(model: editor.ITextModel, position: IPosition): Promise<languages.CompletionList | undefined> {
         const moduleModel = model as ModuleModel
-
         const symbol = moduleModel.getEditingExpression(position)
         console.debug('symbol: ', symbol)
 
@@ -18,7 +17,7 @@ const completionItemProvider: languages.CompletionItemProvider = {
 
         const word = model.getWordAtPosition(position)
         const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
-        const editorScope = EditorScope.getScope(model)
+        const editorScope = EditorScope.getActiveScope(model, position)
 
         if (symbol instanceof ConstSymbol) {
             return {

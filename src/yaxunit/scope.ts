@@ -28,4 +28,4 @@ function handleMethod(m: any): MethodMember {
     }
 }
 
-loadScope().then(s => GlobalScope.registerScope('yaxunit-scope', s))
+GlobalScope.registerScope('yaxunit-scope', loadScope())

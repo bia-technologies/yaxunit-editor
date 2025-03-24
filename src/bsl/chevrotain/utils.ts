@@ -1,5 +1,5 @@
 import { BaseSymbol, CodeSymbol, CompositeSymbol, isCompositeSymbol } from "@/common/codeModel"
-import { isMethodDefinition } from "../codeModel"
+import { FunctionDefinitionSymbol, isMethodDefinition, ProcedureDefinitionSymbol } from "../codeModel"
 
 export function descendantByOffset(offset: number, compositeSymbol: CompositeSymbol): CodeSymbol | undefined {
     if (isMethodDefinition(compositeSymbol)) {
@@ -56,7 +56,10 @@ export function findNodeByOffset(nodes: (BaseSymbol | undefined)[], offset: numb
     }
 }
 
-export function getParentMethodDefinition(symbol: BaseSymbol) {
+export function getParentMethodDefinition(symbol: BaseSymbol): ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined {
+    if (!symbol) {
+        return undefined
+    }
     if (isMethodDefinition(symbol)) {
         return symbol
     }
@@ -64,7 +67,7 @@ export function getParentMethodDefinition(symbol: BaseSymbol) {
     while (parent && !isMethodDefinition(parent)) {
         parent = parent.parent
     }
-    return parent
+    return parent as ProcedureDefinitionSymbol | FunctionDefinitionSymbol
 }
 
 export function updateOffset(symbols: (BaseSymbol | undefined)[], diffOffset: number) {
