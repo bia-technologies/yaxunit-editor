@@ -1,6 +1,6 @@
 import { createToken, Lexer } from "chevrotain"
 
-const Identifier = createToken({ name: 'Identifier', pattern: /[\wа-я_][\wа-я_0-9]*/i })
+const Identifier = createToken({ name: 'Identifier', pattern: /[\wа-яё_][\wа-яё_0-9]*/i })
 
 const keyword = (name: string, ...words: string[]) => {
     words.push(name.toLowerCase())
