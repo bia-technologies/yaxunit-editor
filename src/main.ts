@@ -7,6 +7,7 @@ import '@/yaxunit'
 import '@/bsl/scope'
 import { YAxUnitEditor } from '@/yaxunit'
 
+
 (self as any).MonacoEnvironment = {
   getWorker(): Worker {
     return new editorWorker()
@@ -15,3 +16,31 @@ import { YAxUnitEditor } from '@/yaxunit'
 
 const bslEditor = new YAxUnitEditor();
 (window as any).bslEditor = bslEditor;
+
+if (import.meta.env.DEV) {
+  bslEditor.content =
+    `
+Процедура ИсполняемыеСценарии() Экспорт
+    
+    ЮТТесты.ДобавитьТест("Сложение");
+
+КонецПроцедуры
+
+Процедура Сложение() Экспорт
+
+КонецПроцедуры
+`
+} else {
+  bslEditor.content =
+    `
+Процедура ИсполняемыеСценарии() Экспорт
+    
+    ЮТТесты.ДобавитьТест("Сложение");
+
+КонецПроцедуры
+
+Процедура Сложение() Экспорт
+
+КонецПроцедуры
+`
+}
