@@ -38,6 +38,11 @@ export class BslEditor {
             acceptSuggestionOnCommitCharacter: true,
             // fontFamily: 'Courier New',
             // fontSize: 12,
+            suggest: {
+                preview: true,
+                insertMode: 'replace',
+                localityBonus: true
+            },
             fontLigatures: true,
             wordBasedSuggestions: false,
             model: this.createModel()
