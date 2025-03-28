@@ -1,6 +1,6 @@
 import { IRange, languages } from "monaco-editor-core";
 import { keywords_ru } from "../language/keywords";
-import { default as snippets } from './snippets.json'
+import { default as snippets } from './snippets_ru.json'
 import { default as yaxunitSnippets } from './yaxunit-snippets.json'
 
 export function appendKeywords(suggestions: languages.CompletionItem[], range: IRange) {
