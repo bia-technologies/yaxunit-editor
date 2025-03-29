@@ -1,0 +1,552 @@
+[
+  {
+    "prefix": "If",
+    "body": "If ${1:Condition} Then\n\t$0\nEndIf;",
+    "description": "If"
+  },
+  {
+    "prefix": "If",
+    "body": "If ${1:Condition} Then\n\t$0\nElse\nEndIf;",
+    "description": "IfElse"
+  },
+  {
+    "prefix": "While",
+    "body": "While ${1:Condition} Do\n\t$0\nEndDo;",
+    "description": "While"
+  },
+  {
+    "prefix": "For",
+    "body": "For ${1:Counter} To ${2:Limit} Do\n\t$0\nEndDo;",
+    "description": "For"
+  },
+  {
+    "prefix": "ForEach",
+    "body": "For Each ${1:Variable} In ${2:Collection} Do\n\t$0\nEndDo;",
+    "description": "For Each"
+  },
+  {
+    "prefix": "Procedure",
+    "body": "Procedure ${1:ProcedureName}()\n\t$0\nEndProcedure",
+    "description": "Procedure"
+  },
+  {
+    "prefix": "Procedure",
+    "body": "// <Procedure description>\n//\n// Parameters:\n//  <Parameter1>  - <Type.Subtype> - <parameter description>\n//                  <parameter description continued>\n//  <Parameter2>  - <Type.Subtype> - <parameter description>\n//                  <parameter description continued>\n//\nProcedure ${1:ProcedureName}()\n\t$0\nEndProcedure // ${1:ProcedureName}()",
+    "description": "Procedure (with header)"
+  },
+  {
+    "prefix": "Procedure",
+    "body": "// <Procedure description>\n//\n// Parameters:\n//  <Parameter1>  - <Type.Subtype> - <parameter description>\n//                  <parameter description continued>\n//  <Parameter2>  - <Type.Subtype> - <parameter description>\n//                  <parameter description continued>\n//\n&${1:ChooseACompilationDirective}\nProcedure ${2:ProcedureName}()\n\t$0\nEndProcedure // ${2:ProcedureName}()",
+    "description": "Procedure in a form module"
+  },
+  {
+    "prefix": "Procedure",
+    "body": "// <Procedure description>\n//\n// Parameters:\n//  <Parameter1>  - <Type.Subtype> - <parameter description>\n//                  <parameter description continued>\n//  <Parameter2>  - <Type.Subtype> - <parameter description>\n//                  <parameter description continued>\n//\n&${1:ChooseACompilationDirective}\nProcedure ${2:ProcedureName}()\n\t$0\nEndProcedure // ${2:ProcedureName}()",
+    "description": "Procedure in a command module"
+  },
+  {
+    "prefix": "Function",
+    "body": "Function ${1:FunctionName}()\n\t$0\nEndFunction // ${1:FunctionName}()",
+    "description": "Function"
+  },
+  {
+    "prefix": "Function",
+    "body": "// <Function description>\n//\n//\n// Parameters:\n//  <Parameter1>  - <Type.Subtype> - <parameter description>\n//                 <parameter description continued>\n//  <Parameter2>  - <Type.Subtype> - <parameter description>\n//                 <parameter description continued>\n//\n// Returns:\n//   <Type.Subtype>   - <returned value description>\n//\nFunction ${1:FunctionName}()\n\t$0\nEndFunction // ${1:FunctionName}()",
+    "description": "Function (with header)"
+  },
+  {
+    "prefix": "Function",
+    "body": "// <Function description>\n//\n//\n// Parameters:\n//  <Parameter1>  - <Type.Subtype> - <parameter description>\n//                 <parameter description continued>\n//  <Parameter2>  - <Type.Subtype> - <parameter description>\n//                 <parameter description continued>\n//\n// Returns:\n//   <Type.Subtype>   - <returned value description>\n//\n&${1:ChooseACompilationDirective}\nFunction ${2:FunctionName}()\n\t$0\nEndFunction // ${2:FunctionName}()",
+    "description": "Function in a form module"
+  },
+  {
+    "prefix": "Function",
+    "body": "// <Function description>\n//\n//\n// Parameters:\n//  <Parameter1>  - <Type.Subtype> - <parameter description>\n//                 <parameter description continued>\n//  <Parameter2>  - <Type.Subtype> - <parameter description>\n//                 <parameter description continued>\n//\n// Returns:\n//   <Type.Subtype>   - <returned value description>\n//\n&${1:ChooseACompilationDirective}\nFunction ${2:FunctionName}()\n\t$0\nEndFunction // ${2:FunctionName}()",
+    "description": "Function in a command module"
+  },
+  {
+    "prefix": "Return",
+    "body": "Return;$0",
+    "description": "Return"
+  },
+  {
+    "prefix": "Try",
+    "body": "Try\n\t$0\nExcept\nEndTry;",
+    "description": "Try"
+  },
+  {
+    "prefix": "Directive",
+    "body": "&${1:ChooseACompilationDirective}",
+    "description": "Compilation directive"
+  },
+  {
+    "prefix": "Instrution",
+    "body": "#If ${1:ChooseAPreprocessorInstruction} Then\n\t$0\n#EndIf",
+    "description": "Instruction If"
+  },
+  {
+    "prefix": "Region",
+    "body": "#Region $0\n#EndRegion",
+    "description": "Instruction Region"
+  },
+  {
+    "prefix": "Enums",
+    "body": "PredefinedValue(\"Enum.${1:ChooseAnEnumerationValue}\")",
+    "description": "Enumeration"
+  },
+  {
+    "prefix": "Functionaloption",
+    "body": "GetFunctionalOption(\"${1:ChooseAFunctionalOption}\")",
+    "description": "Get a functional option"
+  },
+  {
+    "prefix": "Functionaloption",
+    "body": "GetInterfaceFunctionalOption(\"${1:ChooseAFunctionalOption}\")",
+    "description": "Get an interface functional option"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"CommonForm.${1:ChooseACommonForm}\");",
+    "description": "Open a common form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"CommonForm.${1:ChooseACommonForm}\", FormParameters);",
+    "description": "Open a common form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"CommonForm.${1:ChooseACommonForm}\");",
+    "description": "Get a common form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"CommonForm.${1:ChooseACommonForm}\");",
+    "description": "Get a common form (with parameters)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"ExchangePlan.${1:ChooseAnExchangePlan}.${2:ChooseForm}\");",
+    "description": "Open an exchange plan form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"ExchangePlan.${1:ChooseAnExchangePlan}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open an exchange plan form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"ExchangePlan.${1:ChooseAnExchangePlan}.${2:ChooseForm}\");",
+    "description": "Get an exchange plan form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"ExchangePlan.${1:ChooseAnExchangePlan}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get an exchange plan form (with parameters)"
+  },
+  {
+    "prefix": "ExchangePlansChoose",
+    "body": "Selection = ExchangePlans.$1.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Items traversal"
+  },
+  {
+    "prefix": "Constants",
+    "body": "Constants.$1.${2:SelectVariant}()",
+    "description": "Get/Set constant"
+  },
+  {
+    "prefix": "Constants",
+    "body": "Constants.$1.Set($0);",
+    "description": "Set constant"
+  },
+  {
+    "prefix": "Constants",
+    "body": "Constants.$1.Get()",
+    "description": "Get constant"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"Catalog.${1:ChooseACatalog}.${2:ChooseForm}$0\");",
+    "description": "Open a catalog form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"Catalog.${1:ChooseCatalog}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a catalog form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"Catalog.${1:ChooseACatalog}.${2:ChooseForm}$0\");",
+    "description": "Get a catalog form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"Catalog.${1:ChooseCatalog}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a catalog form (with parameters)"
+  },
+  {
+    "prefix": "CatalogsSelect",
+    "body": "Select = Catalogs.$1.Select();\nWhile Select.Next() Do\n\t$0\nEndDo;",
+    "description": "Item traversal"
+  },
+  {
+    "prefix": "CatalogsSelectHierarchicaly",
+    "body": "Select = Catalogs.$1.SelectHierarchicaly();\nWhile Select.Next() Do\n\t$0\nEndDo;",
+    "description": "Items hierarchical traversal"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"Document.${1:ChooseADocument}.${2:ChooseForm}$0\");",
+    "description": "Open a document form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"Document.${1:ChooseADocument}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a document form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"Document.${1:ChooseADocument}.${2:ChooseForm}$0\");",
+    "description": "Get a document form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"Document.${1:ChooseADocument}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a document form (with parameters)"
+  },
+  {
+    "prefix": "DocumentsSelect",
+    "body": "Select = Documents.$1.Select();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Document walk-through"
+  },
+  {
+    "prefix": "RegisterRecords",
+    "body": "RegisterRecords.${1:ChooseARegister}",
+    "description": "RegisterRecords"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"Report.${1:ChooseAReport}.${2:ChooseForm}$0\");",
+    "description": "Open a report form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"Report.${1:ChooseAReport}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a report form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"Report.${1:ChooseAReport}.${2:ChooseForm}$0\");",
+    "description": "Get a report form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"Report.${1:ChooseAReport}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a report form (with parameters)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"DataProcessor.${1:ChooseADataProcessor}.${2:ChooseForm}$0\");",
+    "description": "Open a data processor form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"DataProcessor.${1:ChooseADataProcessor}}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a data processor form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"DataProcessor.${1:ChooseADataProcessor}.${2:ChooseForm}$0\");",
+    "description": "Get a data processor form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"DataProcessor.${1:ChooseADataProcessor}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a data processor form (with parameters)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"ChartOfCharacteristicTypes.${1:ChooseAChartOfCharateristicTypes}.${2:ChooseForm}$0\");",
+    "description": "Open a chart of characteristic types form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"ChartOfCharacteristicTypes.${1:ChooseAChartOfCharacteristicTypes}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a chart of characteristic types form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"ChartOfCharacteristicTypes.${1:ChooseAChartOfCharacteristicTypes}.${2:ChooseForm}$0\");",
+    "description": "Get a chart of characteristic types form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"ChartOfCharacteristicTypes.${1:ChooseAChartOfCharacteristicTypes}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a chart of characteristic types form (with parameters)"
+  },
+  {
+    "prefix": "ChartOfAccountsChoose",
+    "body": "Selection = ChartOfAccounts.$1.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Charts of characteristic types traversal"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"ChartOfAccounts.${1:ChooseAChartOfAccounts}.${2:ChooseForm}$0\");",
+    "description": "Open a chart of accounts form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"ChartOfAccounts.${1:ChooseAChartOfAccounts}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a chart of accounts form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"ChartOfAccounts.${1:ChooseAChartOfAccounts}.${2:ChooseForm}$0\");",
+    "description": "Get a chart of accounts form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"ChartOfAccounts.${1:ChooseAChartOfAccounts}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a chart of accounts form (with parameters)"
+  },
+  {
+    "prefix": "ChartsOfAccounts",
+    "body": "ChartsOfAccounts.$1.FindByCode($0)",
+    "description": "Find by code"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"ChartOfCalculationTypes.${1:ChooseAChartOfCalculationTypes}.${2:ChooseForm}$0\");",
+    "description": "Open a chart of calculation types form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"ChartOfCalculationTypes.${1:ChooseAChartOfCalculationTypes}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a chart of calculation types form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"ChartOfCalculationTypes.${1:ChooseAChartOfCalculationTypes}.${2:ChooseForm}$0\");",
+    "description": "Get a chart of calculation types form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"ChartOfCalculationTypes.${1:ChooseAChartOfCalculationTypes}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a chart of calculation types form (with parameters)"
+  },
+  {
+    "prefix": "ChartsOfCalculationTypesChoose",
+    "body": "Selection = ChartsOfCalculationTypes.$1.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Charts of calculation types traversal"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"BusinessProcess.${1:ChooseABusinessProcess}.${2:ChooseForm}$0\");",
+    "description": "Open a business process form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"BusinessProcess.${1:ChooseABusinessProcess}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a business process form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"BusinessProcess.${1:ChooseABusinessProcess}.${2:ChooseForm}$0\");",
+    "description": "Get a business process form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"BusinessProcess.${1:ChooseABusinessProcess}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a business process form (with parameters)"
+  },
+  {
+    "prefix": "BusinessProcessesChoose",
+    "body": "Selection = BusinessProcesses.$1.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Business processes traversal"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"Task.${1:ChooseATask}.${2:ChooseForm}$0\");",
+    "description": "Open a task form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"Task.${1:ChooseATask}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a task form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"Task.${1:ChooseATask}.${2:ChooseForm}$0\");",
+    "description": "Get a task form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"Task.${1:ChooseATask}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a task form (with parameters)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"InformationRegister.${1:ChooseAnInformationRegister}.${2:ChooseForm}$0\");",
+    "description": "Open an information register form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"InformationRegister.${1:ChooseAnInformationRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open an information register form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"InformationRegister.${1:ChooseAnInformationRegister}.${2:ChooseForm}$0\");",
+    "description": "Get an information register form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"InformationRegister.${1:ChooseAnInformationRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get an information register form (with parameters)"
+  },
+  {
+    "prefix": "InformationRegisterChoose",
+    "body": "Selection = InformationRegister.${1:ChooseAnInformationRegister}.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Selection of information register records"
+  },
+  {
+    "prefix": "InformationRegisterSelectByRecorder",
+    "body": "Selection = InformationRegister.${1:ChooseAnInformationRegister}.SelectByRecorder($0);\nWhile Selection.Next() Do\nEndDo;",
+    "description": "Selection of information register records (by recorder)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"AccumulationRegister.${1:ChooseAnAccumulationRegister}.${2:ChooseForm}$0\");",
+    "description": "Open an accumulation register form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"AccumulationRegister.${1:ChooseAnAccumulationRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open an accumulation register form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"AccumulationRegister.${1:ChooseAnAccumulationRegister}.${2:ChooseForm}$0\");",
+    "description": "Get an accumulation register form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"AccumulationRegister.${1:ChooseAnAccumulationRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get an accumulation register form (with parameters)"
+  },
+  {
+    "prefix": "AccumulationRegisterChoose",
+    "body": "Selection = AccumulationRegister.${1:ChooseAnAccumulationRegister}.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Selection of accumulation register records"
+  },
+  {
+    "prefix": "AccumulationRegisterSelectByRecorder",
+    "body": "Selection = AccumulationRegister.${1:ChooseAnAccumulationRegister}.SelectByRecorder($0);\nWhile Selection.Next() Do\nEndDo;",
+    "description": "Selection of accumulation register records (by recorder)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"AccountingRegister.${1:ChooseAnAccountingRegister}.${2:ChooseForm}$0\");",
+    "description": "Open an accounting register form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"AccountingRegister.${1:ChooseAnAccountingRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open an accounting register form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"AccountingRegister.${1:ChooseAnAccountingRegister}.${2:ChooseForm}$0\");",
+    "description": "Get an accounting register form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"AccountingRegister.${1:ChooseAnAccountingRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get an accounting register form (with parameters)"
+  },
+  {
+    "prefix": "AccountingRegisterChoose",
+    "body": "Selection = AccountingRegister.${1:ChooseAnAccountingRegister}.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Selection of accounting register records"
+  },
+  {
+    "prefix": "AccountingRegisterSelectByRecorder",
+    "body": "Selection = AccountingRegister.${1:ChooseAnAccountingRegister}.SelectByRecorder($0);\nWhile Selection.Next() Do\nEndDo;",
+    "description": "Selection of accounting register records (by recorder)"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "OpenForm(\"CalculationRegister.${1:ChooseACalculationRegister}.${2:ChooseForm}$0\");",
+    "description": "Open a calculation register form"
+  },
+  {
+    "prefix": "OpenForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"CalculationRegister.${1:ChooseACalculationRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Open a calculation register form (with parameters)"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "GetForm(\"CalculationRegister.${1:ChooseACalculationRegister}.${2:ChooseForm}$0\");",
+    "description": "Get a calculation register form"
+  },
+  {
+    "prefix": "GetForm",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nForm = GetForm(\"CalculationRegister.${1:ChooseACalculationRegister}.${2:ChooseForm}\", FormParameters);",
+    "description": "Get a calculation register form (with parameters)"
+  },
+  {
+    "prefix": "CalculationRegisterChoose",
+    "body": "Selection = CalculationRegister.${1:ChooseACalculationRegister}.Choose();\nWhile Selection.Next() Do\n\t$0\nEndDo;",
+    "description": "Selection of calculation register records"
+  },
+  {
+    "prefix": "CalculationRegisterSelectByRecorder",
+    "body": "Selection = CalculationRegister.${1:ChooseACalculationRegister}.SelectByRecorder($0);\nWhile Selection.Next() Do\nEndDo;",
+    "description": "Selection of calculation register records (by recorder)"
+  },
+  {
+    "prefix": "Message",
+    "body": "Message = New UserMessage;\nMessage.Text = \"$0\";\nMessage.Field = \"\";\nMessage.SetData();\nMessage.Message();",
+    "description": "Message"
+  },
+  {
+    "prefix": "DoMessageBox",
+    "body": "DoMessageBox($0);",
+    "description": "DoMessageBox"
+  },
+  {
+    "prefix": "Format",
+    "body": "Format($0, \"$1\")",
+    "description": "Format"
+  },
+  {
+    "prefix": "Structure",
+    "body": "New Structure(\"$0\", )",
+    "description": "Create a structure"
+  },
+  {
+    "prefix": "Query",
+    "body": "Query = New Query;\nQuery.Text = \"$1\";\nResult = Query.Execute();\nSelection = Result.Choose();\nWhile Selection.Next() Do\n  $0\nEndDo;",
+    "description": "Query"
+  },
+  {
+    "prefix": "Query",
+    "body": "Query = New Query;\nQuery.Text = \"$1\";\nQuery.SetParameter(\"$0\", );\nResult = Query.Execute();\nSelection = Result.Choose();\nWhile Selection.Next() Do\nEndDo;",
+    "description": "Query with parameter"
+  },
+  {
+    "prefix": "DoQueryBox",
+    "body": "DoQueryBox(\"${1:PromptText}\", ${2:DialogPrompt})",
+    "description": "Promt"
+  },
+  {
+    "prefix": "DoQueryBox",
+    "body": "DoQueryBox(\"${1:PromptText}\", ${2:DialogPrompt}) = ${3:DialogReturnCode}",
+    "description": "Conditional Prompt"
+  },
+  {
+    "prefix": "TypeCheck",
+    "body": "If TypeOf(${1:ExpressionForTypeCheck}) = Type(\"${2:ChooseType}\") Then\n\t$0\nEndIf;\n",
+    "description": "Type check"
+  }
+]
