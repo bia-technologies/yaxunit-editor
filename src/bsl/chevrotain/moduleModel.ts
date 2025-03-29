@@ -20,6 +20,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         const moduleModelImpl = new ChevrotainModuleModel(editorModel);
 
         (editorModel as ModuleModel).getScope = moduleModelImpl.getScope.bind(moduleModelImpl);
+        (editorModel as ModuleModel).getCurrentSymbol = moduleModelImpl.getCurrentSymbol.bind(moduleModelImpl);
         (editorModel as ModuleModel).getEditingExpression = moduleModelImpl.getEditingExpression.bind(moduleModelImpl);
         (editorModel as ModuleModel).getCurrentExpression = moduleModelImpl.getCurrentExpression.bind(moduleModelImpl);
         (editorModel as ModuleModel).getEditingMethod = moduleModelImpl.getEditingMethod.bind(moduleModelImpl);
@@ -67,11 +68,15 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         // this.codeModel.afterUpdate()
     }
 
-    getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
+    getCurrentSymbol(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        const symbol = descendantByOffset(position, this.codeModel)
+        return descendantByOffset(position, this.codeModel)
+    }
+
+    getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
+        const symbol = this.getCurrentSymbol(position)
 
         if (symbol && isAccessProperty(symbol)) {
             const seq = currentAccessSequence(symbol)

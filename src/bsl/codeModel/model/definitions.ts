@@ -7,12 +7,12 @@ import {
     SymbolPosition,
     CompositeSymbol
 } from "@/common/codeModel";
-import { Member, Signature } from "@/common/scope";
+import { Member, MemberType, Signature } from "@/common/scope";
 import { VariablesScope } from "./interfaces";
 import { VariableSymbol } from "./baseSymbols";
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
-import { BslVariable } from "./variables";
+import { BslVariable } from "./members";
 
 export function isMethodDefinition(symbol: any) {
     return symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol
@@ -58,8 +58,9 @@ export class ParameterDefinitionSymbol extends BaseSymbol implements Parameter, 
     }
 }
 
-export class ProcedureDefinitionSymbol extends MethodDefinition implements Method, Acceptable {
+export class ProcedureDefinitionSymbol extends MethodDefinition implements Method, Acceptable, Member {
     get isProc() { return true }
+    get kind() { return MemberType.procedure }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitProcedureDefinition(this)
@@ -68,6 +69,7 @@ export class ProcedureDefinitionSymbol extends MethodDefinition implements Metho
 
 export class FunctionDefinitionSymbol extends MethodDefinition implements Method, Acceptable {
     get isProc() { return false }
+    get kind() { return MemberType.function }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitFunctionDefinition(this)

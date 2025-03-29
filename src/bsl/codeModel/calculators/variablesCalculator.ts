@@ -12,7 +12,7 @@ import {
     VariableDefinitionSymbol,
     VariableSymbol
 } from "../model";
-import { BslVariable } from "../model/variables";
+import { BslVariable } from "../model/members";
 import { ModelCalculator } from "./calculator";
 import { VariablesScope } from "../model/interfaces";
 
@@ -116,6 +116,9 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
             variable = this.createVariable(symbol)
             this.varScope.vars.push(variable)
             this.variablesMap.set(variable.name, variable)
+        }
+        if (variable) {
+            variable.definitions.push(symbol)
         }
         symbol.member = variable
     }

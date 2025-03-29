@@ -5,7 +5,7 @@ import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitio
 import { ParentsCalculator } from "../calculators";
 import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
-import { BslVariable } from "./variables";
+import { BslVariable } from "./members";
 import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";
 import { GlobalScope } from "@/common/scope";
 
@@ -13,8 +13,9 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
     calculators = {
         parents: new ParentsCalculator(),
         variables: new VariablesCalculator(),
-        types: TypesCalculator.instance
+        types: new TypesCalculator(this)
     }
+
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
 
