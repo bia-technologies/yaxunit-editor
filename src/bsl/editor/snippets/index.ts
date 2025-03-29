@@ -1,41 +1,81 @@
 import { IRange, languages } from "monaco-editor-core";
-import { keywords_ru } from "../language/keywords";
-import { default as snippets } from './snippets_ru.json'
-import { default as yaxunitSnippets } from './yaxunit-snippets.json'
+import { EMPTY_RANGE } from "@/monaco/utils";
 
-export function appendKeywords(suggestions: languages.CompletionItem[], range: IRange) {
-    keywords_ru.forEach(keyword => {
-        suggestions.push({
-            label: keyword,
-            kind: languages.CompletionItemKind.Keyword,
-            insertText: keyword,
-            range
-        })
-    })
+const all_snippets: languages.CompletionItem[] = []
+const keywords_snippets: languages.CompletionItem[] = [
+    'Процедура ',
+    'КонецПроцедуры',
+    'Функция ',
+    'КонецФункции',
+    'Прервать;',
+    'Продолжить;',
+    'Возврат',
+    'Если ',
+    'Тогда',
+    'Иначе',
+    'ИначеЕсли ',
+    'КонецЕсли;',
+    'Попытка',
+    'Исключение',
+    'КонецПопытки;',
+    'ВызватьИсключение',
+    'Пока ',
+    'Для ',
+    'Каждого ',
+    'Из ',
+    'По ',
+    'Цикл',
+    'КонецЦикла;',
+    'НЕ ',
+    'И ',
+    'ИЛИ ',
+    'Новый ',
+    'Перем ',
+    'Экспорт',
+    'Знач ',
+    'Истина',
+    'Ложь',
+    'Неопределено',
+    'Перейти ',
+    'ДобавитьОбработчик ',
+    'УдалитьОбработчик ',
+    'Ждать ',
+    'Асинх '
+].map(keyword =>
+({
+    label: keyword,
+    kind: languages.CompletionItemKind.Keyword,
+    insertText: keyword,
+    EMPTY_RANGE
+}))
+
+export function registerSnippets(suggestions: Promise<languages.CompletionItem[]>) {
+    suggestions.then(data => all_snippets.push(...data))
 }
 
 export function appendSnippets(suggestions: languages.CompletionItem[], range: IRange) {
+    all_snippets.forEach(s => s.range = range)
+    suggestions.push(...all_snippets)
+}
+
+export function appendKeywords(suggestions: languages.CompletionItem[], range: IRange) {
+    keywords_snippets.forEach(s => s.range = range)
+    suggestions.push(...keywords_snippets)
+}
+
+registerSnippets(loadSnippets())
+
+async function loadSnippets() {
     // Использован набор шаблонов из https://github.com/1c-syntax/vsc-language-1c-bsl/blob/develop/snippets/snippets.json
-    for (const sn of snippets) {
-        suggestions.push({
-            label: sn.prefix,
-            kind: languages.CompletionItemKind.Snippet,
-            insertText: directives(sn.body),
-            insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: sn.description,
-            range
-        })
-    }
-    for (const sn of yaxunitSnippets) {
-        suggestions.push({
-            label: sn.prefix,
-            kind: languages.CompletionItemKind.Snippet,
-            insertText: sn.body,
-            insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: sn.description,
-            range
-        })
-    }
+    const snippets = await import('./snippets_ru.json')
+    return snippets.default.map(sn => ({
+        label: sn.prefix,
+        kind: languages.CompletionItemKind.Snippet,
+        insertText: directives(sn.body),
+        insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        documentation: sn.description,
+        range: EMPTY_RANGE
+    }))
 }
 
 function directives(snippet: string) {
