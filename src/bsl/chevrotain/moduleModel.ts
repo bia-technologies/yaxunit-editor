@@ -5,6 +5,7 @@ import {
     BaseExpressionSymbol,
     BslCodeModel,
     ConstructorSymbol,
+    EmptySymbol,
     isAccessProperty,
     MethodCallSymbol
 } from "@/bsl/codeModel";
@@ -92,7 +93,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
             position = this.editorModel.getOffsetAt(position)
         }
         const current = this.getCurrentExpression(position)
-        if (current instanceof BaseExpressionSymbol) {
+        if (current instanceof BaseExpressionSymbol || current instanceof EmptySymbol) {
             return current
         } else if (position > 0) {
             return this.getCurrentExpression(position - 1)

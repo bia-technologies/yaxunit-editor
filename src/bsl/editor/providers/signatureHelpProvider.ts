@@ -7,6 +7,7 @@ import { ModuleModel } from '../../moduleModel'
 import { BaseExpressionSymbol, ConstructorSymbol, MethodCallSymbol } from '@/bsl/codeModel'
 import { BaseSymbol } from '@/common/codeModel'
 import { currentAccessSequence } from '@/bsl/codeModel/utils'
+import { getParentMethodDefinition } from '@/bsl/chevrotain/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
@@ -126,6 +127,8 @@ function setActiveParameter(signature: languages.SignatureHelp, args: BaseSymbol
     if (!args) {
         return
     }
+    const methodOffset = getParentMethodDefinition(args[0])?.position.startOffset ?? 0
+    position -= methodOffset
 
     for (let index = args.length - 1; index >= 0; index--) {
         const arg = args[index];

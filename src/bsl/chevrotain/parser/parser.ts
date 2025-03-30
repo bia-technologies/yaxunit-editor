@@ -430,7 +430,7 @@ export class BSLParser extends CstParser {
         this.CONSUME(tokens.LParen)
         this.MANY_SEP({
             SEP: tokens.Comma,
-            DEF: () => this.SUBRULE(this.argument, { LABEL: 'argument' })
+            DEF: () => this.SUBRULE(this.argument)
         })
         this.CONSUME(tokens.RParen)
     })
