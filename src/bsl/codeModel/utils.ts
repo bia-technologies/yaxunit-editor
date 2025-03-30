@@ -1,4 +1,7 @@
-import { AccessProperty, AccessSequenceSymbol, MethodCallSymbol } from './model'
+import { BaseSymbol } from '@/common/codeModel'
+import { AccessProperty, AccessSequenceSymbol, isMethodDefinition, MethodCallSymbol } from './model'
+import { editor, IRange } from 'monaco-editor-core'
+import { getParentMethodDefinition } from '../chevrotain/utils'
 
 export * from '@/common/codeModel/utils'
 
@@ -16,5 +19,19 @@ export function currentAccessSequence(symbol: AccessProperty | MethodCallSymbol)
         }
         seq.type = seq.last.type
         return seq
+    }
+}
+
+export function symbolRange(symbol: BaseSymbol, model: editor.ITextModel): IRange {
+    const method = isMethodDefinition(symbol) ? undefined : getParentMethodDefinition(symbol)
+    const offset = method?.startOffset ?? 0
+    const start = model.getPositionAt(offset + symbol.startOffset)
+    const end = model.getPositionAt(offset + symbol.endOffset)
+
+    return {
+        startLineNumber: start.lineNumber,
+        startColumn: start.column,
+        endLineNumber: end.lineNumber,
+        endColumn: end.column
     }
 }

@@ -25,16 +25,10 @@ export class BslModuleScope extends BaseScope {
     }
 
     updateMembers(): void {
-        this.members = this.getMethods().map(m => {
-            return {
-                kind: m.isProc ? MemberType.procedure : MemberType.function,
-                name: m.name,
-                description: m.description,
-            }
-        })
+        this.members = this.getMethods()
     }
 
-    getMethods(): Method[] {
+    getMethods() {
         return this.model.getCodeModel()?.methods ?? []
     }
 

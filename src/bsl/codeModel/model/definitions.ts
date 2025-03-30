@@ -7,12 +7,12 @@ import {
     SymbolPosition,
     CompositeSymbol
 } from "@/common/codeModel";
-import { Member, Signature } from "@/common/scope";
+import { Member, MemberType, Signature } from "@/common/scope";
 import { VariablesScope } from "./interfaces";
 import { VariableSymbol } from "./baseSymbols";
 import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
-import { BslVariable } from "./variables";
+import { BslVariable } from "./members";
 
 export function isMethodDefinition(symbol: any) {
     return symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol
@@ -24,8 +24,8 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
     params: ParameterDefinitionSymbol[] = []
     vars: BslVariable[] = []
     children: BaseSymbol[] = []
-    description?: string
     member?: Member
+    description?:string
 
     constructor(position: SymbolPosition, name?: string) {
         super(position)
@@ -58,16 +58,28 @@ export class ParameterDefinitionSymbol extends BaseSymbol implements Parameter, 
     }
 }
 
-export class ProcedureDefinitionSymbol extends MethodDefinition implements Method, Acceptable {
+export class ProcedureDefinitionSymbol extends MethodDefinition implements Method, Acceptable, Member {
     get isProc() { return true }
+    get kind() { return MemberType.procedure }
+
+    constructor(position: SymbolPosition, name: string) {
+        super(position, name)
+        this.description = `Локальная процедура \`${this.name}\``
+    }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitProcedureDefinition(this)
     }
 }
 
-export class FunctionDefinitionSymbol extends MethodDefinition implements Method, Acceptable {
+export class FunctionDefinitionSymbol extends MethodDefinition implements Method, Acceptable, Member {
     get isProc() { return false }
+    get kind() { return MemberType.function }
+
+    constructor(position: SymbolPosition, name: string) {
+        super(position, name)
+        this.description = `Локальная функция \`${this.name}\``
+    }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitFunctionDefinition(this)

@@ -9,13 +9,14 @@ import {
     SymbolPosition
 } from "@/common/codeModel";
 import { Member } from "@/common/scope";
+import { MemberRef } from "./interfaces";
 
 export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol {
     type?: string
     value?: string
 }
 
-export class VariableSymbol extends BaseExpressionSymbol implements CommonVariable, Acceptable, NamedSymbol {
+export class VariableSymbol extends BaseExpressionSymbol implements CommonVariable, Acceptable, NamedSymbol, MemberRef {
     name: string
     member?: Member
 

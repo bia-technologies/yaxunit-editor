@@ -1,4 +1,4 @@
-import { ExpressionSymbol, Variable } from "@/common/codeModel";
+import { BaseSymbol, ExpressionSymbol, Variable } from "@/common/codeModel";
 import { Member, MemberType } from "@/common/scope";
 
 export class BslVariable implements Variable, Member {
@@ -6,16 +6,17 @@ export class BslVariable implements Variable, Member {
     type?: string
     value?: string
     description?: string
+    definitions: BaseSymbol[] = []
 
     constructor(name: string) {
         this.name = name
     }
 
-    setTypeValue(symbol:ExpressionSymbol){
-        if(symbol.type){
+    setTypeValue(symbol: ExpressionSymbol) {
+        if (symbol.type) {
             this.type = symbol.type
         }
-        if(symbol.value){
+        if (symbol.value) {
             this.value = symbol.value
         }
     }

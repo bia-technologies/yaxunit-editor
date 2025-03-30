@@ -9,6 +9,7 @@ export interface ExpressionProvider {
     getEditingExpression(position: IPosition): CodeSymbol | undefined,
     getEditingMethod(position: IPosition): MethodCallSymbol | ConstructorSymbol  | undefined,
     getCurrentExpression(position: IPosition): CodeSymbol | undefined
+    getCurrentSymbol(position: IPosition | number): CodeSymbol | undefined
 }
 
 export interface ModuleModel extends editor.ITextModel, ExpressionProvider {
