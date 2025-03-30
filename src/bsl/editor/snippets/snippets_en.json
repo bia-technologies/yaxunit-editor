@@ -251,7 +251,7 @@
   },
   {
     "prefix": "OpenForm",
-    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"DataProcessor.${1:ChooseADataProcessor}}.${2:ChooseForm}\", FormParameters);",
+    "body": "FormParameters = New Structure;\nFormParameters.Insert(\"$0\", );\nOpenForm(\"DataProcessor.${1:ChooseADataProcessor}.${2:ChooseForm}\", FormParameters);",
     "description": "Open a data processor form (with parameters)"
   },
   {

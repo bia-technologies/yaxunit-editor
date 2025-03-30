@@ -16,6 +16,8 @@ export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol
     value?: string
 }
 
+export class EmptySymbol extends BaseSymbol { }
+
 export class VariableSymbol extends BaseExpressionSymbol implements CommonVariable, Acceptable, NamedSymbol, MemberRef {
     name: string
     member?: Member
@@ -98,7 +100,7 @@ export class AccessSequenceSymbol extends BaseExpressionSymbol implements Accept
         return this.access
     }
 
-    get last(){
+    get last() {
         return this.access[this.access.length - 1]
     }
 }

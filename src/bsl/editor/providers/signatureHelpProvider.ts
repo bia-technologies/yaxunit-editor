@@ -7,6 +7,7 @@ import { ModuleModel } from '../../moduleModel'
 import { BaseExpressionSymbol, ConstructorSymbol, MethodCallSymbol } from '@/bsl/codeModel'
 import { BaseSymbol } from '@/common/codeModel'
 import { currentAccessSequence } from '@/bsl/codeModel/utils'
+import { getParentMethodDefinition } from '@/bsl/chevrotain/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],
@@ -15,7 +16,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     async provideSignatureHelp(model: editor.ITextModel, position: IPosition, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
         const positionOffset = getEditedPositionOffset(model, position)
         const moduleModel = model as ModuleModel
-        const symbol = moduleModel.getEditingMethod(position)
+        const symbol = moduleModel.getEditingMethod(positionOffset)
 
         let args = symbol?.arguments as BaseExpressionSymbol[]
 
@@ -126,6 +127,8 @@ function setActiveParameter(signature: languages.SignatureHelp, args: BaseSymbol
     if (!args) {
         return
     }
+    const methodOffset = getParentMethodDefinition(args[0])?.position.startOffset ?? 0
+    position -= methodOffset
 
     for (let index = args.length - 1; index >= 0; index--) {
         const arg = args[index];

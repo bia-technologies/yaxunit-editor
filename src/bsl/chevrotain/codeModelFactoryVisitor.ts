@@ -11,6 +11,7 @@ import {
     ConstSymbol,
     ContinueStatementSymbol,
     ElseBranchSymbol,
+    EmptySymbol,
     ExecuteStatementSymbol,
     ForEachStatementSymbol,
     ForStatementSymbol,
@@ -74,8 +75,8 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         if (!nodes) {
             return []
         }
-        const node = Array.isArray(nodes) ? nodes[0] : nodes
-        const result = this.arguments((node as CstNode).children)
+        const node = (Array.isArray(nodes) ? nodes[0] : nodes) as CstNode
+        const result = this.arguments(node.children, node.location as CstNodeLocation)
         return result ?? []
     }
 
@@ -95,7 +96,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     function(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         const name = firstTokenText(ctx.name)
         const symbol = new FunctionDefinitionSymbol(nodePosition(location), name)
-        
+
         symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]
@@ -416,14 +417,44 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         return symbol
     }
 
-    arguments(ctx: CstChildrenDictionary) {
-        if (ctx.argument) {
+    arguments(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        if (!ctx.argument && !ctx.Comma) {
+            return []
+        }
+
+        if (!ctx.Comma) {
             const args = this.visitAll(ctx.argument)
             if (args.length > 1 || args[0]) {
                 return args
+            } else {
+                return []
             }
         }
-        return undefined
+
+        const args: BaseSymbol[] = []
+        const commas = ctx.Comma
+        let leftPosition = location.startOffset + 1 // TODO use LPAREN
+
+        commas.forEach((comma, idx) => {
+            let arg = this.visit(ctx.argument[idx] as CstNode)
+            const commaPosition = (comma as IToken).startOffset
+            if (!arg) {
+                arg = new EmptySymbol({ startOffset: leftPosition, endOffset: commaPosition })
+            } else {
+                arg.position.startOffset = leftPosition
+            }
+            leftPosition = commaPosition + 1
+            args.push(arg)
+        })
+        let arg = this.visit(ctx.argument[commas.length] as CstNode)
+        if (!arg) {
+            arg = new EmptySymbol({ startOffset: leftPosition, endOffset: (location.endOffset ?? 0) + 1 })
+        } else {
+            arg.position.startOffset = leftPosition
+        }
+        args.push(arg)
+
+        return args
     }
 
     argument(ctx: CstChildrenDictionary) {
