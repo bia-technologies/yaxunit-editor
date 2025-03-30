@@ -24,8 +24,6 @@ import {
     WhileStatementSymbol,
     ForStatementSymbol,
     ForEachStatementSymbol,
-    ContinueStatementSymbol,
-    BreakStatementSymbol,
     GotoStatementSymbol,
     LabelStatementSymbol,
     AddHandlerStatementSymbol,
@@ -34,10 +32,11 @@ import {
     TryStatementSymbol,
     RiseErrorStatementSymbol,
     VariableDefinitionSymbol,
-    acceptItems,
-    CodeModelVisitor
+    CodeModelVisitor,
+    isAcceptable,
+    Acceptable
 } from "../src/bsl/codeModel";
-import { BaseSymbol, isCompositeSymbol } from "../src/common/codeModel";
+import { BaseSymbol } from "../src/common/codeModel";
 
 export class ModelView {
     domId: string
@@ -55,36 +54,6 @@ export class ModelView {
         selector = this.selector
         visitor.visitModel(model).forEach(div => treeContainer.appendChild(div))
     }
-    cstToHtml(symbols: (BaseSymbol | undefined)[], parent: HTMLElement, level = 0) {
-        const selector = this.selector
-        for (const symbol of symbols) {
-            const div = document.createElement('div');
-            div.className = 'node';
-
-            parent.appendChild(div)
-            let typeSpan
-            if (symbol && isCompositeSymbol(symbol)) { // Нетерминал
-                typeSpan = document.createElement('span');
-                typeSpan.className = 'type';
-                typeSpan.textContent = `${symbol.constructor.name}: ${symbol}`;
-                div.appendChild(typeSpan);
-
-                this.cstToHtml(symbol.getChildrenSymbols(), div, level + 1)
-
-            } else if (symbol) { // Токен
-                typeSpan = document.createElement('span');
-                typeSpan.className = 'token';
-                typeSpan.textContent = `${symbol.constructor.name}: ${symbol}`;
-                div.appendChild(typeSpan);
-            } else {
-                typeSpan = document.createElement('span');
-                typeSpan.className = 'error';
-                typeSpan.textContent = `${symbol}`;
-                div.appendChild(typeSpan);
-            }
-
-        }
-    }
 }
 
 let selector: (symbol: BaseSymbol) => void
@@ -96,37 +65,37 @@ const visitor: CodeModelVisitor = {
 
     // definitions
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
-        return compositeSymbolContainer(symbol, 'ProcedureDefinitionSymbol', symbol.name, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Procedure', symbol.name, symbol.getChildrenSymbols())
     },
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol) {
-        return compositeSymbolContainer(symbol, 'ProcedureDefinitionSymbol', symbol.name, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Function', symbol.name, symbol.getChildrenSymbols())
     },
     visitParameterDefinition(symbol: ParameterDefinitionSymbol) {
-        return baseSymbolContainer(symbol, 'ParameterDefinitionSymbol', `${symbol.name}; byVal: ${symbol.byVal}; default: ${symbol.default};`)
+        return baseSymbolContainer(symbol, 'Parameter', `${symbol.name}; byVal: ${symbol.byVal}; default: ${symbol.default};`)
     },
     visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol) {
-        return baseSymbolContainer(symbol, 'ModuleVariableDefinitionSymbol', symbol.name)
+        return baseSymbolContainer(symbol, 'ModuleVariable', symbol.name)
     },
 
     // #region statements
     visitVariableDefinition(symbol: VariableDefinitionSymbol) {
-        return compositeSymbolContainer(symbol, 'VariableDefinitionSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'VariableDefinition', undefined, symbol.getChildrenSymbols())
     },
     visitAssignmentStatement(symbol: AssignmentStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'AssignmentStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Assignment', undefined, symbol.getChildrenSymbols())
     },
     visitReturnStatement(symbol: ReturnStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'ReturnStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Return', undefined, symbol.getChildrenSymbols())
     },
 
     visitExecuteStatement(symbol: ExecuteStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'ExecuteStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Execute', undefined, symbol.getChildrenSymbols())
     },
     visitTryStatement(symbol: TryStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'TryStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Try', undefined, symbol.getChildrenSymbols())
     },
     visitRiseErrorStatement(symbol: RiseErrorStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'RiseErrorStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'RiseError', undefined, symbol.getChildrenSymbols())
     },
 
     visitIfStatement(symbol: IfStatementSymbol) {
@@ -149,10 +118,10 @@ const visitor: CodeModelVisitor = {
         return compositeSymbolContainer(symbol, 'ForEachStatementSymbol', undefined, symbol.getChildrenSymbols())
     },
 
-    visitContinueStatement() {
+    visitContinueStatement(symbol) {
         return baseSymbolContainer(symbol, 'ContinueStatementSymbol')
     },
-    visitBreakStatement() {
+    visitBreakStatement(symbol) {
         return baseSymbolContainer(symbol, 'BreakStatementSymbol')
     },
 
@@ -179,13 +148,13 @@ const visitor: CodeModelVisitor = {
         return baseSymbolContainer(symbol, 'PropertySymbol', symbol.name)
     },
     visitIndexAccessSymbol(symbol: IndexAccessSymbol) {
-        return baseSymbolContainer(symbol, 'IndexAccessSymbol', symbol.index)
+        return baseSymbolContainer(symbol, 'IndexAccessSymbol', `${symbol.index}`)
     },
     visitMethodCallSymbol(symbol: MethodCallSymbol) {
         return compositeSymbolContainer(symbol, 'MethodCallSymbol', symbol.name, symbol.arguments ?? [])
     },
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
-        return compositeSymbolContainer(symbol, 'AccessSequenceSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'AccessSequence', undefined, symbol.getChildrenSymbols())
     },
 
     // expression
@@ -228,12 +197,23 @@ function baseSymbolContainer(symbol: BaseSymbol, type: string, value?: string) {
     return div
 }
 
+function errorContainer(type: string, value?: string) {
+    const div = document.createElement('div')
+    div.className = 'node'
+    const typeSpan = document.createElement('span')
+    typeSpan.className = 'error'
+    typeSpan.textContent = `${type}: ${value ?? ''}`
+    div.appendChild(typeSpan);
+
+    return div
+}
+
 function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: string, symbols?: BaseSymbol[]) {
     const div = document.createElement('div')
     div.className = 'node'
     const typeSpan = document.createElement('span')
     typeSpan.className = 'type'
-    typeSpan.textContent = `${type}: ${value}`
+    typeSpan.textContent = `${type}: ${value ?? ''}`
     div.appendChild(typeSpan);
     if (symbols) {
         const elements = acceptItems(symbols, visitor)
@@ -247,4 +227,19 @@ function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: stri
         })
     }
     return div
+}
+
+function acceptItems(items: (BaseSymbol | undefined)[] | undefined, visitor: CodeModelVisitor) {
+    if (!items) return []
+
+    return items
+        .map((item: any) => {
+            if (!item) {
+                return errorContainer('undefined node')
+            } else if (isAcceptable(item)) {
+                return (<Acceptable>item).accept(visitor)
+            } else {
+                return errorContainer('unsupported', typeof (item))
+            }
+        })
 }

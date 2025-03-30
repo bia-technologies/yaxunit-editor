@@ -156,7 +156,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     riseErrorStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const error = this.visitFirst(ctx.error)
+        const error = this.visitFirst(ctx.expression)
         const args = this.getArguments(ctx.arguments)
 
         return new RiseErrorStatementSymbol(nodePosition(location), error as BaseExpressionSymbol, args)

@@ -5,6 +5,7 @@
 
 .model-tree {
   background-color: #252526;
+  font-family: "Droid Sans Mono", "monospace", monospace;
   padding: 15px;
   width: 100%;
   height: 95vh;
@@ -43,14 +44,12 @@
 
 .type {
   color: #4ec9b0;
-  font-family: "Consolas";
   font-size: 0.95em;
   cursor: pointer;
 }
 
 .token {
   color: #dcdcaa;
-  font-family: "Consolas";
   font-size: 0.9em;
   cursor: pointer;
 }

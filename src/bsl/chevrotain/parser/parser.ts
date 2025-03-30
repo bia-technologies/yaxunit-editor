@@ -87,7 +87,7 @@ export class BSLParser extends CstParser {
     }
 
     public parseChanges(rule: string, startOffset: number, endOffset: number) {
-        let { startIndex, endIndex } = findTokens(this.moduleTokens, startOffset, endOffset)
+        let { startIndex, endIndex } = findTokens(this.moduleTokens, startOffset, endOffset, false)
         this.input = this.moduleTokens.slice(startIndex, endIndex + 1)
         const ruleMethod = (this as any)[rule] as (() => CstNode)
         const result = ruleMethod.bind(this)()
@@ -462,7 +462,7 @@ export class BSLParser extends CstParser {
     }
 }
 
-function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
+function findTokens(tokens: IToken[], startOffset: number, endOffset: number, greedy = true) {
     let startIndex = -1, endIndex = -1
     let includeStart = false, includeEnd = false
 
@@ -474,11 +474,13 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     while (lo <= hi) {
         mid = Math.floor((lo + hi) / 2)
         token = tokens[mid]
-        if (token.startOffset > startOffset)
+        if (token.startOffset > startOffset) {
             hi = mid - 1
-        else if (token.endOffset as number + 1 < startOffset)
+        } else if (greedy && token.endOffset as number + 1 < startOffset) {
             lo = mid + 1
-        else {
+        } else if (!greedy && token.endOffset as number + 1 <= startOffset) {
+            lo = mid + 1
+        } else {
             startIndex = mid
             includeStart = true
             break
@@ -486,7 +488,17 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     }
 
     if (startIndex === -1) {
-        startIndex = mid - 1
+        if (!token) {
+            startIndex = mid - 1
+        // } else if (token.startOffset > startOffset) {
+        //     startIndex = mid
+        } else if (greedy && token.endOffset as number + 1 < startOffset) {
+            startIndex = mid + 1
+        } else if (!greedy && token.endOffset as number + 1 <= startOffset) {
+            startIndex = mid + 1
+        } else {
+            startIndex = mid
+        }
     }
 
     if (startOffset === endOffset) {
