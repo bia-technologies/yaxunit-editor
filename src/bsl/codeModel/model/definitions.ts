@@ -25,7 +25,7 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
     vars: BslVariable[] = []
     children: BaseSymbol[] = []
     member?: Member
-    description?:string
+    description?: string
 
     constructor(position: SymbolPosition, name?: string) {
         super(position)
@@ -94,8 +94,12 @@ export class ModuleVariableDefinitionSymbol extends VariableSymbol implements Mo
     }
 }
 
-export class VariableDefinitionSymbol extends BaseSymbol implements Acceptable {
+export class VariableDefinitionSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
     vars: VariableSymbol[] = []
+
+    getChildrenSymbols(): BaseSymbol[] {
+        return this.vars
+    }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitVariableDefinition(this)

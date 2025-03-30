@@ -1,5 +1,5 @@
 import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
-import { BaseSymbol, Method } from "@/common/codeModel"
+import { BaseSymbol } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
 import { IPosition } from 'monaco-editor-core'
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'

@@ -46,7 +46,7 @@ const keywords_snippets: languages.CompletionItem[] = [
     label: keyword,
     kind: languages.CompletionItemKind.Keyword,
     insertText: keyword,
-    EMPTY_RANGE
+    range: EMPTY_RANGE
 }))
 
 export function registerSnippets(suggestions: Promise<languages.CompletionItem[]>) {
