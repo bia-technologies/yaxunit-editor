@@ -24,8 +24,8 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
     params: ParameterDefinitionSymbol[] = []
     vars: BslVariable[] = []
     children: BaseSymbol[] = []
-    description?: string
     member?: Member
+    description?:string
 
     constructor(position: SymbolPosition, name?: string) {
         super(position)
@@ -62,14 +62,24 @@ export class ProcedureDefinitionSymbol extends MethodDefinition implements Metho
     get isProc() { return true }
     get kind() { return MemberType.procedure }
 
+    constructor(position: SymbolPosition, name: string) {
+        super(position, name)
+        this.description = `Локальная процедура \`${this.name}\``
+    }
+
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitProcedureDefinition(this)
     }
 }
 
-export class FunctionDefinitionSymbol extends MethodDefinition implements Method, Acceptable {
+export class FunctionDefinitionSymbol extends MethodDefinition implements Method, Acceptable, Member {
     get isProc() { return false }
     get kind() { return MemberType.function }
+
+    constructor(position: SymbolPosition, name: string) {
+        super(position, name)
+        this.description = `Локальная функция \`${this.name}\``
+    }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitFunctionDefinition(this)

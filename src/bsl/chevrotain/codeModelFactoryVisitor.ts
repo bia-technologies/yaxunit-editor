@@ -81,8 +81,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     // #region module definitions
     procedure(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const symbol = new ProcedureDefinitionSymbol(nodePosition(location))
-        symbol.name = firstTokenText(ctx.name)
+        const name = firstTokenText(ctx.name)
+        const symbol = new ProcedureDefinitionSymbol(nodePosition(location), name)
+
         symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]
@@ -92,8 +93,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     function(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const symbol = new FunctionDefinitionSymbol(nodePosition(location))
-        symbol.name = firstTokenText(ctx.name)
+        const name = firstTokenText(ctx.name)
+        const symbol = new FunctionDefinitionSymbol(nodePosition(location), name)
+        
         symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]

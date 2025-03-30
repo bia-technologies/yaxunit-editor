@@ -17,7 +17,7 @@ import { ModelCalculator } from "./calculator";
 import { VariablesScope } from "../model/interfaces";
 
 export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCalculator {
-    variablesMap: CaseInsensitiveMap<BslVariable> = new CaseInsensitiveMap()
+    calculatorVariables: CaseInsensitiveMap<BslVariable> = new CaseInsensitiveMap()
     varScope: VariablesScope | undefined
 
     calculate(model: VariablesScope) {
@@ -84,7 +84,7 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
     // #endregion
 
     visitVariableSymbol(symbol: VariableSymbol) {
-        symbol.member = this.variablesMap.get(symbol.name)
+        symbol.member = this.calculatorVariables.get(symbol.name)
     }
 
     visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol): void {
@@ -93,29 +93,31 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
 
     private setVarScope(varScope: VariablesScope) {
         this.varScope = varScope
-        this.variablesMap.clear()
+        this.calculatorVariables.clear()
     }
 
     private clearOldVars(varScope: VariablesScope) {
         for (let index = varScope.vars.length - 1; index >= 0; index--) {
             const variable = varScope.vars[index];
-            if (!this.variablesMap.has(variable.name)) {
+            if (!this.calculatorVariables.has(variable.name)) {
                 varScope.vars.splice(index, 1)
             }
         }
-        this.variablesMap.clear()
+        this.calculatorVariables.clear()
     }
 
     private handleVar(symbol: VariableSymbol | ParameterDefinitionSymbol) {
-        let variable = this.variablesMap.get(symbol.name)
+        let variable = this.calculatorVariables.get(symbol.name)
 
         if (!variable && this.varScope && (variable = findInScope(this.varScope, symbol.name))) {
-            this.variablesMap.set(variable.name, variable)
+            this.calculatorVariables.set(variable.name, variable)
+            variable.definitions.length = 0 // Clear definitions
         }
         if (!variable && this.varScope) {
             variable = this.createVariable(symbol)
+            
             this.varScope.vars.push(variable)
-            this.variablesMap.set(variable.name, variable)
+            this.calculatorVariables.set(variable.name, variable)
         }
         if (variable) {
             variable.definitions.push(symbol)
