@@ -419,7 +419,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     arguments(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         if (!ctx.argument && !ctx.Comma) {
-            return undefined
+            return []
         }
 
         if (!ctx.Comma) {
@@ -427,7 +427,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
             if (args.length > 1 || args[0]) {
                 return args
             } else {
-                return undefined
+                return []
             }
         }
 

@@ -434,6 +434,7 @@ export class BSLParser extends CstParser {
         })
         this.CONSUME(tokens.RParen)
     })
+
     private argument = this.RULE('argument', () => this.OPTION(
         () => this.SUBRULE(this.expression)
     ))

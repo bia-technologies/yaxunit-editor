@@ -185,7 +185,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     async visitMethodCallSymbol(symbol: MethodCallSymbol) {
         if (!symbol.member) {
-            symbol.member = (this.localScope??GlobalScope).findMember(symbol.name)
+            symbol.member = this.fullScope.findMember(symbol.name)
             if (symbol.member?.type) {
                 symbol.type = await symbol.member.type
             }

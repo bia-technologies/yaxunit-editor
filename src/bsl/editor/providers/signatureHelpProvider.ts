@@ -16,7 +16,7 @@ const signatureHelpProvider: languages.SignatureHelpProvider = {
     async provideSignatureHelp(model: editor.ITextModel, position: IPosition, _: CancellationToken, context: languages.SignatureHelpContext): Promise<languages.SignatureHelpResult | undefined> {
         const positionOffset = getEditedPositionOffset(model, position)
         const moduleModel = model as ModuleModel
-        const symbol = moduleModel.getEditingMethod(position)
+        const symbol = moduleModel.getEditingMethod(positionOffset)
 
         let args = symbol?.arguments as BaseExpressionSymbol[]
 
