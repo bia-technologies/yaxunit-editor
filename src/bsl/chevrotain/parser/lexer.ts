@@ -1,6 +1,6 @@
 import { ILexingError, ILexingResult, IToken, Lexer } from "chevrotain"
 import { allTokens } from "./tokens"
-import { IModelContentChange } from "./incrementalBslParser"
+import { IModelContentChange } from "./parser"
 
 export class IncrementLexer extends Lexer {
     moduleTokens: IToken[] = []
@@ -78,12 +78,27 @@ export class IncrementLexer extends Lexer {
     }
 }
 
+/**
+ * Finds the token boundaries overlapping a specified range.
+ *
+ * This function searches a sorted list of tokens to determine the indices corresponding to the boundary
+ * tokens that intersect or are adjacent to the given start and end offsets. It also specifies whether the
+ * tokens at these boundaries should be included.
+ *
+ * @param tokens - The array of tokens, each having numeric start and end offsets.
+ * @param startOffset - The starting offset of the target range.
+ * @param endOffset - The ending offset of the target range.
+ * @returns An object containing:
+ *   - startIndex: The index of the token at or near the start offset.
+ *   - endIndex: The index of the token at or near the end offset.
+ *   - includeStart: True if the token at startIndex should be included.
+ *   - includeEnd: True if the token at endIndex should be included.
+ */
 function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     let startIndex = -1, endIndex = -1
     let includeStart = false, includeEnd = false
 
-    const lastTokenIndex = tokens.length - 1
-    let lo = 0, hi = lastTokenIndex, mid = 0, token
+    let lo = 0, hi = tokens.length - 1, mid = 0, token
 
     if (tokens[hi].endOffset as number + 1 < startOffset) {
         return { startIndex: hi, endIndex: hi, includeStart, includeEnd: true }
@@ -112,16 +127,14 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
             includeStart = includeSymbol(tokens[startIndex], startIndex)
         }
     } else if ((token.endOffset as number + 1) < startOffset) {
-        if (startIndex < lastTokenIndex) {
-            startIndex++
-            includeStart = includeSymbol(tokens[startIndex], startIndex)
-            if (!includeStart) startIndex--
-        }
+        startIndex++
+        includeStart = includeSymbol(tokens[startIndex], startIndex)
+        if (!includeStart) startIndex--
     } else {
         includeStart = true
     }
 
-    hi = lastTokenIndex
+    hi = tokens.length - 1
     while (lo <= hi) {
         mid = Math.floor((lo + hi) / 2)
         token = tokens[mid]
@@ -145,21 +158,24 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
             includeEnd = includeSymbol(tokens[endIndex], endOffset)
         }
     } else if ((token.endOffset as number + 1) < endOffset) {
-        if (endIndex < lastTokenIndex) {
-            endIndex++
-            includeEnd = includeSymbol(tokens[endIndex], endOffset)
-        }
+        endIndex++
+        includeEnd = includeSymbol(tokens[endIndex], endOffset)
     } else {
         includeEnd = true
     }
 
-    if (startIndex === endIndex && !includeStart && !includeEnd) {
-        token = tokens[endIndex]
-        includeStart = token.startOffset > startOffset && (token.endOffset as number + 1) < endOffset
-    }
     return { startIndex, endIndex, includeStart, includeEnd }
 }
 
+/**
+ * Checks if the provided token encompasses the specified offset.
+ *
+ * A token is considered to encompass the offset if the token's start offset is less than or equal to the offset and the token's end offset (plus one) is greater than or equal to the offset.
+ *
+ * @param token - The token with defined start and end offsets.
+ * @param offset - The offset to verify against the token's boundaries.
+ * @returns True if the token fully encompasses the offset; otherwise, false.
+ */
 function includeSymbol(token: IToken, offset: number) {
     return token.startOffset >= offset && token.endOffset as number + 1 <= offset
 }

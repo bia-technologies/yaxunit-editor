@@ -3,9 +3,11 @@ import { ModuleModel } from "../moduleModel"
 import { IModelContentChange, IncrementalBslParser } from "./parser"
 import {
     BslCodeModel,
+    FunctionDefinitionSymbol,
     isAcceptable,
     isMethodDefinition,
-    MethodDefinition
+    MethodDefinition,
+    ProcedureDefinitionSymbol,
 } from "../codeModel"
 import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
 import { editor, MarkerSeverity } from "monaco-editor-core"
@@ -65,27 +67,26 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         const ranges = this.parser.updateTokens(changes)
 
         for (const range of ranges) {
-            let rangeSymbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
-            if (!rangeSymbol) {
-                return false
+            let symbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
+            let rule
+            while (symbol && (rule = getSymbolRule(symbol)) === undefined) {
+                symbol = symbol?.parent
             }
-            let { symbol, newSymbol } = this.updateSymbol(rangeSymbol, range.diff)
-            if (!symbol || !newSymbol) {
-                throw 'Unexpected update symbol error'
-            }
-            if (Array.isArray(newSymbol) && newSymbol.length === 1) {
-                newSymbol = newSymbol[0]
-            }
-            const changedItem = replaceNode(codeModel, symbol, newSymbol)
-            if (!changedItem) {
-                throw 'New node not inserted'
-            }
-            const method = Array.isArray(newSymbol) ? moveMethodsChildren(newSymbol, range.diff) : moveMethodChildren(newSymbol, range.diff)
-            moveLowerMethods(codeModel, method, range.diff)
-            codeModel.afterUpdate(changedItem)
-            console.debug('update ', symbol, 'to', newSymbol)
-
             if (symbol) {
+                const position = getSymbolPosition(symbol)
+                const newNode = this.parser.parseChanges(rule as string, position.startOffset, position.endOffset + range.diff)
+                const newSymbol = this.visitor.visit(newNode) as BaseSymbol
+                if (!newSymbol) {
+                    throw 'Не удалось проанализировать новый символ'
+                }
+                const changedItem = replaceNode(codeModel, symbol, newSymbol)
+                if (!changedItem) {
+                    throw 'New node not inserted'
+                }
+                const method = moveMethodChildren(newSymbol, range.diff)
+                moveLowerMethods(codeModel, method, range.diff)
+                codeModel.afterUpdate(changedItem)
+                console.debug('update ', symbol, 'to', newSymbol)
             } else {
                 return false
             }
@@ -93,35 +94,9 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         console.log('Increment update changes', changes, performance.now() - start, 'ms')
         return true
     }
-
-    private updateSymbol(symbol: BaseSymbol | undefined, diff: number): {
-        symbol: BaseSymbol | undefined, newSymbol: BaseSymbol | BaseSymbol[] | undefined
-    } {
-        let rule
-        while (symbol && (rule = getSymbolRule(symbol)) === undefined) {
-            symbol = symbol?.parent
-        }
-        let firstParse = true
-        while (symbol) {
-            const position = getSymbolPosition(symbol)
-            const { cst: newNode, parseErrors } = this.parser.parseChanges(rule as string, position.startOffset, position.endOffset + diff)
-            if (parseErrors.length && firstParse && symbol.parent) {
-                firstParse = false
-                symbol = symbol.parent
-                rule = symbol ? getSymbolRule(symbol) : undefined
-                continue
-            }
-            const newSymbol = this.visitor.visit(newNode) as BaseSymbol
-            if (!newSymbol) {
-                throw 'Не удалось проанализировать новый символ'
-            }
-            return { symbol, newSymbol }
-        }
-        return { symbol, newSymbol: undefined }
-    }
 }
 
-function moveLowerMethods(codeModel: BslCodeModel, method: MethodDefinition | undefined, diff: number) {
+function moveLowerMethods(codeModel: BslCodeModel, method: ProcedureDefinitionSymbol | FunctionDefinitionSymbol | undefined, diff: number) {
     if (!method) {
         return
     }
@@ -143,44 +118,11 @@ function getSymbolPosition(symbol: BaseSymbol): SymbolPosition {
     } : symbol.position
 }
 
-function moveMethodsChildren(symbols: BaseSymbol[], diff: number) {
-    let lastMethod: MethodDefinition | undefined
-    const order = []
-    const lastSymbol = new Map<MethodDefinition, BaseSymbol>()
-    for (const symbol of symbols) {
-        if (isMethodDefinition(symbol)) {
-            updateMethodChildrenOffset(symbol)
-            lastSymbol.set(symbol, symbol)
-        } else {
-            const method = getParentMethodDefinition(symbol)
-            if (!method) { continue }
-
-            updateOffset([symbol], -method.startOffset)
-            if (lastSymbol.has(method)) {
-                lastSymbol.set(method, symbol)
-            } else {
-                lastSymbol.set(method, symbol)
-                order.push(method)
-            }
-        }
-    }
-
-    for (const method of order) {
-        const symbol = lastSymbol.get(method) as BaseSymbol
-        if (symbol !== method) {
-            moveRightChildren(symbol, method, diff)
-        }
-        lastMethod = method
-    }
-    return lastMethod
-}
-
 function moveMethodChildren(symbol: BaseSymbol, diff: number) {
     if (isMethodDefinition(symbol)) {
         updateMethodChildrenOffset(symbol)
         return symbol
     }
-
     let method = getParentMethodDefinition(symbol)
     if (method) {
         updateOffset([symbol], -method.startOffset)
@@ -207,47 +149,56 @@ function updateMethodChildrenOffset(method: MethodDefinition) {
     updateOffset(method.children, -method.position.startOffset)
 }
 
-function replaceNode(model: BslCodeModel, oldSymbol: BaseSymbol, newSymbol: BaseSymbol | BaseSymbol[]) {
+/**
+ * Replaces an existing symbol in the code model with a provided new symbol.
+ *
+ * If the old symbol has no parent, it is assumed to be a top-level entry in the model and is replaced
+ * directly within the model's children. Otherwise, the function locates the existing symbol within its
+ * parent's properties or arrays and substitutes it with the new symbol, updating the new symbol's parent
+ * reference accordingly.
+ *
+ * @param model - The code model containing the symbol to replace.
+ * @param oldSymbol - The symbol to be replaced.
+ * @param newSymbol - The replacement symbol.
+ *
+ * @returns The parent object in which the replacement occurred, or the new symbol from the top-level
+ *          model children if the old symbol had no parent.
+ */
+function replaceNode(model: BslCodeModel, oldSymbol: BaseSymbol, newSymbol: BaseSymbol) {
     if (!oldSymbol.parent) { // model children
         const index = model.children.indexOf(oldSymbol)
-        replace(model.children, index, newSymbol)
-
-        return Array.isArray(newSymbol) ? newSymbol : [newSymbol]
+        model.children[index] = newSymbol
+        return model.children[index]
     } else {
         const parent: any = oldSymbol.parent
-        for (const key in parent) {
+        for (const key in oldSymbol.parent) {
             const value = parent[key]
             if (value === oldSymbol) {
-                if (Array.isArray(newSymbol)) {
-                    throw 'Array symbols not supported for ' + key
-                }
                 parent[key] = newSymbol
-                break
+                newSymbol.parent = parent
+                return parent
             } else if (Array.isArray(value)) {
                 const index = value.indexOf(oldSymbol)
                 if (index !== -1) {
-                    replace(value, index, newSymbol)
-                    break
+                    value[index] = newSymbol
+                    newSymbol.parent = parent
+                    return parent
                 }
             }
         }
-        if (Array.isArray(newSymbol)) {
-            newSymbol.forEach(item => item.parent = parent)
-        } else {
-            newSymbol.parent = parent
-        }
-        return [parent]
     }
 }
 
-function replace(items: BaseSymbol[], position: number, item: any | []) {
-    if (Array.isArray(item)) {
-        items.splice(position, 1, ...item)
-    } else {
-        items[position] = item
-    }
-}
-
+/**
+ * Determines whether any of the provided changes fully replaces the entire code model.
+ *
+ * The function calculates the overall range of the code model using the start offset of its first child
+ * and the end offset of its last child. It returns true if any change in the array covers this complete range.
+ *
+ * @param codeModel - The code model whose complete range is checked.
+ * @param changes - An array of content changes, each specifying an offset and length.
+ * @returns True if a change replaces the entire code model; otherwise, false.
+ */
 function isReplace(codeModel: BslCodeModel, changes: IModelContentChange[]) {
     const first = codeModel.children[0].startOffset
     const last = codeModel.children[codeModel.children.length - 1].endOffset
@@ -276,6 +227,7 @@ function convertErrorsToMarkers(errors: ErrorInfo[], model: editor.ITextModel): 
             endLineNumber: endPosition.lineNumber,
             endColumn: endPosition.column,
             source: 'chevrotain'
+
         }
     })
 }

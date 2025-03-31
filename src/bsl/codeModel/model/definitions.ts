@@ -14,6 +14,15 @@ import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
 import { BslVariable } from "./members";
 
+/**
+ * Determines whether the provided symbol is a method definition.
+ *
+ * This function checks if the symbol is an instance of either {@link ProcedureDefinitionSymbol} or
+ * {@link FunctionDefinitionSymbol}, and serves as a type guard to confirm the symbol as a method definition.
+ *
+ * @param symbol - The symbol to test.
+ * @returns True if the symbol is a method definition; otherwise, false.
+ */
 export function isMethodDefinition(symbol: any): symbol is ProcedureDefinitionSymbol | FunctionDefinitionSymbol {
     return symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol
 }

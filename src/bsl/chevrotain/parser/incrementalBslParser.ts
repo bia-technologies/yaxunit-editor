@@ -31,13 +31,28 @@ export class IncrementalBslParser extends BSLParser {
         this.input = this.lexer.moduleTokens.slice(startIndex, endIndex + 1)
         const ruleMethod = (this as any)[rule] as (() => CstNode)
         const result = ruleMethod.bind(this)()
-        return {
-            cst: result,
-            parseErrors: this.errors,
-        };
+        return result
     }
 }
 
+/**
+ * Locates the tokens that encompass a given offset range.
+ *
+ * This function performs binary searches on a sorted array of tokens to determine
+ * the token index for the startOffset and, if different, the token index for the endOffset.
+ * It returns the indices along with flags indicating whether the tokens at those indices
+ * exactly include the specified offsets. If startOffset equals endOffset, both indices and
+ * inclusion flags will be the same.
+ *
+ * @param tokens - Sorted array of tokens, each with defined startOffset and endOffset.
+ * @param startOffset - The starting offset of the range to locate.
+ * @param endOffset - The ending offset of the range to locate.
+ * @returns An object containing:
+ *   - startIndex: The index of the token overlapping or adjacent to startOffset.
+ *   - endIndex: The index of the token overlapping or adjacent to endOffset.
+ *   - includeStart: Indicates if the token at startIndex exactly covers startOffset.
+ *   - includeEnd: Indicates if the token at endIndex exactly covers endOffset.
+ */
 function findSymbolTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     let startIndex = -1, endIndex = -1
     let includeStart = false, includeEnd = false
@@ -97,7 +112,16 @@ function findSymbolTokens(tokens: IToken[], startOffset: number, endOffset: numb
 }
 
 export interface IModelContentChange {
+    /**
+     * The offset of the range that got replaced.
+     */
     readonly rangeOffset: number;
+    /**
+     * The length of the range that got replaced.
+     */
     readonly rangeLength: number;
+    /**
+     * The new text for the range.
+     */
     readonly text: string;
 }
