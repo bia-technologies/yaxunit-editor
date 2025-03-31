@@ -164,6 +164,32 @@ describe('Increment lexer. Basic', () => {
             { image: '1', startOffset: 0 },
         ])
     })
+    
+    test('replace word 1', () => {
+        lexer.tokenize("0  3  6  9  2  5")
+        lexer.updateTokens([{ rangeOffset: 8, rangeLength: 3, text: ' 9 ' }])
+        expect(lexer.moduleTokens).toMatchObject([
+            { image: '0', startOffset: 0 },
+            { image: '3', startOffset: 3 },
+            { image: '6', startOffset: 6 },
+            { image: '9', startOffset: 9 },
+            { image: '2', startOffset: 12 },
+            { image: '5', startOffset: 15 },
+        ])
+    })
+
+    test('replace word 2', () => {
+        lexer.tokenize("0  3  6  9  2  5")
+        lexer.updateTokens([{ rangeOffset: 5, rangeLength: 3, text: ' 6 ' }])
+        expect(lexer.moduleTokens).toMatchObject([
+            { image: '0', startOffset: 0 },
+            { image: '3', startOffset: 3 },
+            { image: '6', startOffset: 6 },
+            { image: '9', startOffset: 9 },
+            { image: '2', startOffset: 12 },
+            { image: '5', startOffset: 15 },
+        ])
+    })
 })
 
 describe('Increment lexer. Cases', () => {

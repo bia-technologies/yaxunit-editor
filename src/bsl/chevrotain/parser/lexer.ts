@@ -189,6 +189,7 @@ function getLastTokenIndex(tokens: IToken[], endOffset: number) {
         if (endIndex < lastTokenIndex) {
             endIndex++
             includeEnd = includeSymbol(tokens[endIndex], endOffset)
+            if (!includeEnd) endIndex--
         }
     } else {
         includeEnd = true
