@@ -324,22 +324,28 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     literal(ctx: CstChildrenDictionary) {
         const token = BslVisitor.firstToken(ctx)
-        if (ctx.Number) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.number)
-        } else if (ctx.Date) {
-            return new ConstSymbol(tokenPosition(token), trimChar(token.image, "'").replace(/\D/g, ''), BaseTypes.date)
-        } else if (ctx.Undefined) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.undefined)
-        } else if (ctx.String) {
-            return new ConstSymbol(tokenPosition(token), trimChar(token.image, '"'), BaseTypes.string)
-        } else if (ctx.MultilineString) {
-            return new ConstSymbol(tokenPosition(token), multilineStringContent(token.image), BaseTypes.string)
-        } else if (ctx.Null) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.null)
-        } else if (ctx.True || ctx.False) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.boolean)
-        } else {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.unknown)
+        if (!token) {
+            return undefined
+        }
+        switch (token.tokenType.name) {
+            case 'Number':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.number)
+            case 'Date':
+                return new ConstSymbol(tokenPosition(token), trimChar(token.image, "'").replace(/\D/g, ''), BaseTypes.date)
+            case 'Undefined':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.undefined)
+            case 'String':
+            case 'UnclosingString':
+                return new ConstSymbol(tokenPosition(token), trimChar(token.image, '"'), BaseTypes.string)
+            case 'MultilineString':
+                return new ConstSymbol(tokenPosition(token), multilineStringContent(token.image), BaseTypes.string)
+            case 'Null':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.null)
+            case 'True':
+            case 'False':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.boolean)
+            default:
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.unknown)
         }
     }
 

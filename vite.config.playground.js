@@ -29,7 +29,7 @@ export default defineConfig(api => {
             },
         },
         server: {
-            open: '/demo.html',
+            open: '/playground.html',
         },
     }
 })

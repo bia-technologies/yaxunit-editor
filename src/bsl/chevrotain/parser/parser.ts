@@ -295,8 +295,7 @@ export class BSLParser extends CstParser {
         () => this.CONSUME(tokens.Date),
         () => this.CONSUME(keywords.True),
         () => this.CONSUME(keywords.False),
-        () => this.CONSUME(tokens.String),
-        () => this.CONSUME(tokens.MultilineString),
+        () => this.CONSUME(tokens.StringLiteral),
         () => this.CONSUME(keywords.Undefined),
         () => this.CONSUME(keywords.Null),
     ))

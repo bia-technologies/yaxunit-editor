@@ -71,7 +71,7 @@ const visitor: CodeModelVisitor = {
         return compositeSymbolContainer(symbol, 'Function', symbol.name, symbol.getChildrenSymbols())
     },
     visitParameterDefinition(symbol: ParameterDefinitionSymbol) {
-        return baseSymbolContainer(symbol, 'Parameter', `${symbol.name}; byVal: ${symbol.byVal}; default: ${symbol.default};`)
+        return baseSymbolContainer(symbol, 'Parameter', `${symbol.name}; byVal: ${symbol.byVal}` + (symbol.default ? `; default: ${symbol.default} (${symbol.defaultValue?.type});` : ''))
     },
     visitModuleVariableDefinition(symbol: ModuleVariableDefinitionSymbol) {
         return baseSymbolContainer(symbol, 'ModuleVariable', symbol.name)
@@ -99,59 +99,59 @@ const visitor: CodeModelVisitor = {
     },
 
     visitIfStatement(symbol: IfStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'IfStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'If', undefined, symbol.getChildrenSymbols())
     },
     visitIfBranch(symbol: IfBranchSymbol) {
-        return compositeSymbolContainer(symbol, 'IfBranchSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'If branch', undefined, symbol.getChildrenSymbols())
     },
     visitElseBranch(symbol: ElseBranchSymbol) {
-        return compositeSymbolContainer(symbol, 'ElseBranchSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Else branch', undefined, symbol.getChildrenSymbols())
     },
 
     visitWhileStatement(symbol: WhileStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'WhileStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'While', undefined, symbol.getChildrenSymbols())
     },
     visitForStatement(symbol: ForStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'ForStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'For', undefined, symbol.getChildrenSymbols())
     },
     visitForEachStatement(symbol: ForEachStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'ForEachStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'ForEach', undefined, symbol.getChildrenSymbols())
     },
 
     visitContinueStatement(symbol) {
-        return baseSymbolContainer(symbol, 'ContinueStatementSymbol')
+        return baseSymbolContainer(symbol, 'Continue')
     },
     visitBreakStatement(symbol) {
-        return baseSymbolContainer(symbol, 'BreakStatementSymbol')
+        return baseSymbolContainer(symbol, 'Break')
     },
 
     visitGotoStatement(symbol: GotoStatementSymbol) {
-        return baseSymbolContainer(symbol, 'GotoStatementSymbol', symbol.label)
+        return baseSymbolContainer(symbol, 'Goto', symbol.label)
     },
     visitLabelStatement(symbol: LabelStatementSymbol) {
-        return baseSymbolContainer(symbol, 'LabelStatementSymbol', symbol.label)
+        return baseSymbolContainer(symbol, 'Label', symbol.label)
     },
 
     visitAddHandlerStatement(symbol: AddHandlerStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'AddHandlerStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'AddHandler', undefined, symbol.getChildrenSymbols())
     },
     visitRemoveHandlerStatement(symbol: RemoveHandlerStatementSymbol) {
-        return compositeSymbolContainer(symbol, 'RemoveHandlerStatementSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'RemoveHandler', undefined, symbol.getChildrenSymbols())
     },
     // #endregion
 
     // base
     visitVariableSymbol(symbol: VariableSymbol) {
-        return baseSymbolContainer(symbol, 'VariableSymbol', symbol.name)
+        return baseSymbolContainer(symbol, 'Variable', symbol.name)
     },
     visitPropertySymbol(symbol: PropertySymbol) {
-        return baseSymbolContainer(symbol, 'PropertySymbol', symbol.name)
+        return baseSymbolContainer(symbol, 'Property', symbol.name)
     },
     visitIndexAccessSymbol(symbol: IndexAccessSymbol) {
-        return baseSymbolContainer(symbol, 'IndexAccessSymbol', `${symbol.index}`)
+        return baseSymbolContainer(symbol, 'Index', `${symbol.index}`)
     },
     visitMethodCallSymbol(symbol: MethodCallSymbol) {
-        return compositeSymbolContainer(symbol, 'MethodCallSymbol', symbol.name, symbol.arguments ?? [])
+        return compositeSymbolContainer(symbol, 'MethodCall', symbol.name, symbol.arguments ?? [])
     },
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
         return compositeSymbolContainer(symbol, 'AccessSequence', undefined, symbol.getChildrenSymbols())
@@ -159,19 +159,19 @@ const visitor: CodeModelVisitor = {
 
     // expression
     visitUnaryExpressionSymbol(symbol: UnaryExpressionSymbol) {
-        return compositeSymbolContainer(symbol, 'UnaryExpressionSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'UnaryExpression', undefined, symbol.getChildrenSymbols())
     },
     visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol) {
-        return compositeSymbolContainer(symbol, 'BinaryExpressionSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'BinaryExpression', undefined, symbol.getChildrenSymbols())
     },
     visitTernaryExpressionSymbol(symbol: TernaryExpressionSymbol) {
-        return compositeSymbolContainer(symbol, 'TernaryExpressionSymbol', undefined, symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'TernaryExpression', undefined, symbol.getChildrenSymbols())
     },
     visitConstructorSymbol(symbol: ConstructorSymbol) {
-        return compositeSymbolContainer(symbol, 'ConstructorSymbol', symbol.name.toString(), symbol.getChildrenSymbols())
+        return compositeSymbolContainer(symbol, 'Constructor', symbol.name.toString(), symbol.getChildrenSymbols())
     },
     visitConstSymbol(symbol: ConstSymbol) {
-        return baseSymbolContainer(symbol, 'ConstSymbol', `${symbol.value} (${symbol.type})`)
+        return baseSymbolContainer(symbol, 'Const', `${symbol.value} (${symbol.type})`)
     },
 
     // preprocessor

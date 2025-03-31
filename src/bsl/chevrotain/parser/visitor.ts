@@ -24,7 +24,8 @@ export class BslVisitor extends BaseVisitor {
     }
 
     static firstToken(ctx: CstChildrenDictionary) {
-        return (Object.values(ctx)[0][0] as IToken)
+        const values = Object.values(ctx)
+        return values.length ? (values[0][0] as IToken) : undefined
     }
 
     static firstNode(ctx: CstChildrenDictionary) {
