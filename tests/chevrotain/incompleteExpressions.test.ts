@@ -23,7 +23,7 @@ describe('MethodCall', () => {
             name: 'СтрНайти',
             arguments: [
                 { value: '123' },
-                undefined
+                {}
             ],
             position: {
                 startOffset: 2,

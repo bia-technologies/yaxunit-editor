@@ -14,7 +14,7 @@ import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
 import { BslVariable } from "./members";
 
-export function isMethodDefinition(symbol: any) {
+export function isMethodDefinition(symbol: any): symbol is ProcedureDefinitionSymbol | FunctionDefinitionSymbol {
     return symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol
 }
 

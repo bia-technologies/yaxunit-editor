@@ -256,7 +256,7 @@ describe('MethodCallSymbol', () => {
 
         expect(model.children[0]).toBeInstanceOf(MethodCallSymbol)
         expect(model.children[0]).toMatchObject(
-            { name: 'Сообщить', arguments: [undefined, { value: '1' }] }
+            { name: 'Сообщить', arguments: [{ startOffset: 9 }, { value: '1' }] }
         )
     })
 })

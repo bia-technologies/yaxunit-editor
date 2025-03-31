@@ -1,6 +1,6 @@
 import { isModel } from "@/monaco/utils"
 import { ModuleModel } from "../moduleModel"
-import { BSLParser } from "./parser"
+import { IModelContentChange, IncrementalBslParser } from "./parser"
 import {
     BslCodeModel,
     FunctionDefinitionSymbol,
@@ -18,7 +18,7 @@ import { RuleNameCalculator } from "../codeModel/calculators/ruleNameCalculator"
 import { ILexingError, IRecognitionException } from "chevrotain"
 
 export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
-    parser = new BSLParser()
+    parser = new IncrementalBslParser()
     visitor = new CodeModelFactoryVisitor()
     errors: ErrorInfo[] = []
 
@@ -58,7 +58,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         codeModel.afterUpdate(codeModel)
     }
 
-    updateModel(codeModel: BslCodeModel, changes: editor.IModelContentChange[]): boolean {
+    updateModel(codeModel: BslCodeModel, changes: IModelContentChange[]): boolean {
         if (!codeModel.children.length || isReplace(codeModel, changes)) {
             return false
         }
@@ -174,7 +174,7 @@ function replaceNode(model: BslCodeModel, oldSymbol: BaseSymbol, newSymbol: Base
     }
 }
 
-function isReplace(codeModel: BslCodeModel, changes: editor.IModelContentChange[]) {
+function isReplace(codeModel: BslCodeModel, changes: IModelContentChange[]) {
     const first = codeModel.children[0].startOffset
     const last = codeModel.children[codeModel.children.length - 1].endOffset
     for (const change of changes) {

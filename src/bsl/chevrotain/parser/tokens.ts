@@ -99,6 +99,11 @@ export const tokens = {
     CompareOperator,
     Comment: createToken({ name: "Comment", pattern: /\/\/[^\r\n]*/, group: Lexer.SKIPPED }),
     WhiteSpace: createToken({ name: "WhiteSpace", pattern: /[ \t\n\r]+/, group: Lexer.SKIPPED }),
+    MultilineString: createToken({ name: "MultilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/ }),
+    String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, }),
+    Number: createToken({ name: "Number", pattern: /\d+(\.\d+)?/, }),
+    Date: createToken({ name: 'Date', pattern: /'\d{8,14}'|'\d{4}.?\d{2}.?\d{2}(.?\d{2}.?\d{2}.?\d{2})?'/ }),
+
     ...keywords,
     LSquare: createToken({ name: 'LSquare', pattern: /\[/ }),
     RSquare: createToken({ name: 'RSquare', pattern: /]/ }),
@@ -124,10 +129,6 @@ export const tokens = {
     Greater: createToken({ name: 'Greater', pattern: '>', categories: CompareOperator }),
 
     Question: createToken({ name: 'Question', pattern: '?' }),
-    MultilineString: createToken({ name: "MultilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/ }),
-    String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, }),
-    Number: createToken({ name: "Number", pattern: /\d+(\.\d+)?/, }),
-    Date: createToken({ name: 'Date', pattern: /'\d{8,14}'|'\d{4}.?\d{2}.?\d{2}(.?\d{2}.?\d{2}.?\d{2})?'/ }),
     Identifier
 }
 

@@ -533,7 +533,7 @@ function multilineStringContent(value: string): string {
     value = trimChar(value, '"')
     const lines = value.split('\n')
     for (let index = 0; index < lines.length; index++) {
-        const line = lines[index].trimStart();
+        const line = lines[index].trimLeft();
         if (line.startsWith('|')) {
             lines[index] = line.substring(1)
         } else {
