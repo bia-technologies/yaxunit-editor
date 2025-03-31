@@ -31,7 +31,10 @@ export class IncrementalBslParser extends BSLParser {
         this.input = this.lexer.moduleTokens.slice(startIndex, endIndex + 1)
         const ruleMethod = (this as any)[rule] as (() => CstNode)
         const result = ruleMethod.bind(this)()
-        return result
+        return {
+            cst: result,
+            parseErrors: this.errors,
+        };
     }
 }
 
@@ -94,16 +97,7 @@ function findSymbolTokens(tokens: IToken[], startOffset: number, endOffset: numb
 }
 
 export interface IModelContentChange {
-    /**
-     * The offset of the range that got replaced.
-     */
     readonly rangeOffset: number;
-    /**
-     * The length of the range that got replaced.
-     */
     readonly rangeLength: number;
-    /**
-     * The new text for the range.
-     */
     readonly text: string;
 }

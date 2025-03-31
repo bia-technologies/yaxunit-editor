@@ -12,10 +12,10 @@ export class RuleNameCalculator implements CodeModelVisitor {
         return 'qualifiedName'
     }
     visitAddHandlerStatement() {
-        return 'addHandlerStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitAssignmentStatement() {
-        return 'assignmentStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol) {
         return symbol.parent instanceof BinaryExpressionSymbol ? undefined : 'expression'
@@ -37,31 +37,31 @@ export class RuleNameCalculator implements CodeModelVisitor {
         return undefined
     }
     visitExecuteStatement() {
-        return 'executeStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitForEachStatement() {
-        return 'forEachStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitForStatement() {
-        return 'forStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitFunctionDefinition() {
-        return 'function'
+        return 'module' // Используется верхнеуровневое обобщающее правило, когда вставляется несколько методов
     }
     visitGotoStatement() {
-        return 'gotoStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitIfBranch() {
         return undefined
     }
     visitIfStatement() {
-        return 'ifStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitIndexAccessSymbol() {
         return undefined
     }
     visitLabelStatement() {
-        return 'labelStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitMethodCallSymbol(symbol: MethodCallSymbol) {
         return symbol.parent instanceof AccessSequenceSymbol ? undefined : 'methodCall'
@@ -79,25 +79,25 @@ export class RuleNameCalculator implements CodeModelVisitor {
         return undefined
     }
     visitProcedureDefinition() {
-        return 'procedure'
+        return 'module' // Используется верхнеуровневое обобщающее правило, когда вставляется несколько методов
     }
     visitPropertySymbol() {
         return undefined
     }
     visitRemoveHandlerStatement() {
-        return 'removeHandlerStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitReturnStatement() {
-        return 'returnStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitRiseErrorStatement() {
-        return 'riseErrorStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitTernaryExpressionSymbol() {
         return 'ternaryExpression'
     }
     visitTryStatement() {
-        return 'tryStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
     visitUnaryExpressionSymbol() {
         return undefined
@@ -109,6 +109,6 @@ export class RuleNameCalculator implements CodeModelVisitor {
         return undefined
     }
     visitWhileStatement() {
-        return 'whileStatement'
+        return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
 }

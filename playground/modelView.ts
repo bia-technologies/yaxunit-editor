@@ -52,7 +52,7 @@ export class ModelView {
         }
         treeContainer.innerHTML = "";
         selector = this.selector
-        visitor.visitModel(model).forEach(div => treeContainer.appendChild(div))
+        visitor.visitModel(model).forEach((div: any) => treeContainer.appendChild(div))
     }
 }
 
@@ -176,7 +176,7 @@ const visitor: CodeModelVisitor = {
 
     // preprocessor
     visitPreprocessorSymbol(symbol: PreprocessorSymbol) {
-        return compositeSymbolContainer(symbol, 'VariableDefinitionSymbol', undefined, symbol.getChildrenSymbols())
+        return baseSymbolContainer(symbol, 'Preprocessor', symbol.name)
     },
 
 }
@@ -208,7 +208,7 @@ function errorContainer(type: string, value?: string) {
     return div
 }
 
-function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: string, symbols?: BaseSymbol[]) {
+function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: string, symbols?: (BaseSymbol | undefined)[]) {
     const div = document.createElement('div')
     div.className = 'node'
     const typeSpan = document.createElement('span')
