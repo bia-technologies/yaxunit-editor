@@ -47,7 +47,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
             codeModel.children.push(children)
         }
         const end = performance.now()
-        console.log('Build code model by chevrotain. Parse:', visitorStart - start, 'ms; model build:', end - visitorStart, '; full:', end - start)
+        console.log('------------------------Build code model by chevrotain. Parse:', visitorStart - start, 'ms; model build:', end - visitorStart, '; full:', end - start)
 
         codeModel.children
             .filter(isMethodDefinition)
@@ -58,6 +58,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
 
     updateModel(codeModel: BslCodeModel, changes: IModelContentChange[]): boolean {
         if (!codeModel.children.length || isReplace(codeModel, changes)) {
+            console.debug('Model empty or text replaced -> rebuild')
             return false
         }
 
@@ -67,6 +68,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         for (const range of ranges) {
             let rangeSymbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
             if (!rangeSymbol) {
+                console.debug('Dont find edited symbol -> rebuild')
                 return false
             }
             let { symbol, newSymbol } = this.updateSymbol(rangeSymbol, range.diff)
@@ -85,8 +87,8 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
             codeModel.afterUpdate(changedItem)
             console.debug('update ', symbol, 'to', newSymbol)
 
-            if (symbol) {
-            } else {
+            if (!symbol) {
+                console.debug('Dont find replaced symbol -> rebuild')
                 return false
             }
         }
@@ -207,6 +209,21 @@ function updateMethodChildrenOffset(method: MethodDefinition) {
     updateOffset(method.children, -method.position.startOffset)
 }
 
+/**
+ * Replaces an existing symbol in the code model with a provided new symbol.
+ *
+ * If the old symbol has no parent, it is assumed to be a top-level entry in the model and is replaced
+ * directly within the model's children. Otherwise, the function locates the existing symbol within its
+ * parent's properties or arrays and substitutes it with the new symbol, updating the new symbol's parent
+ * reference accordingly.
+ *
+ * @param model - The code model containing the symbol to replace.
+ * @param oldSymbol - The symbol to be replaced.
+ * @param newSymbol - The replacement symbol.
+ *
+ * @returns The parent object in which the replacement occurred, or the new symbol from the top-level
+ *          model children if the old symbol had no parent.
+ */
 function replaceNode(model: BslCodeModel, oldSymbol: BaseSymbol, newSymbol: BaseSymbol | BaseSymbol[]) {
     if (!oldSymbol.parent) { // model children
         const index = model.children.indexOf(oldSymbol)
@@ -248,6 +265,16 @@ function replace(items: BaseSymbol[], position: number, item: any | []) {
     }
 }
 
+/**
+ * Determines whether any of the provided changes fully replaces the entire code model.
+ *
+ * The function calculates the overall range of the code model using the start offset of its first child
+ * and the end offset of its last child. It returns true if any change in the array covers this complete range.
+ *
+ * @param codeModel - The code model whose complete range is checked.
+ * @param changes - An array of content changes, each specifying an offset and length.
+ * @returns True if a change replaces the entire code model; otherwise, false.
+ */
 function isReplace(codeModel: BslCodeModel, changes: IModelContentChange[]) {
     const first = codeModel.children[0].startOffset
     const last = codeModel.children[codeModel.children.length - 1].endOffset

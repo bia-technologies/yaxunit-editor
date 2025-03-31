@@ -21,7 +21,7 @@ export class IncrementLexer extends Lexer {
             let start = change.rangeOffset
             let end = change.rangeLength + start
             const offsetDiff = change.text.length - change.rangeLength
-            let { startIndex, endIndex, includeStart, includeEnd } = findTokens(this.moduleTokens, start, end)
+            const { startIndex, endIndex, includeStart, includeEnd } = findTokens(this.moduleTokens, start, end)
 
             let text = change.text
 
@@ -42,8 +42,8 @@ export class IncrementLexer extends Lexer {
 
             const lexingResult = (!text || text.trim() === '') ? undefined : super.tokenize(text)
             const textTokens = lexingResult?.tokens ?? []
-
             textTokens.forEach(t => { t.startOffset += start; (t.endOffset as number) += start })
+
             if (start === 0 && !includeStart && !includeEnd && startIndex === 0 && endIndex === 0) {
                 if (offsetDiff) {
                     this.moduleTokens.forEach(t => { t.startOffset += offsetDiff; (t.endOffset as number) += offsetDiff })
@@ -52,15 +52,10 @@ export class IncrementLexer extends Lexer {
             } else if (!includeStart && startIndex === this.moduleTokens.length - 1) {
                 this.moduleTokens = this.moduleTokens.concat(textTokens)
             } else {
-
                 this.moduleTokens.splice(startIndex + (!includeStart ? 1 : 0), endIndex - startIndex + (includeStart ? 1 : 0), ...textTokens)
                 if (offsetDiff) {
                     const startMove = startIndex + textTokens.length + (!includeStart ? 1 : 0)
-                    for (let index = startMove; index < this.moduleTokens.length; index++) {
-                        const token = this.moduleTokens[index];
-                        token.startOffset += offsetDiff;
-                        (token.endOffset as number) += offsetDiff
-                    }
+                    moveTokens(this.moduleTokens, startMove, offsetDiff)
                 } else {
                     console.log('no offset')
                 }
@@ -70,24 +65,62 @@ export class IncrementLexer extends Lexer {
                 end,
                 errors: lexingResult?.errors,
                 diff: offsetDiff
-
             })
-
         }
         return ranges
     }
 }
 
+function moveTokens(tokens: IToken[], start: number, diff: number) {
+    for (let index = start; index < tokens.length; index++) {
+        const token = tokens[index];
+        token.startOffset += diff;
+        (token.endOffset as number) += diff
+    }
+}
+
+/**
+ * Finds the token boundaries overlapping a specified range.
+ *
+ * This function searches a sorted list of tokens to determine the indices corresponding to the boundary
+ * tokens that intersect or are adjacent to the given start and end offsets. It also specifies whether the
+ * tokens at these boundaries should be included.
+ *
+ * @param tokens - The array of tokens, each having numeric start and end offsets.
+ * @param startOffset - The starting offset of the target range.
+ * @param endOffset - The ending offset of the target range.
+ * @returns An object containing:
+ *   - startIndex: The index of the token at or near the start offset.
+ *   - endIndex: The index of the token at or near the end offset.
+ *   - includeStart: True if the token at startIndex should be included.
+ *   - includeEnd: True if the token at endIndex should be included.
+ */
 function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
-    let startIndex = -1, endIndex = -1
-    let includeStart = false, includeEnd = false
+    const lastTokenIndex = tokens.length - 1
+
+    if (tokens[lastTokenIndex].endOffset as number + 1 < startOffset) {
+        return { startIndex: lastTokenIndex, endIndex: lastTokenIndex, includeStart: false, includeEnd: true }
+    } else if (tokens[0].startOffset > endOffset) {
+        return { startIndex: 0, endIndex: 0, includeStart: false, includeEnd: false }
+    }
+
+    let { startIndex, includeStart } = getFirstTokenIndex(tokens, startOffset)
+    let { endIndex, includeEnd } = getLastTokenIndex(tokens, endOffset)
+
+    if (startIndex === endIndex && !includeStart && !includeEnd) {
+        const token = tokens[endIndex]
+        includeStart = token.startOffset > startOffset && (token.endOffset as number + 1) < endOffset
+    }
+    return { startIndex, endIndex, includeStart, includeEnd }
+}
+
+function getFirstTokenIndex(tokens: IToken[], startOffset: number) {
+    let startIndex = -1
+    let includeStart = false
 
     const lastTokenIndex = tokens.length - 1
     let lo = 0, hi = lastTokenIndex, mid = 0, token
 
-    if (tokens[hi].endOffset as number + 1 < startOffset) {
-        return { startIndex: hi, endIndex: hi, includeStart, includeEnd: true }
-    }
     while (lo <= hi) {
         mid = Math.floor((lo + hi) / 2)
         token = tokens[mid]
@@ -120,8 +153,16 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     } else {
         includeStart = true
     }
+    return { startIndex, includeStart }
+}
 
-    hi = lastTokenIndex
+function getLastTokenIndex(tokens: IToken[], endOffset: number) {
+    let endIndex = -1
+    let includeEnd = false
+
+    const lastTokenIndex = tokens.length - 1
+    let lo = 0, hi = lastTokenIndex, mid = 0, token
+
     while (lo <= hi) {
         mid = Math.floor((lo + hi) / 2)
         token = tokens[mid]
@@ -152,14 +193,18 @@ function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     } else {
         includeEnd = true
     }
-
-    if (startIndex === endIndex && !includeStart && !includeEnd) {
-        token = tokens[endIndex]
-        includeStart = token.startOffset > startOffset && (token.endOffset as number + 1) < endOffset
-    }
-    return { startIndex, endIndex, includeStart, includeEnd }
+    return { endIndex, includeEnd }
 }
 
+/**
+ * Checks if the provided token encompasses the specified offset.
+ *
+ * A token is considered to encompass the offset if the token's start offset is less than or equal to the offset and the token's end offset (plus one) is greater than or equal to the offset.
+ *
+ * @param token - The token with defined start and end offsets.
+ * @param offset - The offset to verify against the token's boundaries.
+ * @returns True if the token fully encompasses the offset; otherwise, false.
+ */
 function includeSymbol(token: IToken, offset: number) {
     return token.startOffset >= offset && token.endOffset as number + 1 <= offset
 }

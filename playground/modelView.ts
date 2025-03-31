@@ -181,6 +181,18 @@ const visitor: CodeModelVisitor = {
 
 }
 
+/**
+ * Creates an HTML container representing a symbol.
+ *
+ * The container is a div element with a span displaying the provided type and optional value.
+ * When a global selector is defined and the symbol is available, clicking the span triggers
+ * the selector callback with the symbol.
+ *
+ * @param symbol - The symbol to represent.
+ * @param type - A descriptive label for the symbol.
+ * @param value - An optional value to display with the type.
+ * @returns A div element containing the symbol's representation.
+ */
 function baseSymbolContainer(symbol: BaseSymbol, type: string, value?: string) {
     const div = document.createElement('div')
     div.className = 'node'
@@ -197,6 +209,17 @@ function baseSymbolContainer(symbol: BaseSymbol, type: string, value?: string) {
     return div
 }
 
+/**
+ * Creates a container element for error messages.
+ *
+ * This function generates a <div> element with the class "node" and appends a child
+ * <span> element with the class "error". The span displays the provided error type and,
+ * if supplied, an additional error detail.
+ *
+ * @param type - The error category or identifier.
+ * @param value - An optional message providing extra error context.
+ * @returns The HTML element representing the error container.
+ */
 function errorContainer(type: string, value?: string) {
     const div = document.createElement('div')
     div.className = 'node'
@@ -208,6 +231,19 @@ function errorContainer(type: string, value?: string) {
     return div
 }
 
+/**
+ * Creates a composite container element for a given symbol.
+ *
+ * This function returns a div element that visually represents a symbol by combining a type label
+ * and an optional value. If provided, an array of child symbols is processed and rendered inside the container.
+ * Additionally, if a global selector function exists, the type label becomes clickable to trigger the selector with the symbol.
+ *
+ * @param symbol - The base symbol to render.
+ * @param type - The label representing the symbol's type.
+ * @param value - An optional string value to display alongside the type.
+ * @param symbols - An optional array of child symbols that will be visited and appended to the container.
+ * @returns A div element with class "node" representing the composite symbol.
+ */
 function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: string, symbols?: (BaseSymbol | undefined)[]) {
     const div = document.createElement('div')
     div.className = 'node'
@@ -218,7 +254,7 @@ function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: stri
     if (symbols) {
         const elements = acceptItems(symbols, visitor)
         if (elements) {
-            elements.forEach(e => { if (e) div.appendChild(e) })
+            elements.forEach(e => e && div.appendChild(e))
         }
     }
     if (selector && symbol) {
@@ -229,6 +265,18 @@ function compositeSymbolContainer(symbol: BaseSymbol, type: string, value?: stri
     return div
 }
 
+/**
+ * Processes an array of symbols using the visitor pattern, converting each symbol into its corresponding HTML container.
+ *
+ * Each symbol in the array is evaluated:
+ * - If the symbol is undefined, an error container for an "undefined node" is returned.
+ * - If the symbol is acceptable, its `accept` method is invoked with the provided visitor.
+ * - For any other case, an error container indicating "unsupported" along with the item's type is returned.
+ *
+ * @param items - An optional array of symbols to process; if undefined, an empty array is returned.
+ * @param visitor - A visitor used to render acceptable symbols.
+ * @returns An array of HTML elements generated either by processing the symbol via its `accept` method or by creating an error container.
+ */
 function acceptItems(items: (BaseSymbol | undefined)[] | undefined, visitor: CodeModelVisitor) {
     if (!items) return []
 

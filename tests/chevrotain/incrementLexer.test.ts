@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest'
-import { IncrementalBslParser } from '../../src/bsl/chevrotain/parser'
 import { IncrementLexer } from '../../src/bsl/chevrotain/parser/lexer'
 
 describe('Increment lexer. Basic', () => {

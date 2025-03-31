@@ -535,6 +535,16 @@ function trimChar(value: string, char: string) {
     }
 }
 
+/**
+ * Cleans up a multiline string literal by removing its enclosing quotes and optional line prefixes.
+ *
+ * This function removes surrounding double quotes, splits the string into lines, and left-trims each line.
+ * If a trimmed line begins with a pipe ('|'), that character is removed. The processed lines are then rejoined
+ * using newline characters to produce the final content.
+ *
+ * @param value - The multiline string literal to process.
+ * @returns The cleaned multiline string content.
+ */
 function multilineStringContent(value: string): string {
     value = trimChar(value, '"')
     const lines = value.split('\n')

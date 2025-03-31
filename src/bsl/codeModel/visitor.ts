@@ -98,6 +98,20 @@ export interface CodeModelVisitor {
     visitPreprocessorSymbol(symbol: PreprocessorSymbol): any
 }
 
+/**
+ * Filters the provided array of symbols and applies a visitor to each acceptable item.
+ *
+ * The function checks the array for defined symbols that implement the Acceptable interface
+ * (verified using `isAcceptable`) and calls their `accept` method with the given visitor.
+ * It returns an array of the results from these method calls. If the input array is undefined,
+ * the function returns undefined.
+ *
+ * @param items - An array of CodeSymbol items (or undefined) to process. Only defined symbols
+ *                that are acceptable are visited.
+ * @param visitor - The CodeModelVisitor used to process each acceptable symbol.
+ * @returns An array containing the results of the visitor's accept calls, or undefined if no items
+ *          were provided.
+ */
 export function acceptItems(items: (CodeSymbol | undefined)[] | undefined, visitor: CodeModelVisitor) {
     if (items) {
         return items

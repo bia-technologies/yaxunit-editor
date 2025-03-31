@@ -1,29 +1,6 @@
 
 import {
-    AccessSequenceSymbol,
-    AddHandlerStatementSymbol,
-    AssignmentStatementSymbol,
-    AwaitStatementSymbol,
-    BinaryExpressionSymbol,
-    BreakStatementSymbol,
     BslCodeModel,
-    ConstructorSymbol,
-    ConstSymbol,
-    ContinueStatementSymbol,
-    ForEachStatementSymbol,
-    ForStatementSymbol,
-    FunctionDefinitionSymbol,
-    GotoStatementSymbol,
-    IfStatementSymbol,
-    LabelStatementSymbol,
-    MethodCallSymbol,
-    ProcedureDefinitionSymbol,
-    RemoveHandlerStatementSymbol,
-    TernaryExpressionSymbol,
-    TryStatementSymbol,
-    UnaryExpressionSymbol,
-    VariableDefinitionSymbol,
-    WhileStatementSymbol
 } from '../../src/bsl/codeModel'
 import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain'
 import { describe, expect, test } from 'vitest'
