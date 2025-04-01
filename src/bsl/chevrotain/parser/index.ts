@@ -1,2 +1,2 @@
-export * from './parser'
+export * from './incrementalBslParser'
 export * from './visitor'

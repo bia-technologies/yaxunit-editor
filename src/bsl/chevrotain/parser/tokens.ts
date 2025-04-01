@@ -1,6 +1,6 @@
 import { createToken, Lexer } from "chevrotain"
 
-const Identifier = createToken({ name: 'Identifier', pattern: /[\wа-я_][\wа-я_0-9]*/i })
+const Identifier = createToken({ name: 'Identifier', pattern: /[\wа-яё_][\wа-яё_0-9]*/i })
 
 const keyword = (name: string, ...words: string[]) => {
     words.push(name.toLowerCase())
@@ -23,6 +23,11 @@ const MultiplicationOperator = createToken({
 
 const CompareOperator = createToken({
     name: "CompareOperator",
+    pattern: Lexer.NA,
+});
+
+const StringLiteral = createToken({
+    name: "StringLiteral",
     pattern: Lexer.NA,
 });
 
@@ -94,11 +99,18 @@ export const keywords = {
 }
 
 export const tokens = {
+    StringLiteral,
     AdditionOperator,
     MultiplicationOperator,
     CompareOperator,
     Comment: createToken({ name: "Comment", pattern: /\/\/[^\r\n]*/, group: Lexer.SKIPPED }),
     WhiteSpace: createToken({ name: "WhiteSpace", pattern: /[ \t\n\r]+/, group: Lexer.SKIPPED }),
+    MultilineString: createToken({ name: "MultilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/, categories: StringLiteral }),
+    String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, categories: StringLiteral }),
+    UnclosingString: createToken({ name: "UnclosingString", pattern: /"([^\r\n"]|"")*/, categories: StringLiteral }),
+    Number: createToken({ name: "Number", pattern: /\d+(\.\d+)?/, }),
+    Date: createToken({ name: 'Date', pattern: /'\d{8,14}'|'\d{4}.?\d{2}.?\d{2}(.?\d{2}.?\d{2}.?\d{2})?'/ }),
+
     ...keywords,
     LSquare: createToken({ name: 'LSquare', pattern: /\[/ }),
     RSquare: createToken({ name: 'RSquare', pattern: /]/ }),
@@ -124,10 +136,6 @@ export const tokens = {
     Greater: createToken({ name: 'Greater', pattern: '>', categories: CompareOperator }),
 
     Question: createToken({ name: 'Question', pattern: '?' }),
-    MultilineString: createToken({ name: "MultilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/ }),
-    String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, }),
-    Number: createToken({ name: "Number", pattern: /\d+(\.\d+)?/, }),
-    Date: createToken({ name: 'Date', pattern: /'\d{8,14}'|'\d{4}.?\d{2}.?\d{2}(.?\d{2}.?\d{2}.?\d{2})?'/ }),
     Identifier
 }
 

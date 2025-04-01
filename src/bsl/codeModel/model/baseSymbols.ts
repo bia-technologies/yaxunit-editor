@@ -9,13 +9,16 @@ import {
     SymbolPosition
 } from "@/common/codeModel";
 import { Member } from "@/common/scope";
+import { MemberRef } from "./interfaces";
 
 export class BaseExpressionSymbol extends BaseSymbol implements ExpressionSymbol {
     type?: string
     value?: string
 }
 
-export class VariableSymbol extends BaseExpressionSymbol implements CommonVariable, Acceptable, NamedSymbol {
+export class EmptySymbol extends BaseSymbol { }
+
+export class VariableSymbol extends BaseExpressionSymbol implements CommonVariable, Acceptable, NamedSymbol, MemberRef {
     name: string
     member?: Member
 
@@ -97,7 +100,7 @@ export class AccessSequenceSymbol extends BaseExpressionSymbol implements Accept
         return this.access
     }
 
-    get last(){
+    get last() {
         return this.access[this.access.length - 1]
     }
 }

@@ -39,6 +39,12 @@ import { ModelCalculator } from "./calculator";
 export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     static readonly instance: TypesCalculator = new TypesCalculator()
 
+    codeModel?: BslCodeModel
+
+    constructor(codeModel?: BslCodeModel) {
+        this.codeModel = codeModel
+    }
+
     private localScope?: BaseScope
     private fullScope: UnionScope = new UnionScope()
 
@@ -179,7 +185,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     async visitMethodCallSymbol(symbol: MethodCallSymbol) {
         if (!symbol.member) {
-            symbol.member = GlobalScope.findMember(symbol.name)
+            symbol.member = this.fullScope.findMember(symbol.name)
             if (symbol.member?.type) {
                 symbol.type = await symbol.member.type
             }
@@ -272,7 +278,7 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
     }
 
     private initScope(symbol: VariablesScope) {
-        this.localScope = new BaseScope(symbol.vars)
+        this.localScope = new BaseScope([...symbol.vars, ...(this.codeModel?.methods ?? [])])
         this.fullScope.scopes = [this.localScope, ...GlobalScope.scopes]
     }
 

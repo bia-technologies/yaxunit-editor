@@ -3,6 +3,7 @@ import { completionItemProvider } from '../providers/completionItemProvider'
 import { signatureHelpProvider } from '../providers/signatureHelpProvider'
 import { documentSymbolProvider } from '../providers/documentSymbolProvider';
 import { hoverProvider } from '../providers/hoverProvider';
+import { definitionProvider } from '../providers/definitionProvider';
 
 interface ILangImpl {
   conf: languages.LanguageConfiguration;
@@ -24,5 +25,6 @@ languages.onLanguage(language.id, () => {
     languages.registerSignatureHelpProvider(language.id, signatureHelpProvider)
     languages.registerDocumentSymbolProvider(language.id, documentSymbolProvider)
     languages.registerHoverProvider(language.id, hoverProvider)
+    languages.registerDefinitionProvider(language.id, definitionProvider)
   });
 });

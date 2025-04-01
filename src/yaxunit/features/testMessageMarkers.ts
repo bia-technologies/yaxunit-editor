@@ -28,7 +28,7 @@ export class TestMessageMarkersProvider implements TestModelRender {
                 let traceMarker: editor.IMarkerData | undefined
 
                 if (e.trace) {
-                    const trace = parseTrace(e.trace, editorModel.getEOL())
+                    const trace = parseTrace(e.trace)
                     if (trace) {
                         traceMarker = createMarker(trace.message, trace.line, editorModel)
                         markers.push(traceMarker)
@@ -73,8 +73,8 @@ function createMarker(message: string, line: number, editorModel: editor.ITextMo
     }
 }
 
-function parseTrace(traceMessage: string, EOL: string) {
-    const lines = traceMessage.split(EOL)
+function parseTrace(traceMessage: string) {
+    const lines = traceMessage.split(/\r|\n/)
 
     let endLine = 0
     for (let index = lines.length - 1; index >= 0; index--) {

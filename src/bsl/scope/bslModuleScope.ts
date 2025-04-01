@@ -1,5 +1,5 @@
 import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
-import { BaseSymbol, Method } from "@/common/codeModel"
+import { BaseSymbol } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
 import { IPosition } from 'monaco-editor-core'
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
@@ -25,16 +25,10 @@ export class BslModuleScope extends BaseScope {
     }
 
     updateMembers(): void {
-        this.members = this.getMethods().map(m => {
-            return {
-                kind: m.isProc ? MemberType.procedure : MemberType.function,
-                name: m.name,
-                description: m.description,
-            }
-        })
+        this.members = this.getMethods()
     }
 
-    getMethods(): Method[] {
+    getMethods() {
         return this.model.getCodeModel()?.methods ?? []
     }
 

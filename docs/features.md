@@ -13,7 +13,13 @@
     * Конструкторы и типы данных
     * Методы и свойства объектов платформы
   * Подсказка по публичному программному интерфейсу `YAxUnit`
-  * Подсказка по локальным переменным и методам
+  * Подсказка по локальным переменным
+    ![show-definition-variable](./images/show-definition-variable.png)
+  * Подсказка по методам модуля
+    ![show-definition-method](./images/show-definition-method.png)
+  * Переход к определению
+    ![goto-definition-variable](./images/goto-definition-variable.png)
+
 * Также реализовано
   * Генерация AST с использованием [`chevrotain`](https://chevrotain.io/)
   * Поиск методов, локальных переменных, выражений

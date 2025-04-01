@@ -11,6 +11,7 @@ import {
     ConstSymbol,
     ContinueStatementSymbol,
     ElseBranchSymbol,
+    EmptySymbol,
     ExecuteStatementSymbol,
     ForEachStatementSymbol,
     ForStatementSymbol,
@@ -74,15 +75,16 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         if (!nodes) {
             return []
         }
-        const node = Array.isArray(nodes) ? nodes[0] : nodes
-        const result = this.arguments((node as CstNode).children)
+        const node = (Array.isArray(nodes) ? nodes[0] : nodes) as CstNode
+        const result = this.arguments(node.children, node.location as CstNodeLocation)
         return result ?? []
     }
 
     // #region module definitions
     procedure(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const symbol = new ProcedureDefinitionSymbol(nodePosition(location))
-        symbol.name = firstTokenText(ctx.name)
+        const name = firstTokenText(ctx.name)
+        const symbol = new ProcedureDefinitionSymbol(nodePosition(location), name)
+
         symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]
@@ -92,8 +94,9 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     function(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const symbol = new FunctionDefinitionSymbol(nodePosition(location))
-        symbol.name = firstTokenText(ctx.name)
+        const name = firstTokenText(ctx.name)
+        const symbol = new FunctionDefinitionSymbol(nodePosition(location), name)
+
         symbol.isExport = ctx.Export !== undefined
         if (ctx.parameter) {
             symbol.params = this.visitAll(ctx.parameter) as ParameterDefinitionSymbol[]
@@ -153,7 +156,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     }
 
     riseErrorStatement(ctx: CstChildrenDictionary, location: CstNodeLocation) {
-        const error = this.visitFirst(ctx.error)
+        const error = this.visitFirst(ctx.expression)
         const args = this.getArguments(ctx.arguments)
 
         return new RiseErrorStatementSymbol(nodePosition(location), error as BaseExpressionSymbol, args)
@@ -321,22 +324,28 @@ export class CodeModelFactoryVisitor extends BslVisitor {
 
     literal(ctx: CstChildrenDictionary) {
         const token = BslVisitor.firstToken(ctx)
-        if (ctx.Number) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.number)
-        } else if (ctx.Date) {
-            return new ConstSymbol(tokenPosition(token), trimChar(token.image, "'").replace(/\D/g, ''), BaseTypes.date)
-        } else if (ctx.Undefined) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.undefined)
-        } else if (ctx.String) {
-            return new ConstSymbol(tokenPosition(token), trimChar(token.image, '"'), BaseTypes.string)
-        } else if (ctx.MultilineString) {
-            return new ConstSymbol(tokenPosition(token), multilineStringContent(token.image), BaseTypes.string)
-        } else if (ctx.Null) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.null)
-        } else if (ctx.True || ctx.False) {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.boolean)
-        } else {
-            return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.unknown)
+        if (!token) {
+            return undefined
+        }
+        switch (token.tokenType.name) {
+            case 'Number':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.number)
+            case 'Date':
+                return new ConstSymbol(tokenPosition(token), trimChar(token.image, "'").replace(/\D/g, ''), BaseTypes.date)
+            case 'Undefined':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.undefined)
+            case 'String':
+            case 'UnclosingString':
+                return new ConstSymbol(tokenPosition(token), trimChar(token.image, '"'), BaseTypes.string)
+            case 'MultilineString':
+                return new ConstSymbol(tokenPosition(token), multilineStringContent(token.image), BaseTypes.string)
+            case 'Null':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.null)
+            case 'True':
+            case 'False':
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.boolean)
+            default:
+                return new ConstSymbol(tokenPosition(token), token.image, BaseTypes.unknown)
         }
     }
 
@@ -414,14 +423,44 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         return symbol
     }
 
-    arguments(ctx: CstChildrenDictionary) {
-        if (ctx.argument) {
+    arguments(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+        if (!ctx.argument && !ctx.Comma) {
+            return []
+        }
+
+        if (!ctx.Comma) {
             const args = this.visitAll(ctx.argument)
             if (args.length > 1 || args[0]) {
                 return args
+            } else {
+                return []
             }
         }
-        return undefined
+
+        const args: BaseSymbol[] = []
+        const commas = ctx.Comma
+        let leftPosition = location.startOffset + 1 // TODO use LPAREN
+
+        commas.forEach((comma, idx) => {
+            let arg = this.visit(ctx.argument[idx] as CstNode)
+            const commaPosition = (comma as IToken).startOffset
+            if (!arg) {
+                arg = new EmptySymbol({ startOffset: leftPosition, endOffset: commaPosition })
+            } else {
+                arg.position.startOffset = leftPosition
+            }
+            leftPosition = commaPosition + 1
+            args.push(arg)
+        })
+        let arg = this.visit(ctx.argument[commas.length] as CstNode)
+        if (!arg) {
+            arg = new EmptySymbol({ startOffset: leftPosition, endOffset: (location.endOffset ?? 0) + 1 })
+        } else {
+            arg.position.startOffset = leftPosition
+        }
+        args.push(arg)
+
+        return args
     }
 
     argument(ctx: CstChildrenDictionary) {
@@ -496,11 +535,21 @@ function trimChar(value: string, char: string) {
     }
 }
 
+/**
+ * Cleans up a multiline string literal by removing its enclosing quotes and optional line prefixes.
+ *
+ * This function removes surrounding double quotes, splits the string into lines, and left-trims each line.
+ * If a trimmed line begins with a pipe ('|'), that character is removed. The processed lines are then rejoined
+ * using newline characters to produce the final content.
+ *
+ * @param value - The multiline string literal to process.
+ * @returns The cleaned multiline string content.
+ */
 function multilineStringContent(value: string): string {
     value = trimChar(value, '"')
     const lines = value.split('\n')
     for (let index = 0; index < lines.length; index++) {
-        const line = lines[index].trimStart();
+        const line = lines[index].trimLeft();
         if (line.startsWith('|')) {
             lines[index] = line.substring(1)
         } else {

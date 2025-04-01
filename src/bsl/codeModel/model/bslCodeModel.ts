@@ -1,11 +1,11 @@
 import { BaseSymbol, CompositeSymbol, Method } from "@/common/codeModel";
 import { VariablesScope } from "./interfaces";
 import { MethodsCalculator, TypesCalculator, VariablesCalculator } from "../calculators";
-import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from "./definitions";
+import { FunctionDefinitionSymbol, MethodDefinition, ProcedureDefinitionSymbol } from "./definitions";
 import { ParentsCalculator } from "../calculators";
 import { Emitter, IEvent } from "monaco-editor-core";
 import { AutoDisposable } from "@/common/utils/autodisposable";
-import { BslVariable } from "./variables";
+import { BslVariable } from "./members";
 import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";
 import { GlobalScope } from "@/common/scope";
 
@@ -13,8 +13,9 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
     calculators = {
         parents: new ParentsCalculator(),
         variables: new VariablesCalculator(),
-        types: TypesCalculator.instance
+        types: new TypesCalculator(this)
     }
+
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
 
@@ -36,23 +37,28 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
         return this.children
     }
 
-    async afterUpdate(symbol: BaseSymbol | BslCodeModel) {
+    async afterUpdate(symbol: BaseSymbol[] | BslCodeModel) {
         if (symbol instanceof BslCodeModel) {
             this.calculators.parents.calculate(this)
             this.calculators.variables.calculate(this)
             await this.calculators.types.calculate(this)
         } else {
-            this.calculators.parents.calculate(symbol)
-            const method = getParentMethodDefinition(symbol)
-            if (method) {
-                this.calculators.variables.calculate(method)
-            }
-            await this.calculators.types.calculate(method ?? symbol)
+            symbol.forEach(this.calculators.parents.calculate.bind(this.calculators.parents))
+            const methods = [...new Set(symbol.map(getParentMethodDefinition).filter(s => s))] as (ProcedureDefinitionSymbol | FunctionDefinitionSymbol)[]
+            methods.forEach(this.calculators.variables.calculate.bind(this.calculators.variables))
+            this.updateTypes(methods)
+
         }
         this.onDidChangeModelEmitter.fire(this)
     }
 
     onDidChangeModel: IEvent<BslCodeModel> = (listener) => {
         return this.onDidChangeModelEmitter.event(listener)
+    }
+
+    private async updateTypes(methods: MethodDefinition[]) {
+        for (const method of methods) {
+            await this.calculators.types.calculate(method)
+        }
     }
 }

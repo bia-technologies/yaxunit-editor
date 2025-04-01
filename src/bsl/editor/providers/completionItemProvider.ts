@@ -4,6 +4,7 @@ import { scopeProvider } from '@/bsl/scopeProvider'
 import { ModuleModel } from '@/bsl/moduleModel'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { AccessSequenceSymbol, ConstructorSymbol, ConstSymbol } from '@/bsl/codeModel'
+import { appendKeywords, appendSnippets } from '../snippets'
 
 const completionItemProvider: languages.CompletionItemProvider = {
     triggerCharacters: ['.'],
@@ -50,6 +51,11 @@ const completionItemProvider: languages.CompletionItemProvider = {
         }
 
         const suggestions: languages.CompletionItem[] = []
+
+        if (scope == editorScope) {
+            appendKeywords(suggestions, range)
+            appendSnippets(suggestions, range)
+        }
 
         scope.forEachMembers(m => suggestions.push(newCompletionItem(m, range)))
         console.debug('suggestions', suggestions)

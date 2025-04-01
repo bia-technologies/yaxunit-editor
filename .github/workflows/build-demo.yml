@@ -25,7 +25,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Сборка сайта с документацией
-        run: yarn build
+        run: yarn build-playground
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
