@@ -46,9 +46,16 @@ const keywords_snippets: languages.CompletionItem[] = [
     label: keyword,
     kind: languages.CompletionItemKind.Keyword,
     insertText: keyword,
-    EMPTY_RANGE
+    range: EMPTY_RANGE
 }))
 
+/**
+ * Registers code snippet suggestions.
+ *
+ * Waits for the provided promise to resolve to an array of completion items and appends them to the global snippet registry.
+ *
+ * @param suggestions - A promise that resolves to an array of code completion items.
+ */
 export function registerSnippets(suggestions: Promise<languages.CompletionItem[]>) {
     suggestions.then(data => all_snippets.push(...data))
 }

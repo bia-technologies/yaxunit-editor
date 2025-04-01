@@ -1,0 +1,69 @@
+.column {
+  flex: 50%;
+  overflow: hidden;
+}
+
+.model-tree {
+  background-color: #252526;
+  font-family: "Droid Sans Mono", "monospace", monospace;
+  padding: 15px;
+  width: 100%;
+  height: 95vh;
+  overflow-y: scroll;
+  padding-right: 30px;
+  box-sizing: content-box;
+}
+
+.node {
+  position: relative;
+  margin-left: 15px;
+  padding-left: 12px;
+}
+
+.node::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 12px;
+  width: 10px;
+  border-bottom: 1px solid #404040;
+}
+
+.node::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  height: calc(100% - 14px);
+  border-left: 1px solid #404040;
+  top: 14px;
+}
+
+.node:last-child::after {
+  display: none;
+}
+
+.type {
+  color: #4ec9b0;
+  font-size: 0.95em;
+  cursor: pointer;
+}
+
+.token {
+  color: #dcdcaa;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.token:before {
+  content: "⌙";
+  color: #569cd6;
+  margin-right: 5px;
+}
+
+.error {
+  color: #f48771;
+  background-color: #3a2121;
+  padding: 5px;
+  border-radius: 3px;
+  font-family: "Consolas";
+}

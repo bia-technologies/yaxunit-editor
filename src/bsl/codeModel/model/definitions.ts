@@ -14,7 +14,16 @@ import { Acceptable, CodeModelVisitor } from "../visitor";
 import { ConstSymbol } from "./expressions";
 import { BslVariable } from "./members";
 
-export function isMethodDefinition(symbol: any) {
+/**
+ * Determines whether the provided symbol is a method definition.
+ *
+ * This function checks if the symbol is an instance of either {@link ProcedureDefinitionSymbol} or
+ * {@link FunctionDefinitionSymbol}, and serves as a type guard to confirm the symbol as a method definition.
+ *
+ * @param symbol - The symbol to test.
+ * @returns True if the symbol is a method definition; otherwise, false.
+ */
+export function isMethodDefinition(symbol: any): symbol is ProcedureDefinitionSymbol | FunctionDefinitionSymbol {
     return symbol instanceof ProcedureDefinitionSymbol || symbol instanceof FunctionDefinitionSymbol
 }
 
@@ -25,7 +34,7 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
     vars: BslVariable[] = []
     children: BaseSymbol[] = []
     member?: Member
-    description?:string
+    description?: string
 
     constructor(position: SymbolPosition, name?: string) {
         super(position)
@@ -94,8 +103,12 @@ export class ModuleVariableDefinitionSymbol extends VariableSymbol implements Mo
     }
 }
 
-export class VariableDefinitionSymbol extends BaseSymbol implements Acceptable {
+export class VariableDefinitionSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
     vars: VariableSymbol[] = []
+
+    getChildrenSymbols(): BaseSymbol[] {
+        return this.vars
+    }
 
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitVariableDefinition(this)

@@ -14,9 +14,11 @@
   ],
   "scripts": {
     "dev": "vite",
+    "dev-playground": "vite --open playground.html",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "npx vitest"
+    "test": "npx vitest",
+    "build-playground": "tsc && vite build --config vite.config.playground.js"
   },
   "devDependencies": {
     "jsdom": "^26.0.0",
