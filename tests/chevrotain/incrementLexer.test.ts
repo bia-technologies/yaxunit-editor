@@ -164,7 +164,7 @@ describe('Increment lexer. Basic', () => {
             { image: '1', startOffset: 0 },
         ])
     })
-    
+
     test('replace word 1', () => {
         lexer.tokenize("0  3  6  9  2  5")
         lexer.updateTokens([{ rangeOffset: 8, rangeLength: 3, text: ' 9 ' }])

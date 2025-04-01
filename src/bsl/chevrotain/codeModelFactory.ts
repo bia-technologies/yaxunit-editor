@@ -3,7 +3,6 @@ import { ModuleModel } from "../moduleModel"
 import { IModelContentChange, IncrementalBslParser } from "./parser"
 import {
     BslCodeModel,
-    isAcceptable,
     isMethodDefinition,
     MethodDefinition
 } from "../codeModel"
@@ -13,7 +12,13 @@ import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
 import { descendantByRange, getParentMethodDefinition, updateOffset } from "./utils"
 import { RuleNameCalculator } from "../codeModel/calculators/ruleNameCalculator"
-import { ILexingError, IRecognitionException } from "chevrotain"
+import { CstNode, ILexingError, IRecognitionException } from "chevrotain"
+
+enum EditType {
+    replace,
+    delete,
+    append
+}
 
 export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
     parser = new IncrementalBslParser()
@@ -65,75 +70,155 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         const start = performance.now()
         const ranges = this.parser.updateTokens(changes)
 
+        let success = true
+
         for (const range of ranges) {
             let rangeSymbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
             if (!rangeSymbol) {
                 console.debug('Dont find edited symbol -> rebuild')
                 return false
             }
-            let { symbol, newSymbol } = this.updateSymbol(rangeSymbol, range.diff)
-            if (!symbol || !newSymbol) {
-                if (!rangeSymbol) {
-                    continue
-                } else {
-                    throw 'Unexpected update symbol error'
-                }
-            }
-            if (Array.isArray(newSymbol) && newSymbol.length === 1) {
-                newSymbol = newSymbol[0]
-            }
-            const changedItem = replaceNode(codeModel, symbol, newSymbol)
-            if (!changedItem) {
-                throw 'New node not inserted'
-            }
-            const method = Array.isArray(newSymbol) ? moveMethodsChildren(newSymbol, range.diff) : moveMethodChildren(newSymbol, range.diff)
-            moveLowerMethods(codeModel, method, range.diff)
-            codeModel.afterUpdate(changedItem)
-            console.debug('update ', symbol, 'to', newSymbol)
+            let { symbol, newSymbol, editType } = this.parseChange(rangeSymbol, range.diff)
 
-            if (!symbol) {
-                console.debug('Dont find replaced symbol -> rebuild')
-                return false
+            switch (editType) {
+                case EditType.replace:
+                    success = replaceSymbol(codeModel, symbol, newSymbol, range.diff)
+                    break
+                case EditType.delete:
+                    success = removeSymbol(codeModel, symbol, range.diff)
+                    break
+                case EditType.append:
+            }
+            if (!success) {
+                break
             }
         }
-        console.log('Increment update changes', changes, performance.now() - start, 'ms')
-        return true
+        if (success) {
+            console.log('Increment update changes', changes, performance.now() - start, 'ms')
+        }
+        return success
     }
 
-    private updateSymbol(symbol: BaseSymbol | undefined, diff: number): {
-        symbol: BaseSymbol | undefined, newSymbol: BaseSymbol | BaseSymbol[] | undefined
+    private parseChange(baseSymbol: BaseSymbol | undefined, diff: number): {
+        symbol: BaseSymbol | undefined, newSymbol: BaseSymbol | BaseSymbol[] | undefined, editType: EditType
     } {
-        let rule
-        while (symbol && (rule = getSymbolRule(symbol)) === undefined) {
-            symbol = symbol?.parent
-        }
+        let { rule, symbol } = RuleNameCalculator.getAvailableSymbol(baseSymbol)
+
         let firstParse = true
         while (symbol) {
             const position = getSymbolPosition(symbol)
+            if (position.startOffset === position.endOffset + diff) {
+                return {
+                    symbol,
+                    newSymbol: undefined,
+                    editType: EditType.delete
+                }
+            }
             const { cst: newNode, parseErrors } = this.parser.parseChanges(rule as string, position.startOffset, position.endOffset + diff)
-            if (parseErrors.length && firstParse && symbol.parent) {
-                firstParse = false
-                symbol = symbol.parent
-                while (symbol && (rule = getSymbolRule(symbol)) === undefined) {
-                    symbol = symbol?.parent
+
+            if (parseErrors.length && firstParse) {
+                firstParse = false;
+                if (symbol.parent) {
+                    symbol = symbol.parent;
+                    ({ rule, symbol } = RuleNameCalculator.getAvailableSymbol(baseSymbol));
+                } else {
+                    rule = 'module'
                 }
                 continue
             }
-            const newSymbol = this.visitor.visit(newNode) as BaseSymbol
-            if (!newSymbol) {
-                throw 'Не удалось проанализировать новый символ'
+
+            if (!newNode) {
+                throw 'Не удалось разобрать новый символ по правилу ' + rule
             }
-            return { symbol, newSymbol }
+            const newSymbol = this.createSymbol(newNode)
+
+            return { symbol, newSymbol, editType: EditType.replace }
         }
-        return { symbol, newSymbol: undefined }
+        return { symbol, newSymbol: undefined, editType: EditType.replace }
+    }
+
+    createSymbol(node: CstNode) {
+        const newSymbol = this.visitor.visit(node) as BaseSymbol
+        if (!newSymbol) {
+            throw 'Не удалось проанализировать новый символ ' + node.name
+        }
+        return newSymbol
     }
 }
 
-function moveLowerMethods(codeModel: BslCodeModel, method: MethodDefinition | undefined, diff: number) {
-    if (!method) {
+function replaceSymbol(codeModel: BslCodeModel, symbol: BaseSymbol | undefined, newSymbol: BaseSymbol | BaseSymbol[] | undefined, diff: number) {
+    if (!symbol || !newSymbol) {
+        throw 'Unexpected update symbol error'
+    }
+
+    if (Array.isArray(newSymbol) && newSymbol.length === 1) {
+        newSymbol = newSymbol[0]
+    }
+
+    const changedItem = replaceNode(codeModel, symbol, newSymbol)
+    if (!changedItem) {
+        console.debug('Dont find replaced symbol -> rebuild')
+        return false
+    }
+    let rootItem = Array.isArray(newSymbol) ? moveMethodsChildren(newSymbol, diff) : moveMethodChildren(newSymbol, diff)
+    if (!rootItem) {
+        rootItem = rootSymbol(newSymbol)
+    }
+    moveModelItems(codeModel, rootItem, diff)
+    codeModel.afterUpdate(changedItem)
+    console.debug('update ', symbol, 'to', newSymbol)
+
+    return true
+}
+
+function rootSymbol(newSymbol: BaseSymbol | BaseSymbol[]) {
+    let rootItem = Array.isArray(newSymbol) ? newSymbol[newSymbol.length - 1] : newSymbol
+    while (rootItem.parent) {
+        rootItem = rootItem.parent
+    }
+
+    return rootItem
+}
+
+function removeSymbol(codeModel: BslCodeModel, symbol: BaseSymbol | undefined, diff: number) {
+    if (!symbol) {
+        throw 'Dont set removed symbol'
+    }
+    const rootItem = rootSymbol(symbol)
+    const rootIndex = rootItem ? codeModel.children.indexOf(rootItem) : -1
+
+    const removed = removeNode(codeModel, symbol)
+    moveModelItems(codeModel, rootIndex - 1, diff)
+
+    codeModel.afterUpdate(codeModel)
+
+    return removed
+}
+
+function removeNode(codeModel: BslCodeModel, oldSymbol: BaseSymbol) {
+    const parent = (oldSymbol.parent ?? codeModel) as any
+    for (const key in parent) {
+        const value = parent[key]
+        if (value === oldSymbol) {
+            parent[key] = undefined
+            return true
+        } else if (Array.isArray(value)) {
+            const index = value.indexOf(oldSymbol)
+            if (index !== -1) {
+                value.splice(index, 1)
+                return true
+            }
+        }
+    }
+    return false
+}
+
+function moveModelItems(codeModel: BslCodeModel, method: BaseSymbol | number | undefined, diff: number) {
+    if (method === undefined) {
         return
     }
-    for (let index = codeModel.children.indexOf(method) + 1; index < codeModel.children.length; index++) {
+    const methodIndex = method instanceof BaseSymbol ? codeModel.children.indexOf(method) : method
+    for (let index = methodIndex + 1; index < codeModel.children.length; index++) {
         const node = codeModel.children[index];
         node.position.startOffset += diff
         node.position.endOffset += diff
@@ -189,7 +274,7 @@ function moveMethodChildren(symbol: BaseSymbol, diff: number) {
         return symbol
     }
 
-    let method = getParentMethodDefinition(symbol)
+    let method = getParentMethodDefinition(symbol) as BaseSymbol
     if (method) {
         updateOffset([symbol], -method.startOffset)
         moveRightChildren(symbol, method, diff)
@@ -290,10 +375,6 @@ function isReplace(codeModel: BslCodeModel, changes: IModelContentChange[]) {
         }
     }
     return false
-}
-
-function getSymbolRule(symbol: BaseSymbol) {
-    return isAcceptable(symbol) ? symbol.accept(RuleNameCalculator.instance) : undefined
 }
 
 // Функция для конвертации ошибок Chevrotain в маркеры Monaco
