@@ -11,7 +11,9 @@ export default defineConfig(api => {
             sourcemap: isDev,
             target: 'es2018',
             rollupOptions: {
-                input: path.resolve(__dirname, "./playground.html"),
+                input: {
+                    playground: path.resolve(__dirname, "./playground.html"),
+                }
             }
         },
         esbuild: {

@@ -98,10 +98,10 @@ function moveTokens(tokens: IToken[], start: number, diff: number) {
 function findTokens(tokens: IToken[], startOffset: number, endOffset: number) {
     const lastTokenIndex = tokens.length - 1
 
-    if (tokens[lastTokenIndex].endOffset as number + 1 < startOffset) {
-        return { startIndex: lastTokenIndex, endIndex: lastTokenIndex, includeStart: false, includeEnd: true }
-    } else if (tokens[0].startOffset > endOffset) {
+    if (tokens.length === 0 || tokens[0].startOffset > endOffset) {
         return { startIndex: 0, endIndex: 0, includeStart: false, includeEnd: false }
+    } else if (tokens[lastTokenIndex].endOffset as number + 1 < startOffset) {
+        return { startIndex: lastTokenIndex, endIndex: lastTokenIndex, includeStart: false, includeEnd: true }
     }
 
     let { startIndex, includeStart } = getFirstTokenIndex(tokens, startOffset)
@@ -142,12 +142,12 @@ function getFirstTokenIndex(tokens: IToken[], startOffset: number) {
     if (token.startOffset > startOffset) {
         if (startIndex) {
             startIndex--
-            includeStart = includeSymbol(tokens[startIndex], startIndex)
+            includeStart = includeSymbol(tokens[startIndex], startOffset)
         }
     } else if ((token.endOffset as number + 1) < startOffset) {
         if (startIndex < lastTokenIndex) {
             startIndex++
-            includeStart = includeSymbol(tokens[startIndex], startIndex)
+            includeStart = includeSymbol(tokens[startIndex], startOffset)
             if (!includeStart) startIndex--
         }
     } else {
@@ -207,5 +207,5 @@ function getLastTokenIndex(tokens: IToken[], endOffset: number) {
  * @returns True if the token fully encompasses the offset; otherwise, false.
  */
 function includeSymbol(token: IToken, offset: number) {
-    return token.startOffset >= offset && token.endOffset as number + 1 <= offset
+    return token.startOffset <= offset && token.endOffset as number + 1 >= offset
 }

@@ -3,7 +3,6 @@ import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope/platform'
-// import '@/bsl/scope/configuration'
 import { YAxUnitEditor } from '@/yaxunit'
 import { ModelView } from './modelView';
 import { symbolRange } from '@/bsl/codeModel/utils';
