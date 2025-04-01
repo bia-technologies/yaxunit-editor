@@ -73,7 +73,11 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
             }
             let { symbol, newSymbol } = this.updateSymbol(rangeSymbol, range.diff)
             if (!symbol || !newSymbol) {
-                throw 'Unexpected update symbol error'
+                if (!rangeSymbol) {
+                    continue
+                } else {
+                    throw 'Unexpected update symbol error'
+                }
             }
             if (Array.isArray(newSymbol) && newSymbol.length === 1) {
                 newSymbol = newSymbol[0]
@@ -110,7 +114,9 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
             if (parseErrors.length && firstParse && symbol.parent) {
                 firstParse = false
                 symbol = symbol.parent
-                rule = symbol ? getSymbolRule(symbol) : undefined
+                while (symbol && (rule = getSymbolRule(symbol)) === undefined) {
+                    symbol = symbol?.parent
+                }
                 continue
             }
             const newSymbol = this.visitor.visit(newNode) as BaseSymbol

@@ -16,7 +16,7 @@
   },
   {
     "prefix": "For",
-    "body": "For ${1:Counter} To ${2:Limit} Do\n\t$0\nEndDo;",
+    "body": "For ${1:Counter} = ${2:1} To ${3:Limit} Do\n\t$0\nEndDo;",
     "description": "For"
   },
   {
