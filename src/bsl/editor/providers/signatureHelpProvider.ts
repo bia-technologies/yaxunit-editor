@@ -1,4 +1,4 @@
-import { editor, languages, IPosition, CancellationToken } from 'monaco-editor-core'
+import { editor, languages, IPosition, CancellationToken } from 'monaco-editor'
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { Member, MemberType, MethodMember, Signature, isPlatformMethod, GlobalScope } from '@/common/scope'
 import { parameterDocumentation, signatureDocumentation, signatureLabel } from './documentationRender'

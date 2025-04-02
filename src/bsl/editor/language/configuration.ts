@@ -1,23 +1,54 @@
-import { languages } from 'monaco-editor-core'
+import { languages } from 'monaco-editor'
 import LanguageConfiguration = languages.LanguageConfiguration
 import IMonarchLanguage = languages.IMonarchLanguage
-import { keywords_all } from './keywords'
+import { keywords_all, keywords } from './keywords'
 import { TokenType } from './tokenTypes'
 
 export const conf: LanguageConfiguration = {
   comments: {
     lineComment: "//"
   },
+  brackets: [
+    ['(', ')'],
+    ['[', ']'],
+    [keywords.If.ru, keywords.EndIf.ru],
+    [keywords.If.en, keywords.EndIf.en],
+
+    [keywords.ElsIf.ru, keywords.ElsIf.ru],
+    [keywords.ElsIf.en, keywords.ElsIf.en],
+
+    [keywords.For.ru, keywords.EndDo.ru],
+    [keywords.For.en, keywords.EndDo.en],
+
+    [keywords.While.ru, keywords.EndDo.ru],
+    [keywords.While.en, keywords.EndDo.en],
+
+    [keywords.Try.ru, keywords.EndTry.ru],
+    [keywords.Try.en, keywords.EndTry.en],
+
+    [keywords.Function.ru, keywords.EndFunction.ru],
+    [keywords.Function.en, keywords.EndFunction.en],
+
+    [keywords.Procedure.ru, keywords.EndProcedure.ru],
+    [keywords.Procedure.en, keywords.EndProcedure.en],
+
+    ['#область', '#конецобласти'],
+    ['#region', '#endregion'],
+    ['#если', '#конецесли'],
+    ['#if', '#endif'],
+  ],
   autoClosingPairs: [
-    { open: "\"", close: "\"", notIn: ["string"] },
-    { open: "'", close: "'", notIn: ["string"] },
-    { open: "<", close: ">", notIn: ["string"] },
-    { open: "$", close: "$" },
+    { open: "(", close: ")" },
+    { open: "[", close: "]" },
+    { open: "\"", close: "\"", notIn: ["string", "comment"] },
+    { open: "'", close: "'" },
+
   ],
   surroundingPairs: [
+    { open: "(", close: ")" },
+    { open: "[", close: "]" },
     { open: "\"", close: "\"" },
     { open: "'", close: "'" },
-    { open: "<", close: ">" },
   ],
   folding: {
     offSide: false,
@@ -25,12 +56,15 @@ export const conf: LanguageConfiguration = {
       start: /^\s*#Область.+/,
       end: /^\s*#КонецОбласти/
     }
-  }
+  },
+  colorizedBracketPairs: [
+    ['(', ')'],
+    ['[', ']']
+  ]
 };
 
 export const language: IMonarchLanguage = <IMonarchLanguage>{
   ignoreCase: true,
-
   keywords: keywords_all,
 
   brackets: [
@@ -69,19 +103,23 @@ export const language: IMonarchLanguage = <IMonarchLanguage>{
       // numbers
       [/[0-9_]*\.[0-9_]+([eE][\-+]?\d+)?[fFdD]?/, TokenType.NumberFloat],
       [/[0-9_]+/, TokenType.Number],
+
       // delimiter: after number because of .\d floats
       [/[;,.]/, TokenType.Delimiter],
+
       // strings
       [/"([^"\\]|\\.)*$/, TokenType.StringInvalid],
       [/["|]/, { token: TokenType.StringQuote, next: '@string' }],
       [/\$\@"/, { token: TokenType.StringQuote, next: '@litinterpstring' }],
       [/\@"/, { token: TokenType.StringQuote, next: '@litstring' }],
       [/\$"/, { token: TokenType.StringQuote, next: '@interpolatedstring' }],
+
       // characters
       [/'[^\\']'/, TokenType.String],
       [/(')(@escapes)(')/, [TokenType.String, TokenType.StringEscape, TokenType.String]],
       [/'/, TokenType.StringInvalid]
     ],
+
     comment: [
       [/\/\/.*$/, 'comment'],
     ],

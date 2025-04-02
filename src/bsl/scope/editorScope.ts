@@ -1,5 +1,5 @@
 import { Scope, UnionScope, GlobalScope } from '@/common/scope'
-import { IPosition, editor } from 'monaco-editor-core'
+import { IPosition, editor } from 'monaco-editor'
 import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
 import { ModuleModel } from '../moduleModel'

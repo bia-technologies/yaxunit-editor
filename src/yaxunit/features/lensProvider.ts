@@ -1,5 +1,5 @@
 import { getActiveEditor } from '@/bsl/editor'
-import { languages } from 'monaco-editor-core'
+import { languages } from 'monaco-editor'
 import { YAxUnitEditor } from '../editor'
 
 const codeLensProvider: languages.CodeLensProvider = {

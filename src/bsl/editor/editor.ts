@@ -1,4 +1,4 @@
-import { editor } from 'monaco-editor-core'
+import { editor } from 'monaco-editor'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
 import { ModuleModel } from '../moduleModel'
@@ -19,6 +19,7 @@ export class BslEditor {
         if (container === null) {
             throw 'Error!';
         }
+
         this.editor = editor.create(container, {
             language: 'bsl',
             automaticLayout: true,
@@ -26,18 +27,26 @@ export class BslEditor {
             detectIndentation: false,
             insertSpaces: false,
             useShadowDOM: false,
-            contextmenu: false,
+            contextmenu: true,
             unicodeHighlight: {
                 ambiguousCharacters: false
             },
-            autoClosingQuotes: 'beforeWhitespace',
-            autoClosingBrackets: 'never',
+            autoClosingQuotes: 'languageDefined',
+            autoClosingBrackets: 'languageDefined',
+            autoSurround: 'languageDefined',
             autoClosingDelete: 'auto',
             autoClosingOvertype: 'auto',
-            autoSurround: 'quotes',
             acceptSuggestionOnCommitCharacter: true,
             // fontFamily: 'Courier New',
             // fontSize: 12,
+            renderLineHighlight: 'all',
+            trimAutoWhitespace: false,
+            renderWhitespace: 'all',
+            multiCursorModifier: 'ctrlCmd',
+
+            bracketPairColorization: {
+                enabled: true // don't work on monaco 0.33 
+            },
             suggest: {
                 preview: true,
                 insertMode: 'replace',
@@ -92,3 +101,18 @@ function tuneEditor(editor: editor.IStandaloneCodeEditor) {
 export function getActiveEditor() {
     return activeEditor
 }
+
+window.addEventListener('keydown', function (event) {
+    // Since 0.34.1, monaco.editor.addKeybindingRule(s) can be used to tweak default keybindings.
+    if (event.keyCode === 80 && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        if (event.stopImmediatePropagation) {
+            event.stopImmediatePropagation();
+        } else {
+            event.stopPropagation();
+        }
+
+        activeEditor?.editor.trigger('ctrl-shift-p', 'editor.action.quickCommand', null)
+        return;
+    }
+}, true);

@@ -2,7 +2,7 @@ import { BslVariable, isMemberRef } from "@/bsl/codeModel";
 import { symbolRange } from "@/bsl/codeModel/utils";
 import { ModuleModel } from "@/bsl/moduleModel";
 import { BaseSymbol } from "@/common/codeModel";
-import { editor, languages, IPosition, } from "monaco-editor-core";
+import { editor, languages, IPosition, } from "monaco-editor";
 
 export const definitionProvider: languages.DefinitionProvider = {
     provideDefinition(model: editor.ITextModel, position: IPosition): languages.ProviderResult<languages.Definition> {

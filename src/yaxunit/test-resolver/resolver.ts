@@ -1,4 +1,4 @@
-import { IPosition } from "monaco-editor-core";
+import { IPosition } from "monaco-editor";
 import { ROOT_METHOD, TestsModel } from "../test-model";
 import { YAxUnitEditor } from "../editor";
 import { Method } from "@/common/codeModel";

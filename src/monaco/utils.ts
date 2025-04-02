@@ -1,4 +1,4 @@
-import { IPosition, IRange, editor } from "monaco-editor-core";
+import { IPosition, IRange, editor } from "monaco-editor";
 
 export function isModel(value: any): value is editor.ITextModel {
     return (<editor.ITextModel>value).getValue !== undefined;

@@ -1,4 +1,4 @@
-import { editor, IRange } from "monaco-editor-core";
+import { editor, IRange } from "monaco-editor";
 import { CodeSymbol, CompositeSymbol } from "./base";
 
 export function isCompositeSymbol(symbol: any): symbol is CompositeSymbol {

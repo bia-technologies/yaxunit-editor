@@ -27,13 +27,14 @@
     "terser": "^5.37.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.9",
+    "vite-plugin-monaco-editor-nls": "^3.0.1",
     "vite-plugin-singlefile": "^2.1.0",
     "vitest": "^3.0.5"
   },
   "dependencies": {
     "@ungap/global-this": "^0.4.4",
     "chevrotain": "^11.0.3",
-    "monaco-editor-core": "^0.33",
+    "monaco-editor": "^0.33",
     "performance-polyfill": "^0.0.3",
     "queue-microtask": "^1.2.3",
     "tslib": "^2.8.1"

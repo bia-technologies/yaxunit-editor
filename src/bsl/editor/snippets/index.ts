@@ -1,4 +1,4 @@
-import { IRange, languages } from "monaco-editor-core";
+import { IRange, languages } from "monaco-editor";
 import { EMPTY_RANGE } from "@/monaco/utils";
 
 const all_snippets: languages.CompletionItem[] = []
