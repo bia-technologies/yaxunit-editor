@@ -4,6 +4,9 @@ import IMonarchLanguage = languages.IMonarchLanguage
 import { keywords_all, keywords } from './keywords'
 import { TokenType } from './tokenTypes'
 
+const increaseIndent = [keywords.Function, keywords.Procedure, keywords.If, keywords.Else, keywords.ElsIf, keywords.While, keywords.For, keywords.Try, keywords.Except]
+const decreaseIndent = [keywords.EndFunction, keywords.EndProcedure, keywords.EndIf, keywords.EndDo, keywords.EndTry]
+
 export const conf: LanguageConfiguration = {
   comments: {
     lineComment: "//"
@@ -13,9 +16,6 @@ export const conf: LanguageConfiguration = {
     ['[', ']'],
     [keywords.If.ru, keywords.EndIf.ru],
     [keywords.If.en, keywords.EndIf.en],
-
-    [keywords.ElsIf.ru, keywords.ElsIf.ru],
-    [keywords.ElsIf.en, keywords.ElsIf.en],
 
     [keywords.For.ru, keywords.EndDo.ru],
     [keywords.For.en, keywords.EndDo.en],
@@ -60,7 +60,11 @@ export const conf: LanguageConfiguration = {
   colorizedBracketPairs: [
     ['(', ')'],
     ['[', ']']
-  ]
+  ],
+  indentationRules: {
+    increaseIndentPattern: new RegExp('\s*(' + [...increaseIndent.map(k => k.ru), ...increaseIndent.map(k => k.en)].join('|') + ')\\s.*$', 'i'),
+    decreaseIndentPattern: new RegExp('\s*(' + [...decreaseIndent.map(k => k.ru), ...decreaseIndent.map(k => k.en)].join('|') + ').*$', 'i'),
+  },
 };
 
 export const language: IMonarchLanguage = <IMonarchLanguage>{
