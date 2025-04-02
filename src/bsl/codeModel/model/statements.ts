@@ -81,13 +81,14 @@ export class RiseErrorStatementSymbol extends BaseSymbol implements Acceptable, 
 }
 
 export class IfStatementSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
-    branches: IfBranchSymbol[] = []
-    elseBranch?: ElseBranchSymbol
+    branches: ifBranch[] = []
 
     constructor(position: SymbolPosition, branches: IfBranchSymbol[], elseBranch?: ElseBranchSymbol) {
         super(position)
         this.branches = branches
-        this.elseBranch = elseBranch
+        if (elseBranch) {
+            this.branches.push(elseBranch)
+        }
     }
 
     accept(visitor: CodeModelVisitor): any {
@@ -95,11 +96,15 @@ export class IfStatementSymbol extends BaseSymbol implements Acceptable, Composi
     }
 
     getChildrenSymbols(): (BaseSymbol | undefined)[] {
-        return [...this.branches, this.elseBranch]
+        return this.branches
     }
 }
+export interface ifBranch extends BaseSymbol {
+    condition?: BaseExpressionSymbol
+    body: BaseSymbol[]
 
-export class IfBranchSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
+}
+export class IfBranchSymbol extends BaseSymbol implements ifBranch, Acceptable, CompositeSymbol {
     condition: BaseExpressionSymbol
     body: BaseSymbol[]
 
@@ -118,7 +123,7 @@ export class IfBranchSymbol extends BaseSymbol implements Acceptable, CompositeS
     }
 }
 
-export class ElseBranchSymbol extends BaseSymbol implements Acceptable, CompositeSymbol {
+export class ElseBranchSymbol extends BaseSymbol implements ifBranch, Acceptable, CompositeSymbol {
     body: BaseSymbol[]
 
     constructor(position: SymbolPosition, body: BaseSymbol[]) {

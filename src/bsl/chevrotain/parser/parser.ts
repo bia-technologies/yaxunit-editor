@@ -66,8 +66,7 @@ export class BSLParser extends CstParser {
     }))
 
     protected statement = [
-        () => this.SUBRULE(this.constructorExpression),
-        () => this.SUBRULE(this.constructorMethodExpression),
+        ...this.constructors(),
         () => this.SUBRULE(this.returnStatement),
         () => this.SUBRULE(this.tryStatement),
         () => this.SUBRULE(this.riseErrorStatement),
@@ -238,11 +237,9 @@ export class BSLParser extends CstParser {
 
     // #region Expressions
     protected expression = this.RULE("expression", () => this.choice(
-        () => this.SUBRULE(this.constructorExpression),
-        () => this.SUBRULE(this.constructorMethodExpression),
+        ...this.constructors(),
         () => this.SUBRULE(this.logicalOrExpression),
     ))
-
 
     protected operand = this.RULE('operand', () => {
         this.OPTION(() => this.choice(
@@ -340,6 +337,15 @@ export class BSLParser extends CstParser {
         })
         this.CONSUME(tokens.RParen)
     })
+
+    protected constructorBad = this.RULE('constructorBad', () => this.CONSUME(tokens.New))
+
+    private constructors() {
+        return [
+            () => this.SUBRULE(this.constructorExpression),
+            () => this.SUBRULE(this.constructorMethodExpression),
+            () => this.SUBRULE(this.constructorBad)]
+    }
 
     protected arguments = this.RULE('arguments', () => {
         this.CONSUME(tokens.LParen)

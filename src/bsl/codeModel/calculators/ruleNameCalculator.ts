@@ -1,12 +1,26 @@
 import {
     BinaryExpressionSymbol,
-    MethodCallSymbol,
-    AccessSequenceSymbol,
+    AccessSequenceSymbol
 } from "@/bsl/codeModel";
-import { CodeModelVisitor } from "../visitor";
+import { CodeModelVisitor, isAcceptable } from "../visitor";
+import { BaseSymbol } from "@/common/codeModel";
 
 export class RuleNameCalculator implements CodeModelVisitor {
     static instance = new RuleNameCalculator()
+
+    static getSymbolRule(symbol: BaseSymbol) {
+        return isAcceptable(symbol) ? symbol.accept(RuleNameCalculator.instance) : undefined
+    }
+
+    static getAvailableSymbol(baseSymbol: BaseSymbol | undefined) {
+        let symbol: BaseSymbol | undefined = baseSymbol
+        let rule
+
+        while (symbol && (rule = RuleNameCalculator.getSymbolRule(symbol)) === undefined) {
+            symbol = symbol?.parent
+        }
+        return { rule, symbol }
+    }
 
     visitAccessSequenceSymbol() {
         return 'qualifiedName'
@@ -17,21 +31,21 @@ export class RuleNameCalculator implements CodeModelVisitor {
     visitAssignmentStatement() {
         return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
-    visitBinaryExpressionSymbol(symbol: BinaryExpressionSymbol) {
+    visitBinaryExpressionSymbol(symbol: BaseSymbol) {
         return symbol.parent instanceof BinaryExpressionSymbol ? undefined : 'expression'
     }
-    visitBreakStatement() {
-        return undefined
+    visitBreakStatement(symbol: BaseSymbol) {
+        return symbol.parent ? undefined : 'statements'
     }
-    visitConstSymbol() {
+    visitConstSymbol(symbol: BaseSymbol) {
         // Для корректной обработки незакрытой кавычки строки
-        return undefined // 'literal'
+        return symbol.parent ? undefined : 'literal'
     }
     visitConstructorSymbol() {
         return 'constructorExpression'
     }
-    visitContinueStatement() {
-        return undefined
+    visitContinueStatement(symbol: BaseSymbol) {
+        return symbol.parent ? undefined : 'statements'
     }
     visitElseBranch() {
         return undefined
@@ -63,7 +77,7 @@ export class RuleNameCalculator implements CodeModelVisitor {
     visitLabelStatement() {
         return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
-    visitMethodCallSymbol(symbol: MethodCallSymbol) {
+    visitMethodCallSymbol(symbol: BaseSymbol) {
         return symbol.parent instanceof AccessSequenceSymbol ? undefined : 'methodCall'
     }
     visitModel() {
@@ -75,8 +89,8 @@ export class RuleNameCalculator implements CodeModelVisitor {
     visitParameterDefinition() {
         return 'parameter'
     }
-    visitPreprocessorSymbol() {
-        return undefined
+    visitPreprocessorSymbol(symbol: BaseSymbol) {
+        return symbol.parent ? undefined : 'preprocessor'
     }
     visitProcedureDefinition() {
         return 'module' // Используется верхнеуровневое обобщающее правило, когда вставляется несколько методов
@@ -99,14 +113,14 @@ export class RuleNameCalculator implements CodeModelVisitor {
     visitTryStatement() {
         return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
     }
-    visitUnaryExpressionSymbol() {
-        return undefined
+    visitUnaryExpressionSymbol(symbol: BaseSymbol) {
+        return symbol.parent ? undefined : 'expression'
     }
     visitVariableDefinition() {
         return 'varStatement'
     }
-    visitVariableSymbol() {
-        return undefined
+    visitVariableSymbol(symbol: BaseSymbol) {
+        return symbol.parent ? undefined : 'qualifiedName'
     }
     visitWhileStatement() {
         return 'statements' // Используется верхнеуровневое обобщающее правило для возможности разбора нескольких выражений
