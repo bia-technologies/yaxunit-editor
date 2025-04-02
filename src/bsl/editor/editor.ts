@@ -24,28 +24,35 @@ export class BslEditor {
             language: 'bsl',
             automaticLayout: true,
             glyphMargin: true,
+            useShadowDOM: false,
+            contextmenu: false,
+            wordBasedSuggestions: false,
+
+            multiCursorModifier: 'ctrlCmd',
+
             detectIndentation: false,
             insertSpaces: false,
-            useShadowDOM: false,
-            contextmenu: true,
-            unicodeHighlight: {
-                ambiguousCharacters: false
-            },
+            trimAutoWhitespace: false,
+            autoIndent: 'full',
+            scrollBeyondLastLine: false,
+
             autoClosingQuotes: 'languageDefined',
             autoClosingBrackets: 'languageDefined',
             autoSurround: 'languageDefined',
             autoClosingDelete: 'auto',
             autoClosingOvertype: 'auto',
-            acceptSuggestionOnCommitCharacter: true,
-            // fontFamily: 'Courier New',
-            // fontSize: 12,
-            renderLineHighlight: 'all',
-            trimAutoWhitespace: false,
-            renderWhitespace: 'all',
-            multiCursorModifier: 'ctrlCmd',
 
+            acceptSuggestionOnCommitCharacter: true,
+
+            renderLineHighlight: 'all',
+            renderWhitespace: 'none', // ломает работу шрифтов
+
+            parameterHints: { cycle: true },
             bracketPairColorization: {
                 enabled: true // don't work on monaco 0.33 
+            },
+            unicodeHighlight: {
+                ambiguousCharacters: false
             },
             suggest: {
                 preview: true,
@@ -53,7 +60,8 @@ export class BslEditor {
                 localityBonus: true
             },
             fontLigatures: true,
-            wordBasedSuggestions: false,
+            fontSize: 14,
+            fontFamily: 'JetBrains Mono',
             model: this.createModel()
         });
 
