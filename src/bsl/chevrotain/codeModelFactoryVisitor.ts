@@ -426,7 +426,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         return symbol
     }
 
-    constructorBad(ctx: CstChildrenDictionary, location: CstNodeLocation) {
+    constructorBad(_: CstChildrenDictionary, location: CstNodeLocation) {
         return new ConstructorSymbol(nodePosition(location), '')
     }
 

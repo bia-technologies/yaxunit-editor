@@ -176,7 +176,6 @@ export class BaseCodeModelVisitor implements CodeModelVisitor {
 
     visitIfStatement(symbol: IfStatementSymbol) {
         acceptItems(symbol.branches, this)
-        this.accept(symbol.elseBranch)
     }
 
     visitIfBranch(symbol: IfBranchSymbol) {

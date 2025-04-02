@@ -138,7 +138,6 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     async visitIfStatement(symbol: IfStatementSymbol) {
         await this.acceptItems(symbol.branches)
-        await this.accept(symbol.elseBranch)
     }
 
     async visitIfBranch(symbol: IfBranchSymbol) {
