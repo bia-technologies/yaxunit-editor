@@ -19,7 +19,6 @@
     ![show-definition-method](./images/show-definition-method.png)
   * Переход к определению
     ![goto-definition-variable](./images/goto-definition-variable.png)
-
 * Также реализовано
   * Генерация AST с использованием [`chevrotain`](https://chevrotain.io/)
   * Поиск методов, локальных переменных, выражений
@@ -36,14 +35,22 @@
 ## Работа с тестами
 
 * Поиск тестов на основании данных регистрации (метод `ИсполняемыеСценарии`)
+  
   ![test-resolving](./images/test-resolving.png)
 * Запуск тестов
+  
   ![run-tests](./images/run-tests.gif)
   Реализован запуск тестов и отображение ошибок используя механизмы `Monaco`
 * Переход к ошибка в тестовом модуле
+  
   ![goto_error](./images/goto_error.gif)
 
 Планируется
 
 * Подсказки по добавлению обработчиков событий
 * Подсказки в строках (объекты метаданных, реквизиты и тд)
+
+## Возможности Monaco
+
+* [Палитра команд](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette), которую можно открыть с помощью сочетания клавиш `Ctrl + P`
+* [Мультикурсор](https://alexharri.com/blog/multi-cursor-code-editing-animated-introduction), добавление новых позиций с помощью `Ctrl + Click` и `Ctrl + D`

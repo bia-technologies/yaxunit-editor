@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor-core';
+import { languages } from 'monaco-editor';
 import { completionItemProvider } from '../providers/completionItemProvider'
 import { signatureHelpProvider } from '../providers/signatureHelpProvider'
 import { documentSymbolProvider } from '../providers/documentSymbolProvider';

@@ -3,7 +3,7 @@ import { VariablesScope } from "./interfaces";
 import { MethodsCalculator, TypesCalculator, VariablesCalculator } from "../calculators";
 import { FunctionDefinitionSymbol, MethodDefinition, ProcedureDefinitionSymbol } from "./definitions";
 import { ParentsCalculator } from "../calculators";
-import { Emitter, IEvent } from "monaco-editor-core";
+import { Emitter, IEvent } from "monaco-editor";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslVariable } from "./members";
 import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";

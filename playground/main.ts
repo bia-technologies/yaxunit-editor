@@ -1,5 +1,5 @@
 import '@/styles/style.css';
-import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope/platform'

@@ -1,4 +1,4 @@
-import { editor, IPosition } from "monaco-editor-core"
+import { editor, IPosition } from "monaco-editor"
 import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import {

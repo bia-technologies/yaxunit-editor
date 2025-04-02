@@ -8,7 +8,7 @@ import {
     MethodDefinition
 } from "../codeModel"
 import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
-import { editor, MarkerSeverity } from "monaco-editor-core"
+import { editor, MarkerSeverity } from "monaco-editor"
 import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
 import { descendantByRange, getParentMethodDefinition, updateOffset } from "./utils"

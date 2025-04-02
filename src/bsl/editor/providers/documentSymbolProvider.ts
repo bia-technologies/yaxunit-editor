@@ -1,4 +1,4 @@
-import { editor, languages, CancellationToken } from "monaco-editor-core";
+import { editor, languages, CancellationToken } from "monaco-editor";
 import { ModuleModel } from "@/bsl/moduleModel";
 import { symbolRange } from "@/common/codeModel";
 

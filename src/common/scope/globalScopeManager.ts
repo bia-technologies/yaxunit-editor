@@ -8,7 +8,7 @@ import {
     Scope,
     UnionScope
 } from '@/common/scope'
-import { Emitter, IEvent } from 'monaco-editor-core'
+import { Emitter, IEvent } from 'monaco-editor'
 
 const activeLoaders: Promise<Scope>[] = []
 
