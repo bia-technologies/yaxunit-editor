@@ -9,22 +9,22 @@ export interface TestSuiteResult extends BaseItem {
 export interface TestCaseResult extends BaseItem{
     classname: string,
     failure?: Failure[],
-    skipped?: Error[]
+    skipped?: ReportErrorInfo[]
 }
 
 interface BaseItem {
     name: string,
-    error?: Error[],
+    error?: ReportErrorInfo[],
     time: number,
 }
 
-export interface Error {
+export interface ReportErrorInfo {
     context?:string,
     message: string,
     trace?: string,
     type?: string
 }
-export interface Failure extends Error {
+export interface Failure extends ReportErrorInfo {
     actual: string,
     expected: string
 }
