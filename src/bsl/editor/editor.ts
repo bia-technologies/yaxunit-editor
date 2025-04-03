@@ -1,4 +1,4 @@
-import { editor } from 'monaco-editor-core'
+import { editor, Uri } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
 import { ModuleModel } from '../moduleModel'
@@ -93,7 +93,7 @@ export class BslEditor {
 
     createModel() {
 
-        const model = editor.createModel('', 'bsl');
+        const model = editor.createModel('', 'bsl', Uri.parse('Тестовый модуль'));
 
         return ChevrotainModuleModel.create(model)
     }
