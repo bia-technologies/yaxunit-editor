@@ -14,10 +14,13 @@
     * Методы и свойства объектов платформы
   * Подсказка по публичному программному интерфейсу `YAxUnit`
   * Подсказка по локальным переменным
+
     ![show-definition-variable](./images/show-definition-variable.png)
   * Подсказка по методам модуля
+
     ![show-definition-method](./images/show-definition-method.png)
   * Переход к определению
+
     ![goto-definition-variable](./images/goto-definition-variable.png)
 * Также реализовано
   * Генерация AST с использованием [`chevrotain`](https://chevrotain.io/)
@@ -40,10 +43,13 @@
 * Запуск тестов
   
   ![run-tests](./images/run-tests.gif)
+
   Реализован запуск тестов и отображение ошибок используя механизмы `Monaco`
 * Переход к ошибка в тестовом модуле
   
   ![goto_error](./images/goto_error.gif)
+
+  ![error-stack](./images/error-stack.png)
 
 Планируется
 
