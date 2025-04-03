@@ -1,6 +1,6 @@
 {
   "name": "yaxunit-editor",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Редактор тестов YAxUnit для 1C:Предприятие",
   "repository": "https://github.com/bia-technologies/yaxunit-editor",
   "type": "module",
