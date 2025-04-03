@@ -88,7 +88,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
                     success = removeSymbol(codeModel, symbol, range.diff)
                     break
                 case EditType.append:
-                    appendSymbol(codeModel, newSymbol, range.diff)
+                    appendSymbol()
                     break
             }
             if (!success) {
@@ -197,7 +197,7 @@ function removeSymbol(codeModel: BslCodeModel, symbol: BaseSymbol | undefined, d
     return removed
 }
 
-function appendSymbol(codeModel: BslCodeModel, newSymbol: BaseSymbol | BaseSymbol[] | undefined, diff: number) {
+function appendSymbol() {
     throw 'Not implementation'
 }
 

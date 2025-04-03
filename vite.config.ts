@@ -35,7 +35,10 @@ export default defineConfig(api => {
       },
     },
     plugins: [
-      viteSingleFile(),
+      viteSingleFile({
+        removeViteModuleLoader: true,
+        deleteInlinedFiles: true
+      }),
       MonacoEditorNlsPlugin.default({
         locale: Languages.ru,
         localeData: ru_ru.contents
