@@ -1,6 +1,6 @@
 {
   "name": "yaxunit-editor",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Редактор тестов YAxUnit для 1C:Предприятие",
   "repository": "https://github.com/bia-technologies/yaxunit-editor",
   "type": "module",
@@ -26,11 +26,12 @@
     "resize-observer-polyfill": "^1.5.1",
     "terser": "^5.37.0",
     "typescript": "^5.7.2",
-    "vite": "^6.0.9",
+    "vite": "^6.2.4",
     "vite-plugin-singlefile": "^2.1.0",
-    "vitest": "^3.0.5"
+    "vitest": "^3.1.1"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.5",
     "@ungap/global-this": "^0.4.4",
     "chevrotain": "^11.0.3",
     "monaco-editor-core": "^0.33",

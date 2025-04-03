@@ -2,13 +2,13 @@ import { IEvent, Emitter, IPosition } from 'monaco-editor-core'
 
 import { TestDefinition, TestStatus } from './types'
 import { Method } from '@/common/codeModel'
-import { Report, TestCaseResult, TestSuiteResult } from './report'
+import { ReportErrorInfo, Report, TestCaseResult, TestSuiteResult } from './report'
 
 export const ROOT_METHOD = 'ИсполняемыеСценарии'
 
 export class TestsModel {
     private tests: TestDefinition[] = []
-    private errors: string[] = []
+    private errors: ReportErrorInfo[] = []
     emitter: Emitter<TestsModel> = new Emitter()
     lastReport?: Report
 
@@ -20,7 +20,7 @@ export class TestsModel {
         return this.errors
     }
 
-    updateTests(methods: Method[], getPosition:(offset:number)=>IPosition) {
+    updateTests(methods: Method[], getPosition: (offset: number) => IPosition) {
         let changed = false
         methods.forEach(m => {
             const test = this.findTest(m.name)
@@ -67,12 +67,17 @@ export class TestsModel {
         this.lastReport = result
 
         this.tests.forEach(this.cleanTest)
+        this.errors.length = 0
+
         result.forEach(s => this.loadSuite(s))
         this.emitter.fire(this)
     }
 
     private loadSuite(suite: TestSuiteResult): void {
-        suite.testcase.forEach(t => this.loadTestCase(suite, t))
+        this.loadSuiteErrors(suite)
+        suite.testcase.forEach(t => {
+            this.loadTestCase(suite, t)
+        })
     }
 
     private loadTestCase(suite: TestSuiteResult, test: TestCaseResult): void {
@@ -104,6 +109,13 @@ export class TestsModel {
             }
         }
         method.duration += test.time * 1000
+    }
+
+    private loadSuiteErrors(suite: TestSuiteResult) {
+        if (suite.error) {
+            suite.error.forEach(e => e.context = suite.context)
+            this.errors.push(...suite.error)
+        }
     }
 
     private cleanTest(test: TestDefinition): void {

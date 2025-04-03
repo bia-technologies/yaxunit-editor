@@ -1,7 +1,8 @@
 import { TestsModel } from '../test-model'
-import { editor, MarkerSeverity } from 'monaco-editor-core'
+import { editor, MarkerSeverity, Uri } from 'monaco-editor-core'
 import { TestModelRender } from '../interfaces'
-import { Error } from '../test-model/report'
+import { ReportErrorInfo } from '../test-model/report'
+import { parseTrace } from './stackTrace'
 
 
 export class TestMessageMarkersProvider implements TestModelRender {
@@ -17,25 +18,14 @@ export class TestMessageMarkersProvider implements TestModelRender {
             return
         }
         const markers: editor.IMarkerData[] = this.getTestsMarkers(model, editorModel)
-        editor.setModelMarkers(editorModel, "owner", markers);
+        editor.setModelMarkers(editorModel, "runtime-errors", markers);
     }
 
     private getTestsMarkers(testsModel: TestsModel, editorModel: editor.ITextModel): editor.IMarkerData[] {
         const markers: editor.IMarkerData[] = []
 
         testsModel.getTests().filter(t => t.errors).forEach(t => {
-            (t.errors as Error[]).map(e => {
-                let traceMarker: editor.IMarkerData | undefined
-
-                if (e.trace) {
-                    const trace = parseTrace(e.trace)
-                    if (trace) {
-                        traceMarker = createMarker(trace.message, trace.line, editorModel)
-                        markers.push(traceMarker)
-                    } else {
-                        markers.push(createMarker(e.trace, 1, editorModel))
-                    }
-                }
+            (t.errors as ReportErrorInfo[]).map(e => {
                 const messageMarker: editor.IMarkerData = {
                     message: `${e.context}: ${e.message}`,
                     severity: MarkerSeverity.Error,
@@ -45,21 +35,55 @@ export class TestMessageMarkersProvider implements TestModelRender {
                     endColumn: editorModel.getLineLastNonWhitespaceColumn(t.lineNumber)
                 }
                 markers.push(messageMarker)
-                if (traceMarker) {
-                    messageMarker.relatedInformation = [{
-                        resource: editorModel.uri,
-                        message: traceMarker.message,
-                        startLineNumber: traceMarker.startLineNumber,
-                        startColumn: traceMarker.startColumn,
-                        endLineNumber: traceMarker.endLineNumber,
-                        endColumn: traceMarker.endColumn,
-                    }]
-                }
-            }
-            )
+                markers.push(...createErrorMarkers(e, editorModel, messageMarker))
+            })
         })
+        testsModel.getErrors().forEach(e => markers.push(...createErrorMarkers(e, editorModel)))
         return markers
     }
+}
+
+function createErrorMarkers(e: ReportErrorInfo, editorModel: editor.ITextModel, rootMarker?: editor.IMarkerData) {
+    const trace = e.trace ? parseTrace(e.trace) : undefined
+    const markers = []
+    if (trace) {
+        const attachRelatedInformation = []
+        if (rootMarker) {
+            rootMarker.relatedInformation = []
+            attachRelatedInformation.push(rootMarker)
+        }
+        for (const line of trace) {
+            if (!line.module) { break }
+            if (line.module.startsWith('ВнешняяОбработка.ЗапускТестовогоМодуля')) {
+                const marker = createMarker(`${e.context}: ${e.message}`, line.line, editorModel)
+                markers.push(marker)
+                const relatedInformation = {
+                    resource: editorModel.uri,
+                    message: line.shortMessage,
+                    startLineNumber: marker.startLineNumber,
+                    startColumn: marker.startColumn,
+                    endLineNumber: marker.endLineNumber,
+                    endColumn: marker.endColumn,
+                }
+                attachRelatedInformation.forEach(marker => marker.relatedInformation?.push(relatedInformation))
+                marker.relatedInformation = []
+                attachRelatedInformation.push(marker)
+            } else {
+                const relatedInformation = {
+                    resource: Uri.parse(line.module),
+                    message: line.shortMessage,
+                    startLineNumber: line.line,
+                    startColumn: 0,
+                    endLineNumber: line.line,
+                    endColumn: 0,
+                }
+                attachRelatedInformation.forEach(marker => marker.relatedInformation?.push(relatedInformation))
+            }
+        }
+    } else if (!rootMarker) {
+        markers.push(createMarker(`${e.context}: ${e.message}`, 1, editorModel))
+    }
+    return markers
 }
 
 function createMarker(message: string, line: number, editorModel: editor.ITextModel): editor.IMarkerData {
@@ -71,29 +95,4 @@ function createMarker(message: string, line: number, editorModel: editor.ITextMo
         endLineNumber: line,
         endColumn: editorModel.getLineLength(line)
     }
-}
-
-function parseTrace(traceMessage: string) {
-    const lines = traceMessage.split(/\r|\n/)
-
-    let endLine = 0
-    for (let index = lines.length - 1; index >= 0; index--) {
-        const line = lines[index];
-        if (line.startsWith('{ВнешняяОбработка.')) {
-            endLine = index
-            break
-        }
-    }
-
-    if (endLine) {
-        const match = /\((\d+)\)\}/.exec(lines[endLine])
-        if (match) {
-            lines.length = endLine + 1
-            return {
-                line: parseInt(match[1]),
-                message: lines.join('\n')
-            }
-        }
-    }
-    return undefined
 }

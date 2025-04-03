@@ -53,6 +53,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         if (ctx.statements) {
             symbols.push(...this.getStatements(ctx.statements))
         }
+        sort(symbols)
         return symbols
     }
 
@@ -65,9 +66,7 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         } else {
             statements = []
         }
-        statements.sort((s1, s2) => {
-            return s1.startOffset - s2.startOffset
-        })
+        sort(statements)
         return statements
     }
 
@@ -254,6 +253,10 @@ export class CodeModelFactoryVisitor extends BslVisitor {
     expression(ctx: CstChildrenDictionary) {
         if (ctx.constructorExpression) {
             return this.visitFirst(ctx.constructorExpression)
+        } else if (ctx.constructorMethodExpression) {
+            return this.visitFirst(ctx.constructorMethodExpression)
+        } else if (ctx.constructorBad) {
+            return this.visitFirst(ctx.constructorBad)
         } else if (ctx.logicalOrExpression) {
             return this.visitFirst(ctx.logicalOrExpression)
         }
@@ -423,6 +426,10 @@ export class CodeModelFactoryVisitor extends BslVisitor {
         return symbol
     }
 
+    constructorBad(_: CstChildrenDictionary, location: CstNodeLocation) {
+        return new ConstructorSymbol(nodePosition(location), '')
+    }
+
     arguments(ctx: CstChildrenDictionary, location: CstNodeLocation) {
         if (!ctx.argument && !ctx.Comma) {
             return []
@@ -559,3 +566,9 @@ function multilineStringContent(value: string): string {
     return lines.join('\n')
 }
 
+function sort(symbols: BaseSymbol[]) {
+    symbols.sort((s1, s2) => {
+        return s1.startOffset - s2.startOffset
+    })
+
+}
