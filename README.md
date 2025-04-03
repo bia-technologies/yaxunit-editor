@@ -1,7 +1,7 @@
-[![Demo](https://github.com/bia-technologies/yaxunit-editor/actions/workflows/build-demo.yml/badge.svg?label=Demo&style=flat)](https://bia-technologies.github.io/yaxunit-editor/)
-[![Latest release](https://img.shields.io/github/release/bia-technologies/yaxunit-editor.svg?label=Latest&style=flat)](https://github.com/bia-technologies/yaxunit-editor/releases/latest)
-
 # Редактор тестов YAxUnit
+
+[![Demo](https://github.com/bia-technologies/yaxunit-editor/actions/workflows/build-demo.yml/badge.svg?label=Demo&style=flat)](https://bia-technologies.github.io/yaxunit-editor/playground.html)
+[![Latest release](https://img.shields.io/github/release/bia-technologies/yaxunit-editor.svg?label=Latest&style=flat)](https://github.com/bia-technologies/yaxunit-editor/releases/latest)
 
 ![Run test](/docs/images/run-tests.gif)
 
