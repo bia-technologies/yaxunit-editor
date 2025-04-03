@@ -2,13 +2,13 @@ import { IEvent, Emitter, IPosition } from 'monaco-editor-core'
 
 import { TestDefinition, TestStatus } from './types'
 import { Method } from '@/common/codeModel'
-import { Error, Report, TestCaseResult, TestSuiteResult } from './report'
+import { ReportErrorInfo, Report, TestCaseResult, TestSuiteResult } from './report'
 
 export const ROOT_METHOD = 'ИсполняемыеСценарии'
 
 export class TestsModel {
     private tests: TestDefinition[] = []
-    private errors: Error[] = []
+    private errors: ReportErrorInfo[] = []
     emitter: Emitter<TestsModel> = new Emitter()
     lastReport?: Report
 

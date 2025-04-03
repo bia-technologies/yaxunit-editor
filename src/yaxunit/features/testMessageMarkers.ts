@@ -1,7 +1,7 @@
 import { TestsModel } from '../test-model'
 import { editor, MarkerSeverity, Uri } from 'monaco-editor-core'
 import { TestModelRender } from '../interfaces'
-import { Error } from '../test-model/report'
+import { ReportErrorInfo } from '../test-model/report'
 import { parseTrace } from './stackTrace'
 
 
@@ -25,7 +25,7 @@ export class TestMessageMarkersProvider implements TestModelRender {
         const markers: editor.IMarkerData[] = []
 
         testsModel.getTests().filter(t => t.errors).forEach(t => {
-            (t.errors as Error[]).map(e => {
+            (t.errors as ReportErrorInfo[]).map(e => {
                 const messageMarker: editor.IMarkerData = {
                     message: `${e.context}: ${e.message}`,
                     severity: MarkerSeverity.Error,
@@ -43,7 +43,7 @@ export class TestMessageMarkersProvider implements TestModelRender {
     }
 }
 
-function createErrorMarkers(e: Error, editorModel: editor.ITextModel, rootMarker?: editor.IMarkerData) {
+function createErrorMarkers(e: ReportErrorInfo, editorModel: editor.ITextModel, rootMarker?: editor.IMarkerData) {
     const trace = e.trace ? parseTrace(e.trace) : undefined
     const markers = []
     if (trace) {
