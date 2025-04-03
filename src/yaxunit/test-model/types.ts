@@ -1,5 +1,5 @@
 import { Method } from '@/common/codeModel'
-import { Error } from './report'
+import { ReportErrorInfo } from './report'
 
 export enum TestStatus {
     pending = 'Ожидание',
@@ -17,7 +17,7 @@ export class TestDefinition {
     method: string
     duration: number = 0
     lineNumber: number
-    errors?: Error[]
+    errors?: ReportErrorInfo[]
 
     constructor(method: Method, lineNumber: number) {
         this.method = method.name

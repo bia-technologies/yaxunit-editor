@@ -107,7 +107,6 @@ export class ParentsCalculator implements CodeModelVisitor, ModelCalculator {
 
     visitIfStatement(symbol: IfStatementSymbol) {
         this.setParentItems(symbol, symbol.branches)
-        this.setParent(symbol, symbol.elseBranch)
     }
 
     visitIfBranch(symbol: IfBranchSymbol) {
