@@ -1,4 +1,4 @@
-import { languages, editor } from "monaco-editor";
+import { languages, editor } from "monaco-editor-core";
 import { ModuleModel } from "@/bsl/moduleModel";
 import { hoverSymbolDescription } from './documentationRender';
 

@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
 import { viteSingleFile } from "vite-plugin-singlefile"
 import path from 'path'
-import MonacoEditorNlsPlugin, {
-  esbuildPluginMonacoEditorNls,
-  Languages,
-} from 'vite-plugin-monaco-editor-nls';
+// import MonacoEditorNlsPlugin, {
+//   esbuildPluginMonacoEditorNls,
+//   Languages,
+// } from 'vite-plugin-monaco-editor-nls';
 
 // https://github.com/microsoft/vscode-loc/blob/main/i18n/vscode-language-pack-ru/translations/main.i18n.json
 import ru_ru from './nls/ru.json' with { type: "json" }
@@ -23,26 +23,26 @@ export default defineConfig(api => {
       target: 'es2018',
       include: /\.(ts|jsx|tsx)$/,
     },
-    optimizeDeps: {
-      /** vite >= 2.3.0 */
-      esbuildOptions: {
-        plugins: [
-          esbuildPluginMonacoEditorNls({
-            locale: Languages.ru,
-            localeData: ru_ru.contents
-          }),
-        ],
-      },
-    },
+    // optimizeDeps: {
+    //   /** vite >= 2.3.0 */
+    //   esbuildOptions: {
+    //     plugins: [
+    //       esbuildPluginMonacoEditorNls({
+    //         locale: Languages.ru,
+    //         localeData: ru_ru.contents
+    //       }),
+    //     ],
+    //   },
+    // },
     plugins: [
       viteSingleFile({
         removeViteModuleLoader: true,
         deleteInlinedFiles: true
       }),
-      MonacoEditorNlsPlugin.default({
-        locale: Languages.ru,
-        localeData: ru_ru.contents
-      }),
+      // MonacoEditorNlsPlugin.default({
+      //   locale: Languages.ru,
+      //   localeData: ru_ru.contents
+      // }),
     ],
     resolve: {
       alias: {

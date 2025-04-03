@@ -15,7 +15,7 @@ import {
     VariableSymbol
 } from "@/bsl/codeModel"
 import { CodeSymbol } from "@/common/codeModel"
-import { IMarkdownString } from "monaco-editor"
+import { IMarkdownString } from "monaco-editor-core"
 import { ModuleModel } from "../../moduleModel"
 import { BaseTypes } from "../../scope/baseTypes"
 import { TypesCalculator } from "@/bsl/codeModel/calculators"

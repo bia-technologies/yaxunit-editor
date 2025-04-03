@@ -1,6 +1,6 @@
 import { registerSnippets } from '@/bsl/editor/snippets'
 import { EMPTY_RANGE } from '@/monaco/utils'
-import { languages } from 'monaco-editor'
+import { languages } from 'monaco-editor-core'
 
 registerSnippets(loadSnippets())
 

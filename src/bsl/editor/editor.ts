@@ -1,4 +1,4 @@
-import { editor } from 'monaco-editor'
+import { editor } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
 import { ModuleModel } from '../moduleModel'

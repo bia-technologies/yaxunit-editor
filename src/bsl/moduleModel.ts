@@ -1,4 +1,4 @@
-import { editor, IPosition } from "monaco-editor";
+import { editor, IPosition } from "monaco-editor-core";
 import { BslCodeModel } from "./codeModel";
 import { BslModuleScope } from "./scope/bslModuleScope";
 import { CodeSymbol } from "@/common/codeModel";

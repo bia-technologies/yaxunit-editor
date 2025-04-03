@@ -1,6 +1,6 @@
 import { BaseSymbol } from '@/common/codeModel'
 import { AccessProperty, AccessSequenceSymbol, isMethodDefinition, MethodCallSymbol } from './model'
-import { editor, IRange } from 'monaco-editor'
+import { editor, IRange } from 'monaco-editor-core'
 import { getParentMethodDefinition } from '../chevrotain/utils'
 
 export * from '@/common/codeModel/utils'

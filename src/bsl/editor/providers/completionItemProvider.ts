@@ -1,4 +1,4 @@
-import { editor, languages, IPosition, Range } from 'monaco-editor'
+import { editor, languages, IPosition, Range } from 'monaco-editor-core'
 import { GlobalScope, isMethod, isPlatformMethod, Scope, Member, MemberType } from '@/common/scope'
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { ModuleModel } from '@/bsl/moduleModel'

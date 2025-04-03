@@ -1,8 +1,8 @@
-import './styles/style.css';
-import "@fontsource/jetbrains-mono/index.css"
-import './polyfill .js';
+import './styles/style.css'
+import '@fontsource/jetbrains-mono/index.css'
+import './polyfill .js'
 
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope/platform'

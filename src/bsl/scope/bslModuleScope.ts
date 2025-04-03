@@ -1,7 +1,7 @@
 import { BaseScope, Scope, MethodScope, Member, MemberType } from '@/common/scope'
 import { BaseSymbol } from "@/common/codeModel"
 import { ModuleModel } from '@/bsl/moduleModel'
-import { IPosition } from 'monaco-editor'
+import { IPosition } from 'monaco-editor-core'
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
 import { VariablesCalculator } from '../codeModel/calculators'
 import { getParentMethodDefinition } from '../chevrotain/utils'

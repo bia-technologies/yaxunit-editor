@@ -1,4 +1,4 @@
-import { IEvent, Emitter, IPosition } from 'monaco-editor'
+import { IEvent, Emitter, IPosition } from 'monaco-editor-core'
 
 import { TestDefinition, TestStatus } from './types'
 import { Method } from '@/common/codeModel'

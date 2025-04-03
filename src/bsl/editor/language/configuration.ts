@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor'
+import { languages } from 'monaco-editor-core'
 import LanguageConfiguration = languages.LanguageConfiguration
 import IMonarchLanguage = languages.IMonarchLanguage
 import { keywords_all, keywords } from './keywords'

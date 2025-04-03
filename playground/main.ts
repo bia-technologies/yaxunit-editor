@@ -1,12 +1,13 @@
-import '@/styles/style.css';
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import '../src/styles/style.css'
+import '@fontsource/jetbrains-mono/index.css'
+
+import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope/platform'
+import { ModelView } from './modelView'
+import { symbolRange } from '@/bsl/codeModel/utils'
 import { YAxUnitEditor } from '@/yaxunit'
-import { ModelView } from './modelView';
-import { symbolRange } from '@/bsl/codeModel/utils';
-
 
 (self as any).MonacoEnvironment = {
   getWorker(): Worker {

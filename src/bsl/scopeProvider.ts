@@ -1,4 +1,4 @@
-import { editor } from 'monaco-editor';
+import { editor } from 'monaco-editor-core';
 import { Scope, Member, GlobalScope } from '@/common/scope';
 import { NamedSymbol } from '@/common/codeModel';
 import { isModel } from '@/monaco/utils'
