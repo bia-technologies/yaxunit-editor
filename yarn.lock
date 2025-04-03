@@ -823,9 +823,9 @@ mime-types@^2.1.12:
   dependencies:
     mime-db "1.52.0"
 
-monaco-editor-core-core@^0.33:
+monaco-editor-core@^0.33:
   version "0.33.0"
-  resolved "https://registry.yarnpkg.com/monaco-editor-core-comonaco-editor-coreditor-core-0.33.0.tgz#1a6631932f5239c9ccdb26b437d333cf9bb85d31"
+  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.33.0.tgz#1a6631932f5239c9ccdb26b437d333cf9bb85d31"
   integrity sha512-Kzxak8jnMS8vI08DcseBuOfeQlcVPpGXO210D8M+QnaNR92s4IYzgUeiow/Hld9Gi5pGvjDbPsdUXkPewoTA5g==
 
 ms@^2.1.3:
@@ -1092,17 +1092,17 @@ vite-node@3.0.9:
     pathe "^2.0.3"
     vite "^5.0.0 || ^6.0.0"
 
-vite-plugin-monaco-editor-core.1.0:
+vite-plugin-singlefile@^2.1.0:
   version "2.2.0"
-  resolved "https://registry.yarnpkg.com/vite-plugin-monaco-editor-corevite-plugin-singlefmonaco-editor-core#0ae8604d8e7845e8d4b036e58b15456b989e98de"
+  resolved "https://registry.yarnpkg.com/vite-plugin-singlefile/-/vite-plugin-singlefile-2.2.0.tgz#0ae8604d8e7845e8d4b036e58b15456b989e98de"
   integrity sha512-Ik1wXmJaGzeQtUeIV7JprDUqqy6DlLzXAY27Blei5peE4c9VJF+Kp9xWDJeuX0RJUZmFbIAuw1/RAh06A+Ql7w==
   dependencies:
     micromatch "^4.0.8"
 
 "vite@^5.0.0 || ^6.0.0", vite@^6.0.9:
-  version "6.2.3"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-6.2.3.tgz#249e92d32886981ab46bc1f049ac72abc6fa81e2"
-  integrity sha512-IzwM54g4y9JA/xAeBPNaDXiBF8Jsgl3VBQ2YQ/wOY6fyW3xMdSoltIV3Bo59DErdqdE6RxUfv8W69DvUorE4Eg==
+  version "6.2.4"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-6.2.4.tgz#05809de3f918fded87f73a838761995a4d66a680"
+  integrity sha512-veHMSew8CcRzhL5o8ONjy8gkfmFJAd5Ac16oxBUjlwgX3Gq2Wqr+qNC3TjPIpy7TPV/KporLga5GT9HqdrCizw==
   dependencies:
     esbuild "^0.25.0"
     postcss "^8.5.3"
