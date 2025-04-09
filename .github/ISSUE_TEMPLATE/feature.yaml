@@ -1,0 +1,32 @@
+name: '💡 Feature Request'
+description: 'Предложите идею для этого проекта'
+type: 'Feature'
+labels: ['Enhancement']
+body:
+  - type: textarea
+    attributes:
+      label: В чем суть новой функции?
+      description: Четко и подробно опишите, что вы хотите предложить.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Почему это важно?
+      description: Объясните, какую проблему это решит или какую пользу принесет проекту.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Дополнительный контекст
+      description: Добавьте сюда любой другой контекст или скриншоты по запросу функции.
+    validations:
+      required: false
+  - type: checkboxes
+    attributes:
+      label: "Готовы ли вы помочь с реализацией?"
+      options:
+        - label: "Да, я готов(а) участвовать в разработке (например, через Pull Request)."
+        - label: "Готов(а) помочь с тестированием или документацией."
+        - label: "Могу предложить дизайн или UX-рекомендации."
