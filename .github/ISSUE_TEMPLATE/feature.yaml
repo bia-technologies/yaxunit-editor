@@ -1,7 +1,7 @@
 name: '💡 Feature Request'
 description: 'Предложите идею для этого проекта'
 type: 'Feature'
-labels: ['Enhancement']
+labels: ['enhancement']
 body:
   - type: textarea
     attributes:
