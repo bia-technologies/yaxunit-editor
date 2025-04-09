@@ -32,7 +32,7 @@ function getHover(test: TestDefinition): string {
     lines.push(`Статус: ${test.status}`, `Продолжительность: ${test.duration} мс`)
     
     if(test.errors){
-        test.errors.forEach(e=>lines.push(`**Ошибка(${e.context})**: ${e.message}`))
+        test.errors.forEach(e=>lines.push(`**${e.ownerPresent}**: ${e.message}`))
     }
     return lines.join('  \n')
 }
