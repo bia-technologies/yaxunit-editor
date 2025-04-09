@@ -81,7 +81,9 @@ export class TestsModel {
     }
 
     private loadTestCase(suite: TestSuiteResult, test: TestCaseResult): void {
-        var method = this.findTest(test.name)
+        const methodName = test.classname && test.classname.includes('.') ? test.classname.split('.')[1] : test.name
+
+        var method = this.findTest(methodName)
         if (!method) {
             return
         }
