@@ -1,0 +1,35 @@
+name: '🐞 Bug Report'
+description: 'Регистрация обнаруженной ошибки'
+type: 'Bug'
+labels: ['bug']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: '🐞 Описание ошибки'
+      description: 'Опишите проблему и шаги воспроизведения'
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Пример кода
+      description: 'Код, который приводит к возникновению ошибки'
+      render: bsl
+
+  - type: textarea
+    attributes:
+      label: Текст ошибки (лог)
+      description: 'Ошибки можно посмотреть открыв `Инструменты разработчика` используя сочетание клавиш `Ctrl+Shift_Aft+F12`'
+      render: txt
+
+  - type: dropdown
+    id: operating-systems
+    attributes:
+      label: Операционная система
+      multiple: true
+      options:
+        - Linux
+        - Windows
+        - Mac
+        - Other
