@@ -19,7 +19,7 @@ interface BaseItem {
 }
 
 export interface ReportErrorInfo {
-    context?:string,
+    ownerPresent?:string,
     message: string,
     trace?: string,
     type?: string
