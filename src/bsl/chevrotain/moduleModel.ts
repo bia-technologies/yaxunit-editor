@@ -2,6 +2,7 @@ import { editor, IPosition } from 'monaco-editor-core'
 import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import {
+    AccessSequenceSymbol,
     BaseExpressionSymbol,
     BslCodeModel,
     ConstructorSymbol,
@@ -26,7 +27,6 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         (editorModel as ModuleModel).getCurrentExpression = moduleModelImpl.getCurrentExpression.bind(moduleModelImpl);
         (editorModel as ModuleModel).getEditingMethod = moduleModelImpl.getEditingMethod.bind(moduleModelImpl);
         (editorModel as ModuleModel).getCodeModel = moduleModelImpl.getCodeModel.bind(moduleModelImpl);
-        (editorModel as ModuleModel).updateCodeModel = moduleModelImpl.updateCodeModel.bind(moduleModelImpl);
         const baseDispose = editorModel.dispose
         editorModel.dispose = () => {
             baseDispose()
@@ -64,47 +64,43 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         return this.codeModel
     }
 
-    updateCodeModel() {
-        // this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
-        // this.codeModel.afterUpdate()
-    }
-
     getCurrentSymbol(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        return descendantByOffset(position, this.codeModel)
+        return this.currentSymbol(position)
     }
 
     getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
-        const symbol = this.getCurrentSymbol(position)
-
-        if (symbol && isAccessProperty(symbol)) {
-            const seq = currentAccessSequence(symbol)
-            if (seq) {
-                return seq
-            }
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position)
         }
-        return symbol
+
+        return this.currentExpression(position)
     }
 
     getEditingExpression(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        const current = this.getCurrentExpression(position)
-        if (current instanceof BaseExpressionSymbol || current instanceof EmptySymbol) {
-            return current
-        } else if (position > 0) {
-            return this.getCurrentExpression(position - 1)
+        let current = this.currentExpression(position)
+        const left = position > 0 ? this.currentExpression(position - 1) : undefined
+        const currentValid = current instanceof BaseExpressionSymbol || current instanceof EmptySymbol
+        if (!currentValid || left && left.parent === current) {
+            if (left instanceof AccessSequenceSymbol) {
+                left.unclosed = true
+            }
+            return left
         }
+        
+        return current
     }
 
     getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | undefined {
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position)
         }
-        let symbol: BaseSymbol | undefined = descendantByOffset(position, this.codeModel) as BaseSymbol
+        let symbol: BaseSymbol | undefined = this.currentSymbol(position)
 
         while (symbol) {
             if (symbol instanceof MethodCallSymbol || symbol instanceof ConstructorSymbol) {
@@ -115,8 +111,25 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         }
         return symbol
     }
+
+    private currentSymbol(position: number) {
+        return descendantByOffset(position, this.codeModel) as BaseSymbol
+    }
+
+    private currentExpression(position: number) {
+        const symbol = this.currentSymbol(position)
+
+        if (symbol && isAccessProperty(symbol)) {
+            const seq = currentAccessSequence(symbol)
+            if (seq) {
+                return seq
+            }
+        }
+        return symbol
+    }
 }
 
 function isPosition(object: any): object is IPosition {
     return (object as IPosition).lineNumber !== undefined
 }
+

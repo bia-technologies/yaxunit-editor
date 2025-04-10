@@ -14,5 +14,4 @@ export interface ExpressionProvider {
 export interface ModuleModel extends editor.ITextModel, ExpressionProvider {
     getScope(): BslModuleScope,
     getCodeModel(): BslCodeModel
-    updateCodeModel(): void
 }
