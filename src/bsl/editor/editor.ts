@@ -1,4 +1,4 @@
-import { editor, Uri } from 'monaco-editor-core'
+import { editor, KeyCode, KeyMod, Uri } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
 import { ModuleModel } from '../moduleModel'
@@ -107,17 +107,16 @@ export function getActiveEditor() {
     return activeEditor
 }
 
-window.addEventListener('keydown', function (event) {
-    // Since 0.34.1, monaco.editor.addKeybindingRule(s) can be used to tweak default keybindings.
-    if (event.keyCode === 80 && (event.ctrlKey || event.metaKey)) {
-        event.preventDefault();
-        if (event.stopImmediatePropagation) {
-            event.stopImmediatePropagation();
-        } else {
-            event.stopPropagation();
-        }
+editor.addKeybindingRules([
+    { keybinding: KeyMod.CtrlCmd | KeyCode.KeyP, command: 'editor.action.quickCommand' },
+    { keybinding: KeyMod.CtrlCmd | KeyCode.NumpadDivide, command: 'editor.action.commentLine' },
 
-        activeEditor?.editor.trigger('ctrl-shift-p', 'editor.action.quickCommand', null)
-        return;
-    }
-}, true);
+    { keybinding: KeyCode.F3, command: 'editor.action.nextMatchFindAction' },
+    { keybinding: KeyMod.Shift | KeyCode.F3, command: 'editor.action.previousMatchFindAction' },
+
+    { keybinding: KeyMod.CtrlCmd|KeyMod.Shift | KeyCode.NumpadSubtract, command: 'editor.foldAll' },
+    { keybinding: KeyMod.CtrlCmd|KeyMod.Shift | KeyCode.NumpadAdd, command: 'editor.unfoldAll' },
+
+    { keybinding: KeyMod.CtrlCmd | KeyCode.NumpadSubtract, command: 'editor.fold' },
+    { keybinding: KeyMod.CtrlCmd | KeyCode.NumpadAdd, command: 'editor.unfold' },
+])
