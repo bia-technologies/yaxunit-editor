@@ -6,7 +6,9 @@ body {
 }
 
 #container {
-  flex-grow: 1; 
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .passed {
@@ -50,4 +52,12 @@ body {
     box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
     color: rgb(209, 209, 209);
   }
+}
+
+.monaco-editor .find-widget {
+  transform: translateY(-70px) !important
+}
+
+.monaco-editor .find-widget.visible {
+  transform: translateY(0)!important
 }

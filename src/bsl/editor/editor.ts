@@ -49,7 +49,7 @@ export class BslEditor {
 
             parameterHints: { cycle: true },
             bracketPairColorization: {
-                enabled: true // don't work on monaco 0.33 
+                enabled: true
             },
             unicodeHighlight: {
                 ambiguousCharacters: false
@@ -59,9 +59,6 @@ export class BslEditor {
                 insertMode: 'replace',
                 localityBonus: true
             },
-            fontLigatures: true,
-            fontSize: 14,
-            fontFamily: 'JetBrains Mono',
             model: this.createModel()
         });
 

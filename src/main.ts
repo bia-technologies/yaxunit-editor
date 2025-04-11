@@ -1,5 +1,3 @@
-import './styles/style.css'
-import '@fontsource/jetbrains-mono/index.css'
 import './polyfill .js'
 
 import '@/bsl/editor/language/contribution.js'

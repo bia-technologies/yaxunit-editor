@@ -1,5 +1,4 @@
 import '../src/styles/style.css'
-import '@fontsource/jetbrains-mono/index.css'
 
 import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 import '@/bsl/editor/language/contribution.js'
