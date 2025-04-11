@@ -2,6 +2,7 @@
 import '@ungap/global-this';
 import ResizeObserver from 'resize-observer-polyfill';
 import 'performance-polyfill'
+import 'pointer-events-polyfill'
 
 if (!window.ResizeObserver) {
     window.ResizeObserver = ResizeObserver
