@@ -1,4 +1,4 @@
-import { IDisposable } from "monaco-editor-core";
+import { IDisposable } from 'monaco-editor-core';
 
 export class AutoDisposable implements IDisposable {
     protected _disposables: IDisposable[] = []

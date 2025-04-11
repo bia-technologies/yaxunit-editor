@@ -2291,6 +2291,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"vite-plugin-monaco-editor@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "vite-plugin-monaco-editor@npm:1.1.0"
+  peerDependencies:
+    monaco-editor: ">=0.33.0"
+  checksum: 9b3d3010d2c2c6ed92e58dd17a04f13eb1fe28ba521eda3d38d4dfe8f3654d9a511dfbbb83614496a64c03a6f6a8d123363dcd408ae0b405d29eae9c68b9c376
+  languageName: node
+  linkType: hard
+
 "vite-plugin-singlefile@npm:^2.1.0":
   version: 2.2.0
   resolution: "vite-plugin-singlefile@npm:2.2.0"
@@ -2567,6 +2576,7 @@ __metadata:
     tslib: ^2.8.1
     typescript: ^5.7.2
     vite: ^6.2.4
+    vite-plugin-monaco-editor: ^1.1.0
     vite-plugin-singlefile: ^2.1.0
     vitest: ^3.1.1
   languageName: unknown
