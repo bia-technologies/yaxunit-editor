@@ -54,7 +54,7 @@ function createErrorMarkers(e: ReportErrorInfo, editorModel: editor.ITextModel, 
         }
         for (const line of trace) {
             if (!line.module) { break }
-            if (line.module.startsWith('ВнешняяОбработка.ЗапускТестовогоМодуля')) {
+            if (line.module.startsWith('ВнешняяОбработка.ЗапускТестаИзРедактора')) {
                 const marker = createMarker(`${e.ownerPresent}: ${e.message}`, line.line, editorModel)
                 markers.push(marker)
                 const relatedInformation = {
