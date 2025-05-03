@@ -78,6 +78,7 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
                 console.error('Dont find edited symbol -> rebuild')
                 return false
             }
+            rangeSymbol = getParentMethodDefinition(rangeSymbol)
             let { symbol, newSymbol, editType } = this.parseChange(rangeSymbol, range.diff)
 
             switch (editType) {

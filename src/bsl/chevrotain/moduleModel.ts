@@ -86,13 +86,13 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         let current = this.currentExpression(position)
         const left = position > 0 ? this.currentExpression(position - 1) : undefined
         const currentValid = current instanceof BaseExpressionSymbol || current instanceof EmptySymbol
-        if (!currentValid || left && left.parent === current) {
+        if (!currentValid || left && isParent(left, current)) {
             if (left instanceof AccessSequenceSymbol) {
                 left.unclosed = true
             }
             return left
         }
-        
+
         return current
     }
 
@@ -128,6 +128,18 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         return symbol
     }
 }
+
+function isParent(symbol: BaseSymbol, intendedParent: BaseSymbol) {
+    let currentSymbol: BaseSymbol | undefined = symbol
+    while (currentSymbol) {
+        if (currentSymbol.parent === intendedParent) {
+            return true
+        }
+        currentSymbol = currentSymbol.parent
+    }
+    return false
+}
+
 
 function isPosition(object: any): object is IPosition {
     return (object as IPosition).lineNumber !== undefined

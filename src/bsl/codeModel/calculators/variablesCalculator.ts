@@ -12,7 +12,7 @@ import {
     VariableDefinitionSymbol,
     VariableSymbol
 } from "../model";
-import { BslVariable } from "../model/members";
+import { BslVariable, BslVariableType } from "../model/members";
 import { ModelCalculator } from "./calculator";
 import { VariablesScope } from "../model/interfaces";
 
@@ -129,9 +129,9 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
         const variable = new BslVariable(symbol.name)
 
         if (symbol instanceof VariableSymbol) {
-            variable.description = `Локальная переменная \`${symbol.name}\``
+            variable.variableType = BslVariableType.LocalVariable
         } else {
-            variable.description = `Параметр \`${symbol.name}\``
+            variable.variableType = BslVariableType.Parameter
             variable.value = symbol.default
         }
 
