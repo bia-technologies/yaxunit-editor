@@ -4,7 +4,6 @@ import {
     BaseCodeModelVisitor,
     BslVariable,
     ConstructorSymbol,
-    ConstSymbol,
     FunctionDefinitionSymbol,
     IndexAccessSymbol,
     isAcceptable,
@@ -15,7 +14,7 @@ import {
     VariableSymbol
 } from "@/bsl/codeModel"
 import { CodeSymbol } from "@/common/codeModel"
-import { IMarkdownString } from "monaco-editor-core"
+import { IMarkdownString } from 'monaco-editor-core'
 import { ModuleModel } from "../../moduleModel"
 import { BaseTypes } from "../../scope/baseTypes"
 import { TypesCalculator } from "@/bsl/codeModel/calculators"
@@ -61,10 +60,6 @@ class HoverVisitor extends BaseCodeModelVisitor {
     constructor(model: ModuleModel) {
         super()
         this.model = model
-    }
-
-    visitConstSymbol(symbol: ConstSymbol) {
-        return ['Константа', `Значение: \`${symbol.value}\`  \nТип: \`${symbol.type}\``]
     }
 
     visitVariableSymbol(symbol: VariableSymbol) {

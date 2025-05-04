@@ -81,7 +81,9 @@ export class TestsModel {
     }
 
     private loadTestCase(suite: TestSuiteResult, test: TestCaseResult): void {
-        var method = this.findTest(test.name)
+        const methodName = test.classname && test.classname.includes('.') ? test.classname.split('.')[1] : test.name
+
+        var method = this.findTest(methodName)
         if (!method) {
             return
         }
@@ -99,13 +101,13 @@ export class TestsModel {
         if (method.status !== TestStatus.passed) {
             var errors = method.errors ? method.errors : method.errors = []
             if (test.error) {
-                test.error.forEach(e => { errors.push(e); e.context = suite.context })
+                test.error.forEach(e => { errors.push(e); e.ownerPresent = test.name + ' [' + suite.context + ']'})
             }
             if (test.failure) {
-                test.failure.forEach(e => { errors.push(e); e.context = suite.context })
+                test.failure.forEach(e => { errors.push(e); e.ownerPresent = test.name + ' [' + suite.context + ']' })
             }
             if (test.skipped) {
-                test.skipped.forEach(e => { errors.push(e); e.context = suite.context })
+                test.skipped.forEach(e => { errors.push(e); e.ownerPresent = test.name + ' [' + suite.context + ']' })
             }
         }
         method.duration += test.time * 1000
@@ -113,7 +115,7 @@ export class TestsModel {
 
     private loadSuiteErrors(suite: TestSuiteResult) {
         if (suite.error) {
-            suite.error.forEach(e => e.context = suite.context)
+            suite.error.forEach(e => e.ownerPresent = suite.name + ' [' + suite.context + ']')
             this.errors.push(...suite.error)
         }
     }

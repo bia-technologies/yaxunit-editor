@@ -27,7 +27,7 @@ export class TestMessageMarkersProvider implements TestModelRender {
         testsModel.getTests().filter(t => t.errors).forEach(t => {
             (t.errors as ReportErrorInfo[]).map(e => {
                 const messageMarker: editor.IMarkerData = {
-                    message: `${e.context}: ${e.message}`,
+                    message: `${e.ownerPresent}: ${e.message}`,
                     severity: MarkerSeverity.Error,
                     startLineNumber: t.lineNumber,
                     startColumn: editorModel.getLineFirstNonWhitespaceColumn(t.lineNumber),
@@ -54,8 +54,8 @@ function createErrorMarkers(e: ReportErrorInfo, editorModel: editor.ITextModel, 
         }
         for (const line of trace) {
             if (!line.module) { break }
-            if (line.module.startsWith('ВнешняяОбработка.ЗапускТестовогоМодуля')) {
-                const marker = createMarker(`${e.context}: ${e.message}`, line.line, editorModel)
+            if (line.module.startsWith('ВнешняяОбработка.ЗапускТестаИзРедактора')) {
+                const marker = createMarker(`${e.ownerPresent}: ${e.message}`, line.line, editorModel)
                 markers.push(marker)
                 const relatedInformation = {
                     resource: editorModel.uri,
@@ -81,7 +81,7 @@ function createErrorMarkers(e: ReportErrorInfo, editorModel: editor.ITextModel, 
             }
         }
     } else if (!rootMarker) {
-        markers.push(createMarker(`${e.context}: ${e.message}`, 1, editorModel))
+        markers.push(createMarker(`${e.ownerPresent}: ${e.message}`, 1, editorModel))
     }
     return markers
 }

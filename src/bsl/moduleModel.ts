@@ -1,4 +1,4 @@
-import { editor, IPosition } from "monaco-editor-core";
+import { editor, IPosition } from 'monaco-editor-core';
 import { BslCodeModel } from "./codeModel";
 import { BslModuleScope } from "./scope/bslModuleScope";
 import { CodeSymbol } from "@/common/codeModel";
@@ -14,5 +14,4 @@ export interface ExpressionProvider {
 export interface ModuleModel extends editor.ITextModel, ExpressionProvider {
     getScope(): BslModuleScope,
     getCodeModel(): BslCodeModel
-    updateCodeModel(): void
 }

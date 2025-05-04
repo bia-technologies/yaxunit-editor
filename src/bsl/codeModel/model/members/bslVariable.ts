@@ -5,8 +5,8 @@ export class BslVariable implements Variable, Member {
     name: string
     type?: string
     value?: string
-    description?: string
     definitions: BaseSymbol[] = []
+    variableType: BslVariableType = BslVariableType.Unknown
 
     constructor(name: string) {
         this.name = name
@@ -24,4 +24,22 @@ export class BslVariable implements Variable, Member {
     get kind() {
         return MemberType.variable
     }
+
+    get description(){
+        switch(this.variableType){
+            case BslVariableType.LocalVariable:
+                return '```bsl\n' + `Перем ${this.name}: ${this.type}` + '\n```'
+            case BslVariableType.Parameter:
+                return '```bsl\n' + `(Параметр) Перем ${this.name}: ${this.type}` + '\n```'
+            default:
+                return this.name
+        }
+    }
+}
+
+export enum BslVariableType {
+    LocalVariable,
+    GlobalVariable,
+    Parameter,
+    Unknown
 }

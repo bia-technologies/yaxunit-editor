@@ -2,6 +2,7 @@
 import '@ungap/global-this';
 import ResizeObserver from 'resize-observer-polyfill';
 import 'performance-polyfill'
+import 'pointer-events-polyfill'
 
 if (!window.ResizeObserver) {
     window.ResizeObserver = ResizeObserver
@@ -32,6 +33,26 @@ if (!('isConnected' in Node.prototype)) {
             );
         },
     });
+}
+
+if (!Array.prototype.flat) {
+    Array.prototype.flat = function (depth) {
+        var flattened = [];
+
+        function flatten(arr, currentDepth) {
+            for (var i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i]) && currentDepth < depth) {
+                    flatten(arr[i], currentDepth + 1);
+                } else {
+                    flattened.push(arr[i]);
+                }
+            }
+        }
+
+        flatten(this, 0);
+
+        return flattened;
+    };
 }
 
 export function makeLogProxy(obj) {

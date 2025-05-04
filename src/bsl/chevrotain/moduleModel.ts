@@ -1,7 +1,8 @@
-import { editor, IPosition } from "monaco-editor-core"
+import { editor, IPosition } from 'monaco-editor-core'
 import { ExpressionProvider, ModuleModel } from "../moduleModel";
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import {
+    AccessSequenceSymbol,
     BaseExpressionSymbol,
     BslCodeModel,
     ConstructorSymbol,
@@ -26,7 +27,6 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         (editorModel as ModuleModel).getCurrentExpression = moduleModelImpl.getCurrentExpression.bind(moduleModelImpl);
         (editorModel as ModuleModel).getEditingMethod = moduleModelImpl.getEditingMethod.bind(moduleModelImpl);
         (editorModel as ModuleModel).getCodeModel = moduleModelImpl.getCodeModel.bind(moduleModelImpl);
-        (editorModel as ModuleModel).updateCodeModel = moduleModelImpl.updateCodeModel.bind(moduleModelImpl);
         const baseDispose = editorModel.dispose
         editorModel.dispose = () => {
             baseDispose()
@@ -64,20 +64,65 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         return this.codeModel
     }
 
-    updateCodeModel() {
-        // this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
-        // this.codeModel.afterUpdate()
-    }
-
     getCurrentSymbol(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
+            position = this.editorModel.getOffsetAt(position);
         }
-        return descendantByOffset(position, this.codeModel)
+        return this.currentSymbol(position);
     }
 
     getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
-        const symbol = this.getCurrentSymbol(position)
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position);
+        }
+
+        return this.currentExpression(position);
+    }
+
+    getEditingExpression(position: IPosition | number): CodeSymbol | undefined {
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position);
+        }
+        
+        const current = this.currentExpression(position);
+        const left = position > 0 ? this.currentExpression(position - 1) : undefined;
+
+        // Проверяем, является ли текущий символ допустимым
+        const currentValid = current instanceof BaseExpressionSymbol || current instanceof EmptySymbol;
+        
+        // Если текущий символ недопустим или левый символ является родителем текущего
+        if (!currentValid || (left && isParent(left, current))) {
+            if (left instanceof AccessSequenceSymbol) {
+                left.unclosed = true; // Устанавливаем флаг для незакрытой последовательности
+            }
+            return left; // Возвращаем левый символ
+        }
+
+        return current; // Возвращаем текущий символ
+    }
+
+    getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | undefined {
+        if (isPosition(position)) {
+            position = this.editorModel.getOffsetAt(position);
+        }
+        let symbol: BaseSymbol | undefined = this.currentSymbol(position)
+
+        while (symbol) {
+            if (symbol instanceof MethodCallSymbol || symbol instanceof ConstructorSymbol) {
+                return symbol;
+            } else {
+                symbol = symbol.parent;
+            }
+        }
+        return symbol;
+    }
+
+    private currentSymbol(position: number) {
+        return descendantByOffset(position, this.codeModel) as BaseSymbol
+    }
+
+    private currentExpression(position: number) {
+        const symbol = this.currentSymbol(position)
 
         if (symbol && isAccessProperty(symbol)) {
             const seq = currentAccessSequence(symbol)
@@ -87,36 +132,25 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         }
         return symbol
     }
-
-    getEditingExpression(position: IPosition | number): CodeSymbol | undefined {
-        if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
-        }
-        const current = this.getCurrentExpression(position)
-        if (current instanceof BaseExpressionSymbol || current instanceof EmptySymbol) {
-            return current
-        } else if (position > 0) {
-            return this.getCurrentExpression(position - 1)
-        }
-    }
-
-    getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | undefined {
-        if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
-        }
-        let symbol: BaseSymbol | undefined = descendantByOffset(position, this.codeModel) as BaseSymbol
-
-        while (symbol) {
-            if (symbol instanceof MethodCallSymbol || symbol instanceof ConstructorSymbol) {
-                return symbol
-            } else {
-                symbol = symbol.parent
-            }
-        }
-        return symbol
-    }
 }
+
+function isParent(symbol: BaseSymbol, intendedParent: BaseSymbol) {
+    if (!intendedParent) {
+        return false
+    }
+
+    let currentSymbol: BaseSymbol | undefined = symbol
+    while (currentSymbol) {
+        if (currentSymbol.parent === intendedParent) {
+            return true
+        }
+        currentSymbol = currentSymbol.parent
+    }
+    return false
+}
+
 
 function isPosition(object: any): object is IPosition {
     return (object as IPosition).lineNumber !== undefined
 }
+

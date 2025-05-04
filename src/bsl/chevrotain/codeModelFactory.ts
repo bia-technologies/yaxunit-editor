@@ -7,7 +7,7 @@ import {
     MethodDefinition
 } from "../codeModel"
 import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
-import { editor, MarkerSeverity } from "monaco-editor-core"
+import { editor, MarkerSeverity } from 'monaco-editor-core'
 import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
 import { descendantByRange, getParentMethodDefinition, updateOffset } from "./utils"
@@ -75,9 +75,11 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         for (const range of ranges) {
             let rangeSymbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
             if (!rangeSymbol) {
-                console.debug('Dont find edited symbol -> rebuild')
+                console.error('Dont find edited symbol -> rebuild')
                 return false
             }
+            rangeSymbol = getParentMethodDefinition(rangeSymbol) ?? rangeSymbol
+
             let { symbol, newSymbol, editType } = this.parseChange(rangeSymbol, range.diff)
 
             switch (editType) {
@@ -97,6 +99,8 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
         }
         if (success) {
             console.log('Increment update changes', changes, performance.now() - start, 'ms')
+        } else {
+            console.error('Changes parsing error -> rebuild')
         }
         return success
     }
@@ -130,10 +134,12 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
             }
 
             if (!newNode) {
-                throw 'Не удалось разобрать новый символ по правилу ' + rule
+                throw new Error(`Не удалось разобрать новый символ по правилу ${rule}\nInput: ${this.parser.input}`)
             }
             const newSymbol = this.createSymbol(newNode)
-
+            if (!newSymbol) {
+                throw new Error(`Не удалось проанализировать новый символ ${newNode.name?? '<unknown>'}\nInput: ${this.parser.input}`)
+            }
             return { symbol, newSymbol, editType: EditType.replace }
         }
         return { symbol, newSymbol: undefined, editType: EditType.replace }
@@ -141,9 +147,6 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
 
     createSymbol(node: CstNode) {
         const newSymbol = this.visitor.visit(node) as BaseSymbol
-        if (!newSymbol) {
-            throw 'Не удалось проанализировать новый символ ' + node.name
-        }
         return newSymbol
     }
 }

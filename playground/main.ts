@@ -1,5 +1,4 @@
 import '../src/styles/style.css'
-import '@fontsource/jetbrains-mono/index.css'
 
 import editorWorker from 'monaco-editor-core/esm/vs/editor/editor.worker?worker'
 import '@/bsl/editor/language/contribution.js'
@@ -71,11 +70,11 @@ async function setDemoData(bslEditor: YAxUnitEditor) {
     error: [{ message: 'Ошибка чтения набора', trace: 'Ошибка чтения набора\n{ВнешняяОбработка.ЗапускТестовогоМодуля.МодульОбъекта(5)}:ЮТТесты.ВТранзакции()' }],
     testcase: [{
       classname: 'ОМ_Тест.ТестУспешно',
-      name: 'ТестУспешно',
+      name: 'Успешный тест',
       time: 0.123,
     }, {
       classname: 'ОМ_Тест.ТестОшибка',
-      name: 'ТестОшибка',
+      name: 'Тест с ошибкой',
       time: 0.123,
       failure: [{
         message: 'Ожидали, что проверяемое значение `1` равно `2`, но это не так.', trace: `[Failed] <Ожидали, что проверяемое значение \`1\` равно \`2\`, но это не так.>
@@ -97,7 +96,7 @@ async function setDemoData(bslEditor: YAxUnitEditor) {
       }]
     }, {
       classname: 'ОМ_Тест.ТестСломан',
-      name: 'ТестСломан',
+      name: 'Сломанный тест',
       time: 0.123,
       error: [{
         message: 'Исполнения: Метод объекта не обнаружен (ОтсутствующийМетод)', trace: `Метод объекта не обнаружен (ОтсутствующийМетод)
@@ -117,11 +116,11 @@ async function setDemoData(bslEditor: YAxUnitEditor) {
     time: 0.835,
     testcase: [{
       classname: 'ОМ_Тест.ТестУспешно',
-      name: 'ТестУспешно',
+      name: 'Успешный тест',
       time: 0.123,
     }, {
       classname: 'ОМ_Тест.ТестОшибка',
-      name: 'ТестОшибка',
+      name: 'Тест с ошибкой',
       time: 0.123,
       failure: [{
         message: 'Ожидали, что проверяемое значение `1` равно `2`, но это не так.', trace: `[Failed] <Ожидали, что проверяемое значение \`1\` равно \`2\`, но это не так.>
@@ -143,7 +142,7 @@ async function setDemoData(bslEditor: YAxUnitEditor) {
       }]
     }, {
       classname: 'ОМ_Тест.ТестСломан',
-      name: 'ТестСломан',
+      name: 'Сломанный тест',
       time: 0.123,
       error: [{
         message: 'Исполнения: Метод объекта не обнаружен (ОтсутствующийМетод)', trace: `Метод объекта не обнаружен (ОтсутствующийМетод)
