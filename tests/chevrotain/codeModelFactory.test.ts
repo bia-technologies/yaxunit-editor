@@ -594,9 +594,9 @@ describe('If statement', () => {
         expect(exp).toBeInstanceOf(IfStatementSymbol)
         expect(exp).toMatchObject({
             branches: [
-                { condition: { value: 'true' }, body: [{ name: 'a' }, { name: 'b' }] }
+                { condition: { value: 'true' }, body: [{ name: 'a' }, { name: 'b' }] },
+                { body: [{ name: 'c' }, { name: 'd' }] }
             ],
-            elseBranch: { body: [{ name: 'c' }, { name: 'd' }] }
         })
     })
 })
