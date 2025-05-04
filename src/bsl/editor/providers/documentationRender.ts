@@ -4,7 +4,6 @@ import {
     BaseCodeModelVisitor,
     BslVariable,
     ConstructorSymbol,
-    ConstSymbol,
     FunctionDefinitionSymbol,
     IndexAccessSymbol,
     isAcceptable,
@@ -61,10 +60,6 @@ class HoverVisitor extends BaseCodeModelVisitor {
     constructor(model: ModuleModel) {
         super()
         this.model = model
-    }
-
-    visitConstSymbol(symbol: ConstSymbol) {
-        return ['Константа', `Значение: \`${symbol.value}\`  \nТип: \`${symbol.type}\``]
     }
 
     visitVariableSymbol(symbol: VariableSymbol) {
