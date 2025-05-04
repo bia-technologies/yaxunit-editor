@@ -66,50 +66,55 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
 
     getCurrentSymbol(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
+            position = this.editorModel.getOffsetAt(position);
         }
-        return this.currentSymbol(position)
+        return this.currentSymbol(position);
     }
 
     getCurrentExpression(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
+            position = this.editorModel.getOffsetAt(position);
         }
 
-        return this.currentExpression(position)
+        return this.currentExpression(position);
     }
 
     getEditingExpression(position: IPosition | number): CodeSymbol | undefined {
         if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
+            position = this.editorModel.getOffsetAt(position);
         }
-        let current = this.currentExpression(position)
-        const left = position > 0 ? this.currentExpression(position - 1) : undefined
-        const currentValid = current instanceof BaseExpressionSymbol || current instanceof EmptySymbol
-        if (!currentValid || left && isParent(left, current)) {
+        
+        const current = this.currentExpression(position);
+        const left = position > 0 ? this.currentExpression(position - 1) : undefined;
+
+        // Проверяем, является ли текущий символ допустимым
+        const currentValid = current instanceof BaseExpressionSymbol || current instanceof EmptySymbol;
+        
+        // Если текущий символ недопустим или левый символ является родителем текущего
+        if (!currentValid || (left && isParent(left, current))) {
             if (left instanceof AccessSequenceSymbol) {
-                left.unclosed = true
+                left.unclosed = true; // Устанавливаем флаг для незакрытой последовательности
             }
-            return left
+            return left; // Возвращаем левый символ
         }
 
-        return current
+        return current; // Возвращаем текущий символ
     }
 
     getEditingMethod(position: IPosition | number): MethodCallSymbol | ConstructorSymbol | undefined {
         if (isPosition(position)) {
-            position = this.editorModel.getOffsetAt(position)
+            position = this.editorModel.getOffsetAt(position);
         }
         let symbol: BaseSymbol | undefined = this.currentSymbol(position)
 
         while (symbol) {
             if (symbol instanceof MethodCallSymbol || symbol instanceof ConstructorSymbol) {
-                return symbol
+                return symbol;
             } else {
-                symbol = symbol.parent
+                symbol = symbol.parent;
             }
         }
-        return symbol
+        return symbol;
     }
 
     private currentSymbol(position: number) {
@@ -130,6 +135,10 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
 }
 
 function isParent(symbol: BaseSymbol, intendedParent: BaseSymbol) {
+    if (!intendedParent) {
+        return false
+    }
+
     let currentSymbol: BaseSymbol | undefined = symbol
     while (currentSymbol) {
         if (currentSymbol.parent === intendedParent) {

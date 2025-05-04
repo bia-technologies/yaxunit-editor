@@ -78,7 +78,8 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
                 console.error('Dont find edited symbol -> rebuild')
                 return false
             }
-            rangeSymbol = getParentMethodDefinition(rangeSymbol)
+            rangeSymbol = getParentMethodDefinition(rangeSymbol) ?? rangeSymbol
+
             let { symbol, newSymbol, editType } = this.parseChange(rangeSymbol, range.diff)
 
             switch (editType) {
@@ -133,11 +134,11 @@ export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
             }
 
             if (!newNode) {
-                throw 'Не удалось разобрать новый символ по правилу ' + rule
+                throw new Error(`Не удалось разобрать новый символ по правилу ${rule}\nInput: ${this.parser.input}`)
             }
             const newSymbol = this.createSymbol(newNode)
             if (!newSymbol) {
-                throw 'Не удалось проанализировать новый символ ' + newNode.name + '\n' + this.parser.input
+                throw new Error(`Не удалось проанализировать новый символ ${newNode.name?? '<unknown>'}\nInput: ${this.parser.input}`)
             }
             return { symbol, newSymbol, editType: EditType.replace }
         }
