@@ -1,5 +1,6 @@
 # Редактор тестов YAxUnit
 
+[![OpenYellow](https://img.shields.io/endpoint?url=https://openyellow.org/data/badges/6/904155607.json)](https://openyellow.org/grid?data=top&repo=904155607)
 [![Demo](https://github.com/bia-technologies/yaxunit-editor/actions/workflows/build-demo.yml/badge.svg?label=Demo&style=flat)](https://bia-technologies.github.io/yaxunit-editor/playground.html)
 [![Latest release](https://img.shields.io/github/release/bia-technologies/yaxunit-editor.svg?label=Latest&style=flat)](https://github.com/bia-technologies/yaxunit-editor/releases/latest)
 
