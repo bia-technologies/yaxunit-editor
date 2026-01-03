@@ -10,7 +10,7 @@ import {
     isAccessProperty,
     MethodCallSymbol
 } from "@/bsl/codeModel";
-import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
+import { ChevrotainCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
 import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
 import { currentAccessSequence } from "../codeModel/utils";
@@ -38,7 +38,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
     codeModel: BslCodeModel
     editorModel: ModuleModel
     scope: BslModuleScope
-    codeModelFactory = new ChevrotainSitterCodeModelFactory()
+    codeModelFactory = new ChevrotainCodeModelFactory()
 
     constructor(model: editor.ITextModel) {
         super()

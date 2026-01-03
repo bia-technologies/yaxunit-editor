@@ -10,6 +10,7 @@ import {
     ConstructorSymbol,
     ConstSymbol,
     ContinueStatementSymbol,
+    ExecuteStatementSymbol,
     ForEachStatementSymbol,
     ForStatementSymbol,
     FunctionDefinitionSymbol,
@@ -19,16 +20,18 @@ import {
     MethodCallSymbol,
     ProcedureDefinitionSymbol,
     RemoveHandlerStatementSymbol,
+    ReturnStatementSymbol,
+    RiseErrorStatementSymbol,
     TernaryExpressionSymbol,
     TryStatementSymbol,
     UnaryExpressionSymbol,
     VariableDefinitionSymbol,
     WhileStatementSymbol
-} from '../../src/bsl/codeModel'
-import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain'
+} from '../../../src/bsl/codeModel'
+import { ChevrotainCodeModelFactory } from '../../../src/bsl/chevrotain'
 import { describe, expect, test } from 'vitest'
 
-const codeModelFactory = new ChevrotainSitterCodeModelFactory()
+const codeModelFactory = new ChevrotainCodeModelFactory()
 
 describe('Literals', () => {
     test('Number', () => {
@@ -77,6 +80,18 @@ describe('Literals', () => {
         const exp = expression('неопределено')
         expect(exp).toBeInstanceOf(ConstSymbol)
         expect(exp).toMatchObject({ value: 'неопределено', type: 'Неопределено' })
+    })
+
+    test('True', () => {
+        const exp = expression('истина')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: 'истина', type: 'Булево' })
+    })
+
+    test('False', () => {
+        const exp = expression('ложь')
+        expect(exp).toBeInstanceOf(ConstSymbol)
+        expect(exp).toMatchObject({ value: 'ложь', type: 'Булево' })
     })
 })
 
@@ -259,6 +274,19 @@ describe('MethodCallSymbol', () => {
             { name: 'Сообщить', arguments: [{ startOffset: 9 }, { value: '1' }] }
         )
     })
+
+    test('Execute method call', () => {
+        const model = buildModel('Объект.Выполнить("Метод", Параметры);')
+        expect(model).not.toBeUndefined()
+
+        expect(model.children[0]).toBeInstanceOf(AccessSequenceSymbol)
+        expect(model.children[0]).toMatchObject({
+            access: [
+                { name: 'Объект' },
+                { name: 'Выполнить', arguments: [{ value: 'Метод' }, { name: 'Параметры' }] }
+            ]
+        })
+    })
 })
 
 describe('Constructor', () => {
@@ -327,6 +355,14 @@ describe('Constructor', () => {
         )
     })
 
+    test('Constructor bad', () => {
+        const exp = statement('Новый')
+        expect(exp).toBeInstanceOf(ConstructorSymbol)
+        expect(exp).toMatchObject({
+            name: ''
+        })
+    })
+
 })
 
 describe('Definitions', () => {
@@ -369,6 +405,44 @@ describe('Definitions', () => {
             children: [
                 { name: 'Сообщить', arguments: [{ value: '1' },] }
             ]
+        })
+    })
+
+    test('Procedure with Export', () => {
+        const model = buildModel('Процедура Тест() Экспорт КонецПроцедуры')
+
+        expect(model.children[0]).toBeInstanceOf(ProcedureDefinitionSymbol)
+        expect(model.children[0]).toMatchObject({
+            name: 'Тест',
+            isExport: true,
+        })
+    })
+
+    test('Function with Export', () => {
+        const model = buildModel('Функция Тест() Экспорт КонецФункции')
+
+        expect(model.children[0]).toBeInstanceOf(FunctionDefinitionSymbol)
+        expect(model.children[0]).toMatchObject({
+            name: 'Тест',
+            isExport: true,
+        })
+    })
+
+    test('Async Procedure', () => {
+        const model = buildModel('Асинх Процедура Тест() КонецПроцедуры')
+
+        expect(model.children[0]).toBeInstanceOf(ProcedureDefinitionSymbol)
+        expect(model.children[0]).toMatchObject({
+            name: 'Тест',
+        })
+    })
+
+    test('Async Function', () => {
+        const model = buildModel('Асинх Функция Тест() КонецФункции')
+
+        expect(model.children[0]).toBeInstanceOf(FunctionDefinitionSymbol)
+        expect(model.children[0]).toMatchObject({
+            name: 'Тест',
         })
     })
 })
@@ -528,6 +602,91 @@ describe('Expression', () => {
                     operator: '<'
                 },
                 operator: 'Или'
+            })
+    })
+
+    test('BinaryExpression. subtraction', () => {
+        const exp = expression('10 - 5')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: { value: '10' },
+                right: { value: '5' },
+                operator: '-'
+            })
+    })
+
+    test('BinaryExpression. modulo', () => {
+        const exp = expression('10 % 3')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: { value: '10' },
+                right: { value: '3' },
+                operator: '%'
+            })
+    })
+
+    test('BinaryExpression. not equal', () => {
+        const exp = expression('a <> 0')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: { name: 'a' },
+                right: { value: '0' },
+                operator: '<>'
+            })
+    })
+
+    test('BinaryExpression. less or equal', () => {
+        const exp = expression('a <= 10')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: { name: 'a' },
+                right: { value: '10' },
+                operator: '<='
+            })
+    })
+
+    test('BinaryExpression. greater or equal', () => {
+        const exp = expression('a >= 0')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: { name: 'a' },
+                right: { value: '0' },
+                operator: '>='
+            })
+    })
+
+    test('BinaryExpression. equal comparison', () => {
+        const exp = expression('a = b')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: { name: 'a' },
+                right: { name: 'b' },
+                operator: '='
+            })
+    })
+
+    test('BinaryExpression. and operator', () => {
+        const exp = expression('a > 0 И b < 10')
+        expect(exp).toBeInstanceOf(BinaryExpressionSymbol)
+        expect(exp).toMatchObject(
+            {
+                left: {
+                    left: { name: 'a' },
+                    right: { value: '0' },
+                    operator: '>'
+                },
+                right: {
+                    left: { name: 'b' },
+                    right: { value: '10' },
+                    operator: '<'
+                },
+                operator: 'И'
             })
     })
 
@@ -727,13 +886,73 @@ describe('Var statement', () => {
     })
 })
 
+describe('Return statement', () => {
+    test('without expression', () => {
+        const exp = statement('Возврат;')
+        expect(exp).toBeInstanceOf(ReturnStatementSymbol)
+        expect(exp).toMatchObject({
+            expression: undefined
+        })
+    })
+
+    test('with expression', () => {
+        const exp = statement('Возврат 1 + 2;')
+        expect(exp).toBeInstanceOf(ReturnStatementSymbol)
+        expect(exp).toMatchObject({
+            expression: {
+                left: { value: '1' },
+                right: { value: '2' },
+                operator: '+'
+            }
+        })
+    })
+
+    test('with variable', () => {
+        const exp = statement('Возврат Результат;')
+        expect(exp).toBeInstanceOf(ReturnStatementSymbol)
+        expect(exp).toMatchObject({
+            expression: { name: 'Результат' }
+        })
+    })
+})
+
+describe('Execute statement', () => {
+    test('with string', () => {
+        const exp = statement('Выполнить "Сообщить(\\"Тест\\")"')
+        expect(exp).toBeInstanceOf(ExecuteStatementSymbol)
+        expect(exp.text).not.toBeUndefined()
+    })
+
+    test('with expression', () => {
+        const exp = statement('Выполнить КодМетода')
+        expect(exp).toBeInstanceOf(ExecuteStatementSymbol)
+        expect(exp).toMatchObject({
+            text: { name: 'КодМетода' }
+        })
+    })
+})
+
+describe('Rise error statement', () => {
+    test('with string', () => {
+        const exp = statement('ВызватьИсключение "Ошибка"')
+        expect(exp).toBeInstanceOf(RiseErrorStatementSymbol)
+        expect(exp.error).not.toBeUndefined()
+    })
+
+    test('with expression', () => {
+        const exp = statement('ВызватьИсключение Новый ОписаниеОшибки("Текст")')
+        expect(exp).toBeInstanceOf(RiseErrorStatementSymbol)
+        expect(exp.error).not.toBeUndefined()
+    })
+})
+
 
 function buildModel(content: string) {
     return codeModelFactory.buildModel(content) as BslCodeModel
 }
 
 function statement(content: string) {
-    const model = codeModelFactory.buildModel(content) as BslCodeModel
+    const model = buildModel(content)
     return model.children[0]
 }
 

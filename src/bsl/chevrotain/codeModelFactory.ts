@@ -20,7 +20,7 @@ enum EditType {
     append
 }
 
-export class ChevrotainSitterCodeModelFactory extends AutoDisposable {
+export class ChevrotainCodeModelFactory extends AutoDisposable {
     parser = new IncrementalBslParser()
     visitor = new CodeModelFactoryVisitor()
     errors: ErrorInfo[] = []

@@ -1,10 +1,22 @@
-import { CstNode, IToken } from "chevrotain";
-import { IncrementLexer } from "./lexer";
+import { CstNode } from "chevrotain";
+import { IncrementLexer, findTokens } from "./lexer";
 import { BSLParser } from "./parser";
 
+/**
+ * Инкрементальный парсер для BSL, поддерживающий обновление только изменённых частей кода.
+ * 
+ * Расширяет базовый BSLParser, добавляя функциональность инкрементального парсинга
+ * через обновление токенов без полной перетокенизации файла.
+ */
 export class IncrementalBslParser extends BSLParser {
     lexer: IncrementLexer = new IncrementLexer()
 
+    /**
+     * Выполняет полный парсинг модуля.
+     * 
+     * @param text - Исходный текст модуля для парсинга
+     * @returns Результат парсинга, содержащий CST, ошибки лексического анализа и ошибки парсинга
+     */
     public parseModule(text: string) {
         const start = performance.now()
 
@@ -22,14 +34,45 @@ export class IncrementalBslParser extends BSLParser {
         };
     }
 
+    /**
+     * Обновляет токены при изменении текста.
+     * 
+     * Делегирует обновление токенов инкрементальному лексеру,
+     * который эффективно обновляет только изменённые части.
+     * 
+     * @param changes - Массив изменений текста
+     * @returns Массив объектов с информацией об обработанных диапазонах
+     */
     public updateTokens(changes: IModelContentChange[]) {
         return this.lexer.updateTokens(changes)
-
     }
+
+    /**
+     * Парсит только изменённый фрагмент кода, используя указанное правило.
+     * 
+     * Находит границы токенов для указанного диапазона и выполняет парсинг
+     * только этой части через указанное правило парсера.
+     * 
+     * @param rule - Имя правила парсера для выполнения (например, 'expression', 'statement')
+     * @param startOffset - Начальное смещение изменённого фрагмента
+     * @param endOffset - Конечное смещение изменённого фрагмента
+     * @returns Результат парсинга фрагмента, содержащий CST и ошибки парсинга
+     */
     public parseChanges(rule: string, startOffset: number, endOffset: number) {
-        let { startIndex, endIndex } = findSymbolTokens(this.lexer.moduleTokens, startOffset, endOffset)
+        // Очищаем ошибки перед парсингом, чтобы не накапливались ошибки от предыдущих вызовов
+        this.errors = []
+        
+        const { startIndex, endIndex } = findTokens(this.lexer.moduleTokens, startOffset, endOffset)
         this.input = this.lexer.moduleTokens.slice(startIndex, endIndex + 1)
-        const ruleMethod = (this as any)[rule] as (() => CstNode)
+        
+        // Динамический доступ к методу правила парсера
+        // Используем 'as any', так как Chevrotain создаёт методы динамически через RULE()
+        const ruleMethod = (this as any)[rule] as (() => CstNode) | undefined
+        
+        if (!ruleMethod) {
+            throw new Error(`Правило парсера '${rule}' не найдено`)
+        }
+        
         const result = ruleMethod.bind(this)()
         return {
             cst: result,
@@ -39,90 +82,22 @@ export class IncrementalBslParser extends BSLParser {
 }
 
 /**
- * Locates the tokens that encompass a given offset range.
- *
- * This function performs binary searches on a sorted array of tokens to determine
- * the token index for the startOffset and, if different, the token index for the endOffset.
- * It returns the indices along with flags indicating whether the tokens at those indices
- * exactly include the specified offsets. If startOffset equals endOffset, both indices and
- * inclusion flags will be the same.
- *
- * @param tokens - Sorted array of tokens, each with defined startOffset and endOffset.
- * @param startOffset - The starting offset of the range to locate.
- * @param endOffset - The ending offset of the range to locate.
- * @returns An object containing:
- *   - startIndex: The index of the token overlapping or adjacent to startOffset.
- *   - endIndex: The index of the token overlapping or adjacent to endOffset.
- *   - includeStart: Indicates if the token at startIndex exactly covers startOffset.
- *   - includeEnd: Indicates if the token at endIndex exactly covers endOffset.
+ * Описание изменения содержимого в текстовой модели.
+ * Используется для инкрементального обновления токенов и парсинга.
  */
-function findSymbolTokens(tokens: IToken[], startOffset: number, endOffset: number) {
-    let startIndex = -1, endIndex = -1
-    let includeStart = false, includeEnd = false
-
-    let lo = 0, hi = tokens.length - 1, mid = 0, token
-
-    if (tokens[hi].endOffset as number + 1 < startOffset) {
-        return { startIndex: hi, endIndex: hi, includeStart, includeEnd }
-    }
-    while (lo <= hi) {
-        mid = Math.floor((lo + hi) / 2)
-        token = tokens[mid]
-        if (token.startOffset > startOffset) {
-            hi = mid - 1
-        } else if (token.endOffset as number + 1 <= startOffset) {
-            lo = mid + 1
-        } else {
-            startIndex = mid
-            includeStart = true
-            break
-        }
-    }
-
-    if (startIndex === -1) {
-        if (!token) {
-            startIndex = mid - 1
-        } else if (token.endOffset as number + 1 <= startOffset) {
-            startIndex = mid + 1
-        } else {
-            startIndex = mid
-        }
-    }
-
-    if (startOffset === endOffset) {
-        return { startIndex, endIndex: startIndex, includeStart, includeEnd: includeStart }
-    }
-
-    hi = tokens.length - 1
-    while (lo <= hi) {
-        mid = Math.floor((lo + hi) / 2)
-        if (tokens[mid].startOffset >= endOffset)
-            hi = mid - 1
-        else if (tokens[mid].endOffset as number < endOffset)
-            lo = mid + 1
-        else {
-            endIndex = mid
-            includeEnd = true
-            break
-        }
-    }
-    if (endIndex === -1) {
-        endIndex = tokens[mid].startOffset >= endOffset ? mid - 1 : mid
-    }
-    return { startIndex, endIndex, includeStart, includeEnd }
-}
-
 export interface IModelContentChange {
     /**
-     * The offset of the range that got replaced.
+     * Смещение диапазона, который был заменён.
      */
     readonly rangeOffset: number;
+    
     /**
-    * The length of the range that got replaced.
-    */
+     * Длина диапазона, который был заменён.
+     */
     readonly rangeLength: number;
+    
     /**
-     * The new text for the range.
+     * Новый текст для диапазона.
      */
     readonly text: string;
 }

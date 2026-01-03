@@ -1,6 +1,16 @@
 import { CstParser, EMPTY_ALT } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 
+/**
+ * Парсер грамматики языка BSL (1С:Предприятие).
+ * 
+ * Реализует грамматику языка BSL на основе библиотеки Chevrotain.
+ * Поддерживает парсинг модулей, процедур, функций, выражений и всех конструкций языка.
+ * 
+ * Настройки парсера:
+ * - `nodeLocationTracking: "onlyOffset"` - отслеживание только смещений узлов (экономия памяти)
+ * - `recoveryEnabled: true` - включено восстановление после ошибок
+ */
 export class BSLParser extends CstParser {
     constructor() {
         super(allTokens, {
@@ -362,17 +372,39 @@ export class BSLParser extends CstParser {
 
     // #endregion
 
+    /**
+     * Вспомогательный метод для создания альтернатив в правилах парсера.
+     * Обёртка над OR() для улучшения читаемости кода.
+     * 
+     * @param tokens - Массив функций-альтернатив, каждая функция определяет одно правило
+     */
     protected choice(...tokens: (() => any)[]) {
-        const items = tokens.map(t => { return { ALT: t } })
+        const items = tokens.map(t => ({ ALT: t }))
         this.OR(items)
     }
 
+    /**
+     * Вспомогательный метод для создания альтернатив с использованием OR1().
+     * Используется для разрешения конфликтов парсера, когда нужна пронумерованная альтернатива.
+     * 
+     * @param tokens - Массив функций-альтернатив, каждая функция определяет одно правило
+     */
     protected choice1(...tokens: (() => any)[]) {
-        const items = tokens.map(t => { return { ALT: t } })
+        const items = tokens.map(t => ({ ALT: t }))
         this.OR1(items)
     }
 
-    private binaryExpression(operand: any, operator: any) {
+    /**
+     * Фабрика для создания правил бинарных выражений.
+     * Генерирует правило для бинарных операторов с левой ассоциативностью.
+     * 
+     * Формат генерируемого правила: `операнд (оператор операнд)*`
+     * 
+     * @param operand - Правило для операнда (левой и правой части выражения)
+     * @param operator - Токен оператора
+     * @returns Функция-правило для парсера Chevrotain
+     */
+    private binaryExpression(operand: () => any, operator: any) {
         return () => {
             this.SUBRULE(operand, { LABEL: "lhs" })
             this.MANY(() => {
