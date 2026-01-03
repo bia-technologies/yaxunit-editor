@@ -5,8 +5,11 @@ import '@/bsl/editor/language/contribution.js'
 import '@/yaxunit'
 import '@/bsl/scope/platform'
 import { ModelView } from './modelView'
+import { ParseTreeView } from './parseTreeView'
+import { TokensView } from './tokensView'
 import { symbolRange } from '@/bsl/codeModel/utils'
 import { YAxUnitEditor } from '@/yaxunit'
+import { IncrementalBslParser } from '@/bsl/chevrotain/parser'
 
 (self as any).MonacoEnvironment = {
   getWorker(): Worker {
@@ -159,11 +162,119 @@ async function setDemoData(bslEditor: YAxUnitEditor) {
   )
 }
 
-const view = new ModelView('model-tree')
-bslEditor.getModel().getCodeModel().onDidChangeModel(() => {
-  view.render(bslEditor.getModel().getCodeModel())
+// Инициализация вкладок
+const codeModelView = new ModelView('model-tree')
+const parseTreeView = new ParseTreeView('parse-tree')
+const tokensView = new TokensView('tokens')
+
+// Переключение вкладок
+const tabButtons = document.querySelectorAll('.tab-button')
+const tabPanes = document.querySelectorAll('.tab-pane')
+
+tabButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const tabName = button.getAttribute('data-tab')
+    
+    // Убираем активный класс со всех кнопок и панелей
+    tabButtons.forEach(btn => btn.classList.remove('active'))
+    tabPanes.forEach(pane => pane.classList.remove('active'))
+    
+    // Добавляем активный класс к выбранной кнопке и панели
+    button.classList.add('active')
+    const targetPane = document.getElementById(`tab-${tabName}`)
+    if (targetPane) {
+      targetPane.classList.add('active')
+    }
+  })
 })
-view.selector = (symbol) => {
+
+// Создаем отдельный парсер для playground (для отображения parse tree и tokens)
+const playgroundParser = new IncrementalBslParser()
+
+// Функция для обновления всех представлений
+function updateAllViews() {
+  const model = bslEditor.getModel()
+  const codeModel = model.getCodeModel()
+  
+  // Обновляем модель кода
+  codeModelView.render(codeModel)
+  
+  // Парсим текст для отображения parse tree и tokens
+  const editorModel = bslEditor.editor.getModel()
+  if (editorModel) {
+    const text = editorModel.getValue()
+    
+    try {
+      const parseResult = playgroundParser.parseModule(text)
+      
+      // Обновляем parse tree
+      parseTreeView.render(parseResult.cst)
+      
+      // Обновляем tokens
+      tokensView.render(playgroundParser.lexer.moduleTokens)
+    } catch (error) {
+      console.error('Ошибка парсинга:', error)
+    }
+  }
+}
+
+codeModelView.selector = (symbol) => {
   const range = symbolRange(symbol, bslEditor.getModel())
   bslEditor.editor.setSelection(range)
 }
+
+tokensView.selector = (token) => {
+  const model = bslEditor.editor.getModel()
+  if (!model || token.startOffset === undefined) {
+    return
+  }
+  
+  const startPosition = model.getPositionAt(token.startOffset)
+  const endOffset = token.endOffset ?? token.startOffset
+  const endPosition = model.getPositionAt(endOffset + 1)
+  
+  bslEditor.editor.setSelection({
+    startLineNumber: startPosition.lineNumber,
+    startColumn: startPosition.column,
+    endLineNumber: endPosition.lineNumber,
+    endColumn: endPosition.column
+  })
+  
+  bslEditor.editor.revealLineInCenter(startPosition.lineNumber)
+}
+
+parseTreeView.selector = (node) => {
+  const model = bslEditor.editor.getModel()
+  if (!model || !node.location) {
+    return
+  }
+  
+  const startPosition = model.getPositionAt(node.location.startOffset)
+  const endOffset = node.location.endOffset ?? node.location.startOffset
+  const endPosition = model.getPositionAt(endOffset + 1)
+  
+  bslEditor.editor.setSelection({
+    startLineNumber: startPosition.lineNumber,
+    startColumn: startPosition.column,
+    endLineNumber: endPosition.lineNumber,
+    endColumn: endPosition.column
+  })
+  
+  bslEditor.editor.revealLineInCenter(startPosition.lineNumber)
+}
+
+// Обновляем представления при изменении модели кода
+bslEditor.getModel().getCodeModel().onDidChangeModel(() => {
+  updateAllViews()
+})
+
+// Обновляем при изменении содержимого редактора
+bslEditor.editor.getModel()?.onDidChangeContent(() => {
+  // Небольшая задержка, чтобы дать время парсеру обновиться
+  setTimeout(() => {
+    updateAllViews()
+  }, 100)
+})
+
+// Первоначальное обновление
+updateAllViews()

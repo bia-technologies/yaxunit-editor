@@ -7,7 +7,24 @@
   </head>
   <body>
     <div id="container" class="column"></div>
-    <div id="model-tree" class="model-tree column"></div>
+    <div id="output-panel" class="column">
+      <div class="tabs">
+        <button class="tab-button active" data-tab="code-model">Модель кода</button>
+        <button class="tab-button" data-tab="parse-tree">Parse Tree</button>
+        <button class="tab-button" data-tab="tokens">Tokens</button>
+      </div>
+      <div class="tab-content">
+        <div id="tab-code-model" class="tab-pane active">
+          <div id="model-tree" class="model-tree"></div>
+        </div>
+        <div id="tab-parse-tree" class="tab-pane">
+          <div id="parse-tree" class="model-tree"></div>
+        </div>
+        <div id="tab-tokens" class="tab-pane">
+          <div id="tokens" class="model-tree"></div>
+        </div>
+      </div>
+    </div>
     <button id='V8WebAppEventRequestForwarder' style="display: none"></button>
     <button id='V8WebAppEventResponseForwarder' style="display: none"></button>
 

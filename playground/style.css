@@ -3,15 +3,70 @@
   overflow: hidden;
 }
 
+#output-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+}
+
+.tabs {
+  display: flex;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+  padding: 0;
+  margin: 0;
+}
+
+.tab-button {
+  background-color: transparent;
+  border: none;
+  color: #cccccc;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  transition: background-color 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button:hover {
+  background-color: #2a2d2e;
+}
+
+.tab-button.active {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border-bottom: 2px solid #007acc;
+}
+
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-pane {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tab-pane.active {
+  display: flex;
+  flex-direction: column;
+}
+
 .model-tree {
   background-color: #252526;
   font-family: "Droid Sans Mono", "monospace", monospace;
   padding: 15px;
   width: 100%;
-  height: 95vh;
+  height: 100%;
   overflow-y: scroll;
   padding-right: 30px;
   box-sizing: content-box;
+  flex: 1;
 }
 
 .node {
@@ -66,4 +121,64 @@
   padding: 5px;
   border-radius: 3px;
   font-family: "Consolas";
+}
+
+/* Стили для таблицы токенов */
+.tokens-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Droid Sans Mono", "monospace", monospace;
+  font-size: 0.9em;
+}
+
+.tokens-table thead tr {
+  background-color: #2d2d30;
+  color: #cccccc;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tokens-table th {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.tokens-table tbody tr {
+  border-bottom: 1px solid #3e3e42;
+  cursor: pointer;
+}
+
+.tokens-table tbody tr:hover {
+  background-color: #2a2d2e !important;
+}
+
+.tokens-table tbody tr:nth-child(even) {
+  background-color: #252526;
+}
+
+.tokens-table tbody tr:nth-child(odd) {
+  background-color: #1e1e1e;
+}
+
+.tokens-table td {
+  padding: 6px 12px;
+}
+
+.tokens-table .token-index {
+  color: #858585;
+}
+
+.tokens-table .token-type {
+  color: #4ec9b0;
+}
+
+.tokens-table .token-text {
+  color: #dcdcaa;
+  word-break: break-all;
+}
+
+.tokens-table .token-offset {
+  color: #858585;
 }
