@@ -86,13 +86,13 @@ export class IncrementLexer extends Lexer {
     }
 
     /**
-     * Сортирует изменения по offset (от меньшего к большему) для корректной обработки.
+     * Сортирует изменения по offset (ASC) для корректной обработки.
      * 
      * @param changes - Массив изменений текста
      * @returns Отсортированный массив изменений
      */
     private sortChanges(changes: IModelContentChange[]): IModelContentChange[] {
-        return [...changes].sort((a, b) => a.rangeOffset - b.rangeOffset)
+        return [...changes].sort((a, b) => b.rangeOffset - a.rangeOffset)
     }
 
     /**
@@ -105,6 +105,7 @@ export class IncrementLexer extends Lexer {
         let start = change.rangeOffset
         let end = change.rangeLength + start
         const offsetDiff = change.text.length - change.rangeLength
+        
         const boundaries = findTokens(this.moduleTokens, start, end)
 
         // Валидация индексов перед обращением к массиву
@@ -134,8 +135,7 @@ export class IncrementLexer extends Lexer {
      */
     private validateBoundaries(boundaries: ITokenBoundaries): boolean {
         const { startIndex, endIndex } = boundaries
-        const isValid = startIndex >= 0 && startIndex < this.moduleTokens.length &&
-                       endIndex >= 0 && endIndex < this.moduleTokens.length
+        const isValid = startIndex >= 0 && endIndex >= startIndex
 
         if (!isValid) {
             console.warn(

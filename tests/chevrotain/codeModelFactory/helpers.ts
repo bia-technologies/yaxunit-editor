@@ -1,5 +1,4 @@
 import { ChevrotainCodeModelFactory } from '../../../src/bsl/chevrotain'
-import { IModelContentChange } from '../../../src/bsl/chevrotain/parser'
 import { expect, vi } from 'vitest'
 import { ModuleModel } from '../../../src/bsl/moduleModel'
 import { BslCodeModel } from '../../../src/bsl/codeModel'
@@ -15,27 +14,6 @@ export function setupTestEnvironment() {
     vi.spyOn(console, 'debug').mockImplementation(() => { })
     vi.spyOn(console, 'error').mockImplementation(() => { })
     return codeModelFactory
-}
-
-/**
- * Создает изменение для вставки текста
- */
-export function insert(offset: number, text: string): IModelContentChange {
-    return { rangeOffset: offset, rangeLength: 0, text }
-}
-
-/**
- * Создает изменение для удаления текста
- */
-export function remove(offset: number, length: number): IModelContentChange {
-    return { rangeOffset: offset, rangeLength: length, text: '' }
-}
-
-/**
- * Создает изменение для замены текста
- */
-export function replace(offset: number, length: number, text: string): IModelContentChange {
-    return { rangeOffset: offset, rangeLength: length, text }
 }
 
 /**

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest"
-import { ChevrotainSitterCodeModelFactory } from "../../src/bsl/chevrotain"
+import { ChevrotainCodeModelFactory } from "../../src/bsl/chevrotain"
 import { BslCodeModel, MethodCallSymbol } from "../../src/bsl/codeModel"
 
-const codeModelFactory = new ChevrotainSitterCodeModelFactory()
+const codeModelFactory = new ChevrotainCodeModelFactory()
 
 describe('MethodCall', () => {
     test('without right paren', () => {

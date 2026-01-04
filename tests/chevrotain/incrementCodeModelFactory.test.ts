@@ -2,10 +2,10 @@
 import {
     BslCodeModel,
 } from '../../src/bsl/codeModel'
-import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain'
+import { ChevrotainCodeModelFactory } from '../../src/bsl/chevrotain'
 import { describe, expect, test } from 'vitest'
 
-const codeModelFactory = new ChevrotainSitterCodeModelFactory()
+const codeModelFactory = new ChevrotainCodeModelFactory()
 
 describe('increment code model', () => {
 

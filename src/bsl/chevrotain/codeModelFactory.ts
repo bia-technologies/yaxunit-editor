@@ -63,7 +63,7 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
 
     updateModel(codeModel: BslCodeModel, changes: IModelContentChange[]): boolean {
         if (!codeModel.children.length || isReplace(codeModel, changes)) {
-            console.debug('Model empty or text replaced -> rebuild')
+            console.warn('Model empty or text replaced -> rebuild')
             return false
         }
 
@@ -75,7 +75,7 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
         for (const range of ranges) {
             let rangeSymbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
             if (!rangeSymbol) {
-                console.error('Dont find edited symbol -> rebuild')
+                console.warn('Dont find edited symbol -> rebuild')
                 return false
             }
             rangeSymbol = getParentMethodDefinition(rangeSymbol) ?? rangeSymbol
@@ -100,7 +100,7 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
         if (success) {
             console.log('Increment update changes', changes, performance.now() - start, 'ms')
         } else {
-            console.error('Changes parsing error -> rebuild')
+            console.warn('Changes parsing error -> rebuild')
         }
         return success
     }
