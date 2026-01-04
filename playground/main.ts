@@ -7,6 +7,7 @@ import '@/bsl/scope/platform'
 import { ModelView } from './modelView'
 import { ParseTreeView } from './parseTreeView'
 import { TokensView } from './tokensView'
+import { ErrorsView } from './errorsView'
 import { symbolRange } from '@/bsl/codeModel/utils'
 import { YAxUnitEditor } from '@/yaxunit'
 import { IncrementalBslParser } from '@/bsl/chevrotain/parser'
@@ -166,6 +167,7 @@ async function setDemoData(bslEditor: YAxUnitEditor) {
 const codeModelView = new ModelView('model-tree')
 const parseTreeView = new ParseTreeView('parse-tree')
 const tokensView = new TokensView('tokens')
+const errorsView = new ErrorsView('errors')
 
 // Переключение вкладок
 const tabButtons = document.querySelectorAll('.tab-button')
@@ -212,6 +214,9 @@ function updateAllViews() {
       
       // Обновляем tokens
       tokensView.render(playgroundParser.lexer.moduleTokens)
+      
+      // Обновляем ошибки лексера
+      errorsView.render(playgroundParser.lexer.lexingErrors)
     } catch (error) {
       console.error('Ошибка парсинга:', error)
     }
@@ -252,6 +257,27 @@ parseTreeView.selector = (node) => {
   const startPosition = model.getPositionAt(node.location.startOffset)
   const endOffset = node.location.endOffset ?? node.location.startOffset
   const endPosition = model.getPositionAt(endOffset + 1)
+  
+  bslEditor.editor.setSelection({
+    startLineNumber: startPosition.lineNumber,
+    startColumn: startPosition.column,
+    endLineNumber: endPosition.lineNumber,
+    endColumn: endPosition.column
+  })
+  
+  bslEditor.editor.revealLineInCenter(startPosition.lineNumber)
+}
+
+errorsView.selector = (error) => {
+  const model = bslEditor.editor.getModel()
+  if (!model || error.offset === undefined) {
+    return
+  }
+  
+  const startPosition = model.getPositionAt(error.offset)
+  const errorLength = error.length ?? 1
+  const endOffset = error.offset + errorLength
+  const endPosition = model.getPositionAt(endOffset)
   
   bslEditor.editor.setSelection({
     startLineNumber: startPosition.lineNumber,

@@ -40,6 +40,7 @@ interface ITokenBoundaries {
 export class IncrementLexer extends Lexer {
     moduleTokens: IToken[] = []
     commentTokens: IToken[] = []
+    lexingErrors: ILexingError[] = []
     private sourceText: string = ""
 
     /**
@@ -64,6 +65,8 @@ export class IncrementLexer extends Lexer {
         const result = super.tokenize(text, initialMode)
         this.moduleTokens = result.tokens
         this.commentTokens = result.groups["Comment"] ?? []
+        this.lexingErrors = [...result.errors]
+        result.errors.forEach(e=>console.error('Lexer tokenize error', e))
         return result
     }
 
@@ -86,10 +89,72 @@ export class IncrementLexer extends Lexer {
             const afterText = this.applyChange(beforeText, change)
             const processedRange = this.processChange(change, beforeText, afterText)
             this.sourceText = afterText
+            
+            // Обновляем ошибки: удаляем ошибки в измененном диапазоне, добавляем новые
+            this.updateLexingErrors(processedRange)
+            
             ranges.push(processedRange)
         }
         
         return ranges
+    }
+    
+    /**
+     * Обновляет список ошибок лексера при инкрементальном обновлении токенов.
+     * 
+     * Удаляет ошибки, которые находятся в измененном диапазоне, и добавляет новые ошибки
+     * из обработанного диапазона. Также корректирует позиции ошибок после измененного диапазона.
+     * 
+     * @param processedRange - Обработанный диапазон с новыми ошибками
+     */
+    private updateLexingErrors(processedRange: IProcessedRange): void {
+        const { start, end, errors: newErrors, diff } = processedRange
+        
+        // Удаляем ошибки, которые находятся в измененном диапазоне
+        this.lexingErrors = this.lexingErrors.filter(error => {
+            const errorEnd = error.offset + error.length
+            // Ошибка удаляется, если она пересекается с измененным диапазоном
+            return errorEnd < start || error.offset > end
+        })
+        
+        // Корректируем позиции ошибок после измененного диапазона
+        if (diff !== 0) {
+            this.lexingErrors = this.lexingErrors.map(error => {
+                if (error.offset > end) {
+                    // Смещаем ошибку на разницу в длине текста и пересчитываем line/column
+                    const adjustedOffset = error.offset + diff
+                    const { line, column } = this.calculateLineAndColumn(this.sourceText, adjustedOffset)
+                    return {
+                        ...error,
+                        offset: adjustedOffset,
+                        line: line,
+                        column: column
+                    }
+                }
+                return error
+            })
+        }
+        
+        // Пересчитываем line/column для новых ошибок и добавляем их
+        if (newErrors && newErrors.length > 0) {
+            const adjustedNewErrors = newErrors.map(error => {
+                const { line, column } = this.calculateLineAndColumn(this.sourceText, error.offset)
+                return {
+                    ...error,
+                    line: line,
+                    column: column
+                }
+            })
+            this.lexingErrors.push(...adjustedNewErrors)
+        }
+        
+        // Добавляем новые ошибки из обработанного диапазона
+        if (newErrors && newErrors.length > 0) {
+            this.lexingErrors.push(...newErrors)
+        }
+        
+        // Сортируем ошибки по позиции
+        this.lexingErrors.sort((a, b) => a.offset - b.offset)
     }
 
     /**
@@ -143,6 +208,33 @@ export class IncrementLexer extends Lexer {
         }
         
         return { lineStart, lineEnd }
+    }
+
+    /**
+     * Вычисляет номер строки и столбца для указанного смещения в тексте.
+     * 
+     * @param text - Полный текст документа
+     * @param offset - Смещение в тексте
+     * @returns Объект с номером строки (начиная с 1) и столбца (начиная с 1)
+     */
+    private calculateLineAndColumn(text: string, offset: number): { line: number, column: number } {
+        if (offset < 0 || offset > text.length) {
+            return { line: 1, column: 1 }
+        }
+        
+        let line = 1
+        let column = 1
+        
+        for (let i = 0; i < offset; i++) {
+            if (text[i] === '\n') {
+                line++
+                column = 1
+            } else if (text[i] !== '\r') {
+                column++
+            }
+        }
+        
+        return { line, column }
     }
 
     /**
@@ -349,7 +441,8 @@ export class IncrementLexer extends Lexer {
         }
 
         const lexingResult = super.tokenize(text)
-        
+        lexingResult.errors.forEach(e=>console.error('Lexer update error', e))
+
         // Корректируем смещения для новых токенов
         for (const token of lexingResult.tokens) {
             token.startOffset += startOffset
@@ -363,10 +456,24 @@ export class IncrementLexer extends Lexer {
             return token
         })
 
+        // Корректируем смещения и позиции для ошибок
+        const adjustedErrors = lexingResult.errors.map(error => {
+            const adjustedOffset = error.offset + startOffset
+            // Вычисляем line и column относительно полного текста
+            const { line, column } = this.calculateLineAndColumn(this.sourceText, adjustedOffset)
+            
+            return {
+                ...error,
+                offset: adjustedOffset,
+                line: line,
+                column: column
+            }
+        })
+
         return {
             tokens: lexingResult.tokens,
             commentTokens,
-            errors: lexingResult.errors
+            errors: adjustedErrors
         }
     }
 

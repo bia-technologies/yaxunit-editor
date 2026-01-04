@@ -123,6 +123,14 @@
   font-family: "Consolas";
 }
 
+.success {
+  color: #4ec9b0;
+  background-color: #1e3a2e;
+  padding: 5px;
+  border-radius: 3px;
+  font-family: "Consolas";
+}
+
 /* Стили для таблицы токенов */
 .tokens-table {
   width: 100%;
@@ -181,4 +189,25 @@
 
 .tokens-table .token-offset {
   color: #858585;
+}
+
+/* Стили для ошибок лексера */
+.tokens-table .error-row {
+  cursor: pointer;
+}
+
+.tokens-table .error-row:hover {
+  background-color: #3a2121 !important;
+}
+
+.tokens-table .error-line,
+.tokens-table .error-column,
+.tokens-table .error-offset,
+.tokens-table .error-length {
+  color: #858585;
+}
+
+.tokens-table .error-message {
+  color: #f48771;
+  word-break: break-word;
 }
