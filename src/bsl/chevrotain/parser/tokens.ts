@@ -103,7 +103,7 @@ export const tokens = {
     AdditionOperator,
     MultiplicationOperator,
     CompareOperator,
-    Comment: createToken({ name: "Comment", pattern: /\/\/[^\r\n]*/, group: Lexer.SKIPPED }),
+    Comment: createToken({ name: "Comment", pattern: /\/\/[^\r\n]*/, group: "Comment" }),
     WhiteSpace: createToken({ name: "WhiteSpace", pattern: /[ \t\n\r]+/, group: Lexer.SKIPPED }),
     MultilineString: createToken({ name: "MultilineString", pattern: /"([^\r\n"]|"")*\n(\s*\|([^\r\n"]|"")*)*"/, categories: StringLiteral }),
     String: createToken({ name: "String", pattern: /"([^\r\n"]|"")*"/, categories: StringLiteral }),

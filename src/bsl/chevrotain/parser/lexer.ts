@@ -39,6 +39,8 @@ interface ITokenBoundaries {
  */
 export class IncrementLexer extends Lexer {
     moduleTokens: IToken[] = []
+    commentTokens: IToken[] = []
+    private sourceText: string = ""
 
     /**
      * Создает новый экземпляр инкрементального лексера.
@@ -58,8 +60,10 @@ export class IncrementLexer extends Lexer {
      * @returns Результат токенизации, содержащий массив токенов и возможные ошибки
      */
     public tokenize(text: string, initialMode?: string | undefined): ILexingResult {
+        this.sourceText = text
         const result = super.tokenize(text, initialMode)
         this.moduleTokens = result.tokens
+        this.commentTokens = result.groups["Comment"] ?? []
         return result
     }
 
@@ -78,7 +82,10 @@ export class IncrementLexer extends Lexer {
         const sortedChanges = this.sortChanges(changes)
         
         for (const change of sortedChanges) {
-            const processedRange = this.processChange(change)
+            const beforeText = this.sourceText
+            const afterText = this.applyChange(beforeText, change)
+            const processedRange = this.processChange(change, beforeText, afterText)
+            this.sourceText = afterText
             ranges.push(processedRange)
         }
         
@@ -96,34 +103,138 @@ export class IncrementLexer extends Lexer {
     }
 
     /**
+     * Применяет изменение к тексту, возвращая новую версию текста.
+     * 
+     * @param text - Исходный текст
+     * @param change - Изменение для применения
+     * @returns Новый текст после применения изменения
+     */
+    private applyChange(text: string, change: IModelContentChange): string {
+        return text.slice(0, change.rangeOffset) + change.text + text.slice(change.rangeOffset + change.rangeLength)
+    }
+
+    /**
+     * Находит границы строки, содержащей указанное смещение.
+     * 
+     * @param text - Текст для поиска
+     * @param offset - Смещение внутри строки
+     * @returns Объект с lineStart (начало строки, включительно) и lineEnd (конец строки, исключительно)
+     */
+    private getLineBounds(text: string, offset: number): { lineStart: number; lineEnd: number } {
+        // Clamp offset к допустимому диапазону
+        const clampedOffset = Math.max(0, Math.min(offset, text.length))
+        
+        // Ищем начало строки (позицию после предыдущего перевода строки или 0)
+        let lineStart = 0
+        for (let i = clampedOffset - 1; i >= 0; i--) {
+            if (text[i] === '\n' || text[i] === '\r') {
+                lineStart = i + 1
+                break
+            }
+        }
+        
+        // Ищем конец строки (первый перевод строки справа или конец текста)
+        let lineEnd = text.length
+        for (let i = clampedOffset; i < text.length; i++) {
+            if (text[i] === '\n' || text[i] === '\r') {
+                lineEnd = i
+                break
+            }
+        }
+        
+        return { lineStart, lineEnd }
+    }
+
+    /**
+     * Проверяет, содержит ли строка однострочный комментарий.
+     * 
+     * @param text - Текст для поиска
+     * @param lineStart - Начало строки (включительно)
+     * @param lineEnd - Конец строки (исключительно)
+     * @returns true, если в строке найден "//"
+     */
+    private lineHasLineComment(text: string, lineStart: number, lineEnd: number): boolean {
+        const lineText = text.slice(lineStart, lineEnd)
+        const commentIndex = lineText.indexOf('//')
+        return commentIndex !== -1
+    }
+
+    /**
+     * Определяет, нужно ли расширять окно переразбора до конца строки для обработки комментариев.
+     * 
+     * @param beforeText - Текст до изменения
+     * @param afterText - Текст после изменения
+     * @param change - Изменение текста
+     * @returns true, если нужно расширить до конца строки
+     */
+    private shouldExpandToLineForComment(beforeText: string, afterText: string, change: IModelContentChange): boolean {
+        const oldLine = this.getLineBounds(beforeText, change.rangeOffset)
+        const newLine = this.getLineBounds(afterText, change.rangeOffset)
+        
+        return this.lineHasLineComment(beforeText, oldLine.lineStart, oldLine.lineEnd) ||
+               this.lineHasLineComment(afterText, newLine.lineStart, newLine.lineEnd)
+    }
+
+    /**
      * Обрабатывает одно изменение текста, обновляя соответствующие токены.
      * 
      * @param change - Изменение текста для обработки
+     * @param beforeText - Текст до изменения
+     * @param afterText - Текст после изменения
      * @returns Информация об обработанном диапазоне
      */
-    private processChange(change: IModelContentChange): IProcessedRange {
-        let start = change.rangeOffset
-        let end = change.rangeLength + start
-        const offsetDiff = change.text.length - change.rangeLength
+    private processChange(change: IModelContentChange, beforeText: string, afterText: string): IProcessedRange {
+        const start = change.rangeOffset
+        const end = start + change.rangeLength
+        const diff = change.text.length - change.rangeLength
         
-        const boundaries = findTokens(this.moduleTokens, start, end)
-
-        // Валидация индексов перед обращением к массиву
-        if (!this.validateBoundaries(boundaries)) {
-            return this.createErrorRange(start, end, offsetDiff)
+        // Проверяем, нужно ли расширять до конца строки для обработки комментариев
+        const expandToLine = this.shouldExpandToLineForComment(beforeText, afterText, change)
+        
+        let boundaries: ITokenBoundaries
+        let adjustedStart: number
+        let adjustedEnd: number
+        let expandedText: string
+        
+        if (expandToLine) {
+            // Расширяем до конца строки
+            const oldLine = this.getLineBounds(beforeText, start)
+            const newLine = this.getLineBounds(afterText, start)
+            
+            adjustedStart = oldLine.lineStart
+            adjustedEnd = oldLine.lineEnd
+            expandedText = afterText.slice(newLine.lineStart, newLine.lineEnd)
+            
+            boundaries = findTokens(this.moduleTokens, adjustedStart, adjustedEnd)
+            
+            // Валидация индексов
+            if (!this.validateBoundaries(boundaries)) {
+                return this.createErrorRange(adjustedStart, adjustedEnd, diff)
+            }
+        } else {
+            // Обычная логика: расширение до границ токенов
+            boundaries = findTokens(this.moduleTokens, start, end)
+            
+            // Валидация индексов
+            if (!this.validateBoundaries(boundaries)) {
+                return this.createErrorRange(start, end, diff)
+            }
+            
+            const expanded = this.expandTextToTokenBoundaries(afterText, start, end, boundaries, beforeText)
+            expandedText = expanded.text
+            adjustedStart = expanded.start
+            adjustedEnd = expanded.end
         }
-
-        const { text: expandedText, start: adjustedStart, end: adjustedEnd } = 
-            this.expandTextToTokenBoundaries(change.text, start, end, boundaries)
         
         const textTokens = this.tokenizeText(expandedText, adjustedStart)
-        this.replaceTokens(boundaries, textTokens, offsetDiff, adjustedStart)
+        this.replaceTokens(boundaries, textTokens, diff, adjustedStart)
+        this.updateCommentTokensAfterChange(adjustedStart, adjustedEnd, diff, textTokens.commentTokens)
 
         return {
             start: adjustedStart,
             end: adjustedEnd,
             errors: textTokens.errors,
-            diff: offsetDiff
+            diff
         }
     }
 
@@ -170,39 +281,57 @@ export class IncrementLexer extends Lexer {
 
     /**
      * Расширяет текст изменения до границ токенов, если изменение частично затрагивает токены.
+     * Использует afterText для получения изменённого текста и beforeText для неизменённых частей.
      * 
-     * @param changeText - Исходный текст изменения
-     * @param start - Начальная позиция изменения
-     * @param end - Конечная позиция изменения
+     * @param afterText - Текст после изменения
+     * @param start - Начальная позиция изменения (в beforeText)
+     * @param end - Конечная позиция изменения (в beforeText)
      * @param boundaries - Границы токенов
+     * @param beforeText - Текст до изменения
      * @returns Расширенный текст и скорректированные границы
      */
     private expandTextToTokenBoundaries(
-        changeText: string,
+        afterText: string,
         start: number,
         end: number,
-        boundaries: ITokenBoundaries
+        boundaries: ITokenBoundaries,
+        beforeText: string
     ): { text: string, start: number, end: number } {
         const { startIndex, endIndex, includeStart, includeEnd } = boundaries
+        const diff = afterText.length - beforeText.length
 
         if (!includeStart && !includeEnd) {
+            // Изменение не пересекается с токенами - берём текст напрямую из afterText
+            const changeText = afterText.slice(start, end + diff)
             return { text: changeText, start, end }
         }
 
         const startToken = this.moduleTokens[startIndex]
         const endToken = this.moduleTokens[endIndex]
-
-        const leftText = includeStart 
-            ? startToken.image.substring(0, start - startToken.startOffset) 
-            : ''
-        const endTokenEndOffset = getEndOffset(endToken)
-        const rightText = includeEnd 
-            ? endToken.image.substring(end - endToken.startOffset) 
-            : ''
-
-        const expandedText = leftText + changeText + rightText
+        
+        // Границы токенов в beforeText
         const adjustedStart = includeStart ? startToken.startOffset : start
-        const adjustedEnd = includeEnd ? endTokenEndOffset : end
+        const adjustedEnd = includeEnd ? getEndOffset(endToken) : end
+        
+        // Для частей, которые нужно взять из beforeText (leftText, rightText)
+        let leftText = ''
+        let rightText = ''
+        
+        if (includeStart) {
+            // Левая часть токена из beforeText (до изменения)
+            leftText = beforeText.slice(startToken.startOffset, start)
+        }
+        
+        if (includeEnd) {
+            const endTokenEndOffset = getEndOffset(endToken)
+            // Правая часть токена из beforeText (после изменения)
+            rightText = beforeText.slice(end, endTokenEndOffset + 1)
+        }
+        
+        // Изменённый текст берём из afterText
+        const changeText = afterText.slice(start, end + diff)
+        
+        const expandedText = leftText + changeText + rightText
 
         return { text: expandedText, start: adjustedStart, end: adjustedEnd }
     }
@@ -212,11 +341,11 @@ export class IncrementLexer extends Lexer {
      * 
      * @param text - Текст для токенизации
      * @param startOffset - Смещение начала текста в исходном документе
-     * @returns Объект с токенами и ошибками
+     * @returns Объект с токенами, комментариями и ошибками
      */
-    private tokenizeText(text: string, startOffset: number): { tokens: IToken[], errors?: ILexingError[] } {
+    private tokenizeText(text: string, startOffset: number): { tokens: IToken[], commentTokens: IToken[], errors?: ILexingError[] } {
         if (!text || text.trim() === '') {
-            return { tokens: [] }
+            return { tokens: [], commentTokens: [] }
         }
 
         const lexingResult = super.tokenize(text)
@@ -227,8 +356,16 @@ export class IncrementLexer extends Lexer {
             token.endOffset = (getEndOffset(token) + startOffset) as typeof token.endOffset
         }
 
+        // Корректируем смещения для комментариев
+        const commentTokens = (lexingResult.groups["Comment"] ?? []).map((token: IToken) => {
+            token.startOffset += startOffset
+            token.endOffset = (getEndOffset(token) + startOffset) as typeof token.endOffset
+            return token
+        })
+
         return {
             tokens: lexingResult.tokens,
+            commentTokens,
             errors: lexingResult.errors
         }
     }
@@ -243,7 +380,7 @@ export class IncrementLexer extends Lexer {
      */
     private replaceTokens(
         boundaries: ITokenBoundaries,
-        newTokens: { tokens: IToken[], errors?: ILexingError[] },
+        newTokens: { tokens: IToken[], commentTokens: IToken[], errors?: ILexingError[] },
         offsetDiff: number,
         adjustedStart: number
     ): void {
@@ -273,6 +410,51 @@ export class IncrementLexer extends Lexer {
         if (offsetDiff !== 0) {
             const startMove = startIndex + textTokens.length + (!includeStart ? 1 : 0)
             moveTokens(this.moduleTokens, startMove, offsetDiff)
+        }
+    }
+
+
+
+    /**
+     * Обновляет commentTokens после обработки изменения.
+     * 
+     * @param start - Начальная позиция изменения
+     * @param end - Конечная позиция изменения
+     * @param offsetDiff - Разница в смещении
+     * @param newCommentTokens - Новые токены комментариев из токенизации
+     */
+    private updateCommentTokensAfterChange(
+        start: number,
+        end: number,
+        offsetDiff: number,
+        newCommentTokens: IToken[]
+    ): void {
+        // Удаляем комментарии, которые были затронуты изменением
+        this.commentTokens = this.commentTokens.filter(comment => {
+            const commentEnd = getEndOffset(comment)
+            return commentEnd < start || comment.startOffset > end
+        })
+
+        // Добавляем новые комментарии
+        if (newCommentTokens.length > 0) {
+            // Находим позицию для вставки новых комментариев
+            let insertIndex = 0
+            for (let i = 0; i < this.commentTokens.length; i++) {
+                if (this.commentTokens[i].startOffset > start) {
+                    insertIndex = i
+                    break
+                }
+                insertIndex = i + 1
+            }
+            this.commentTokens.splice(insertIndex, 0, ...newCommentTokens)
+        }
+
+        // Обновляем смещения комментариев после измененного диапазона
+        if (offsetDiff !== 0) {
+            const updateStartIndex = this.commentTokens.findIndex(comment => comment.startOffset > end)
+            if (updateStartIndex !== -1) {
+                moveTokens(this.commentTokens, updateStartIndex, offsetDiff)
+            }
         }
     }
 
