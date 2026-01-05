@@ -577,4 +577,125 @@ describe('внутренние функции и сложные сценарии
             }
         }
     })
+
+    test('должен обрабатывать расскомментирование блока кода без rebuild', () => {
+        // Начальный код с закомментированным оператором
+        const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\nКонецПроцедуры'
+        const codeModel = codeModelFactory.buildModel(initialCode)
+        expect(codeModel.children[0].children.length).toBe(1) // Только один оператор
+
+        // Расскомментируем строку: удаляем "// " (4 символа: "// " = 2 символа комментария + пробел)
+        // Позиция "// " в строке: "Процедура Тест()\n  а = 1;\n  " = 25 символов
+        const commentStart = initialCode.indexOf('// ')
+        expect(commentStart).toBeGreaterThan(0)
+        
+        const result = codeModelFactory.updateModel(codeModel, [
+            remove(commentStart, 3) // Удаляем "// " (3 символа)
+        ])
+
+        expect(result).toBe(true)
+        expect(codeModel.children[0].children.length).toBe(2) // Теперь два оператора
+        expect(codeModel.children[0].children[1].variable.name).toBe('б')
+        expectExpression(codeModel.children[0].children[1].expression, { value: '2' })
+    })
+
+    test('должен обрабатывать расскомментирование нескольких строк без rebuild', () => {
+        // Начальный код с закомментированным блоком
+        const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\n  // в = 3;\nКонецПроцедуры'
+        const codeModel = codeModelFactory.buildModel(initialCode)
+        expect(codeModel.children[0].children.length).toBe(1)
+
+        // Расскомментируем первую строку
+        const firstCommentStart = initialCode.indexOf('// ')
+        const result1 = codeModelFactory.updateModel(codeModel, [
+            remove(firstCommentStart, 3)
+        ])
+
+        expect(result1).toBe(true)
+        expect(codeModel.children[0].children.length).toBe(2)
+
+        // Расскомментируем вторую строку
+        // После первого расскомментирования позиция второго комментария сместилась на -3
+        const secondCommentStart = initialCode.lastIndexOf('// ') - 3
+        const result2 = codeModelFactory.updateModel(codeModel, [
+            remove(secondCommentStart, 3)
+        ])
+
+        expect(result2).toBe(true)
+        expect(codeModel.children[0].children.length).toBe(3)
+        expect(codeModel.children[0].children[2].variable.name).toBe('в')
+    })
+
+    test('должен обрабатывать расскомментирование в середине процедуры без rebuild', () => {
+        const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\n  в = 3;\nКонецПроцедуры'
+        const codeModel = codeModelFactory.buildModel(initialCode)
+        expect(codeModel.children[0].children.length).toBe(2) // а = 1 и в = 3
+
+        // Расскомментируем среднюю строку
+        const commentStart = initialCode.indexOf('// ')
+        const result = codeModelFactory.updateModel(codeModel, [
+            remove(commentStart, 3)
+        ])
+
+        expect(result).toBe(true)
+        expect(codeModel.children[0].children.length).toBe(3)
+        expect(codeModel.children[0].children[1].variable.name).toBe('б')
+    })
+
+    test('должен обрабатывать посимвольное расскомментирование без rebuild', () => {
+        // Начальный код с закомментированным оператором
+        const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\nКонецПроцедуры'
+        const codeModel = codeModelFactory.buildModel(initialCode)
+        expect(codeModel.children[0].children.length).toBe(1) // Только один оператор
+
+        // Шаг 1: Удаляем первый символ "/"
+        // После удаления получается "/ б = 2;", что может быть невалидным кодом
+        const firstSlashPos = initialCode.indexOf('//')
+        let result = codeModelFactory.updateModel(codeModel, [
+            remove(firstSlashPos, 1)
+        ])
+        expect(result).toBe(true)
+
+        result = codeModelFactory.updateModel(codeModel, [
+            remove(firstSlashPos, 1)
+        ])
+        expect(result).toBe(true)
+
+        // После удаления второго "/" код должен стать активным
+        expect(codeModel.children[0].children.length).toBe(2)
+        expect(codeModel.children[0].children[1].variable.name).toBe('б')
+    })
+
+    test('должен обрабатывать посимвольное комментирование без rebuild', () => {
+        // Начальный код с незакомментированным оператором
+        const initialCode = 'Процедура Тест()\n  а = 1;\n  б = 2;\nКонецПроцедуры'
+        const codeModel = codeModelFactory.buildModel(initialCode)
+        expect(codeModel.children[0].children.length).toBe(2) // Два оператора
+
+        // Находим позицию начала строки "  б = 2;"
+        const bLineStart = initialCode.indexOf('б = 2;')
+        expect(bLineStart).toBeGreaterThan(0)
+
+        // Шаг 1: Добавляем первый символ "/"
+        let result = codeModelFactory.updateModel(codeModel, [
+            insert(bLineStart, '/')
+        ])
+        expect(result).toBe(true)
+
+        // Шаг 2: Добавляем второй символ "/"
+        result = codeModelFactory.updateModel(codeModel, [
+            insert(bLineStart + 1, '/')
+        ])
+        expect(result).toBe(true)
+
+        // Шаг 3: Добавляем пробел после "//"
+        result = codeModelFactory.updateModel(codeModel, [
+            insert(bLineStart + 2, ' ')
+        ])
+        expect(result).toBe(true)
+
+        // После добавления "// " код должен стать закомментированным
+        expect(codeModel.children[0].children.length).toBe(1) // Только один оператор остался
+        expect(codeModel.children[0].children[0].variable.name).toBe('а')
+    })
 })

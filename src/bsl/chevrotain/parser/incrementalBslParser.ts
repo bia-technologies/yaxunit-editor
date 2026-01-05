@@ -1,6 +1,7 @@
-import { CstNode } from "chevrotain";
+import { CstNode, createTokenInstance, EOF, IToken } from "chevrotain";
 import { IncrementLexer, findTokens } from "./lexer";
 import { BSLParser } from "./parser";
+import { getEndOffset } from "./tokenUtils";
 
 /**
  * Инкрементальный парсер для BSL, поддерживающий обновление только изменённых частей кода.
@@ -10,6 +11,27 @@ import { BSLParser } from "./parser";
  */
 export class IncrementalBslParser extends BSLParser {
     lexer: IncrementLexer = new IncrementLexer()
+
+    private withEOF(tokens: IToken[]): IToken[] {
+        const last = tokens.length ? tokens[tokens.length - 1] : undefined
+        const eofOffset = last ? getEndOffset(last) + 1 : 0
+        const eofLine = (last?.endLine ?? last?.startLine ?? 1) as number
+        const eofColumnBase = (last?.endColumn ?? last?.startColumn ?? 1) as number
+        const eofColumn = eofColumnBase + 1
+
+        const eof = createTokenInstance(
+            EOF,
+            "",
+            eofOffset,
+            eofOffset,
+            eofLine,
+            eofLine,
+            eofColumn,
+            eofColumn
+        )
+
+        return tokens.concat(eof)
+    }
 
     /**
      * Выполняет полный парсинг модуля.
@@ -21,7 +43,7 @@ export class IncrementalBslParser extends BSLParser {
         const start = performance.now()
 
         const lexResult = this.lexer.tokenize(text)
-        this.input = this.lexer.moduleTokens
+        this.input = this.withEOF(this.lexer.moduleTokens)
         const cst = this.module();
 
         const end = performance.now()
@@ -63,7 +85,7 @@ export class IncrementalBslParser extends BSLParser {
         this.errors = []
         
         const { startIndex, endIndex } = findTokens(this.lexer.moduleTokens, startOffset, endOffset)
-        this.input = this.lexer.moduleTokens.slice(startIndex, endIndex + 1)
+        this.input = this.withEOF(this.lexer.moduleTokens.slice(startIndex, endIndex + 1))
         
         // Динамический доступ к методу правила парсера
         // Используем 'as any', так как Chevrotain создаёт методы динамически через RULE()

@@ -215,10 +215,12 @@ function updateAllViews() {
       // Обновляем tokens
       tokensView.render(playgroundParser.lexer.moduleTokens)
       
-      // Обновляем ошибки лексера
-      errorsView.render(playgroundParser.lexer.lexingErrors)
+      // Обновляем ошибки лексера и парсера
+      errorsView.render(parseResult.lexErrors || [], parseResult.parseErrors || [])
     } catch (error) {
       console.error('Ошибка парсинга:', error)
+      // В случае исключения показываем пустые массивы ошибок
+      errorsView.render([], [])
     }
   }
 }

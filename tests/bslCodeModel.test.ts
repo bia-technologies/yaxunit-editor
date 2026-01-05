@@ -1,9 +1,9 @@
-import { ChevrotainSitterCodeModelFactory } from '../src/bsl/chevrotain'
+import { ChevrotainCodeModelFactory } from '../src/bsl/chevrotain'
 import { BslCodeModel } from '../src/bsl/codeModel'
 import { descendantByOffset } from '../src/bsl/chevrotain/utils'
 import { describe, expect, test } from 'vitest'
 
-const factory = new ChevrotainSitterCodeModelFactory()
+const factory = new ChevrotainCodeModelFactory()
 
 describe('descendantByOffset', () => {
 

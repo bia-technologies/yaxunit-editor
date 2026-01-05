@@ -87,3 +87,33 @@ export function hitOffset(symbol: BaseSymbol | undefined, offset: number) {
     return symbol.position.startOffset <= offset && symbol.position.endOffset >= offset
 }
 
+/**
+ * Находит ближайший метод, который содержит указанный диапазон.
+ * Используется когда точный символ не найден (например, при расскомментировании).
+ */
+export function findContainingMethod(compositeSymbol: CompositeSymbol, start: number, end: number): BaseSymbol | undefined {
+    if (!isMethodDefinition(compositeSymbol)) {
+        // Ищем среди дочерних методов
+        for (const child of compositeSymbol.getChildrenSymbols()) {
+            if (!child) continue
+            if (isMethodDefinition(child)) {
+                if (child.position.startOffset <= start && child.position.endOffset >= start) {
+                    return child
+                }
+            } else if (isCompositeSymbol(child)) {
+                const found = findContainingMethod(child, start, end)
+                if (found) {
+                    return found
+                }
+            }
+        }
+        return undefined
+    }
+    
+    // Если это метод, проверяем, содержит ли он диапазон
+    if (compositeSymbol.position.startOffset <= start && compositeSymbol.position.endOffset >= start) {
+        return compositeSymbol
+    }
+    
+    return undefined
+}

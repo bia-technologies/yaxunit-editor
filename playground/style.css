@@ -191,7 +191,7 @@
   color: #858585;
 }
 
-/* Стили для ошибок лексера */
+/* Стили для ошибок */
 .tokens-table .error-row {
   cursor: pointer;
 }
@@ -203,6 +203,7 @@
 .tokens-table .error-line,
 .tokens-table .error-column,
 .tokens-table .error-offset,
+.tokens-table .error-type,
 .tokens-table .error-length {
   color: #858585;
 }

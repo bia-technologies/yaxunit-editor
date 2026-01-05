@@ -1,4 +1,4 @@
-import { CstParser, EMPTY_ALT } from "chevrotain"
+import { CstParser } from "chevrotain"
 import { tokens, allTokens, keywords } from './tokens'
 
 /**
@@ -71,8 +71,15 @@ export class BSLParser extends CstParser {
 
     // #region statements
     protected statements = this.RULE('statements', () => this.MANY(() => {
-        this.choice(...this.statement)
-        this.OPTION(() => this.CONSUME(tokens.Semicolon))
+        // Восстановление: если оператор начинается с мусора (например "/"), не выходим из метода,
+        // а потребляем токен и продолжаем разбор до следующего валидного оператора.
+        // Важно: все альтернативы тут должны потреблять минимум 1 токен (никаких EMPTY_ALT).
+        this.OR([
+            ...this.statement.map(s => ({ ALT: s })),
+            { ALT: () => this.SUBRULE(this.garbageToken) },
+            { ALT: () => this.CONSUME(tokens.Semicolon) }, // пустой оператор
+        ])
+        this.OPTION(() => this.CONSUME1(tokens.Semicolon))
     }))
 
     protected statement = [
@@ -95,8 +102,35 @@ export class BSLParser extends CstParser {
         () => this.SUBRULE(this.awaitStatement),
         () => this.SUBRULE(this.executeStatement),
         () => this.SUBRULE(this.assignmentStatement),
-        EMPTY_ALT,
     ]
+
+    /**
+     * Один "мусорный" токен в начале оператора.
+     * Должен реально CONSUME()ить токен, чтобы Chevrotain видел, что в грамматике это не EMPTY.
+     */
+    protected garbageToken = this.RULE('garbageToken', () => {
+        this.OR([
+            // categories
+            { ALT: () => this.CONSUME(tokens.AdditionOperator) },
+            { ALT: () => this.CONSUME(tokens.MultiplicationOperator) },
+            { ALT: () => this.CONSUME(tokens.CompareOperator) },
+            { ALT: () => this.CONSUME(tokens.StringLiteral) },
+
+            // literals
+            { ALT: () => this.CONSUME(tokens.Number) },
+            { ALT: () => this.CONSUME(tokens.Date) },
+
+            // punctuation
+            { ALT: () => this.CONSUME(tokens.Question) },
+            { ALT: () => this.CONSUME(tokens.LParen) },
+            { ALT: () => this.CONSUME(tokens.RParen) },
+            { ALT: () => this.CONSUME(tokens.LSquare) },
+            { ALT: () => this.CONSUME(tokens.RSquare) },
+            { ALT: () => this.CONSUME(tokens.Dot) },
+            { ALT: () => this.CONSUME(tokens.Comma) },
+            { ALT: () => this.CONSUME(tokens.Colon) },
+        ])
+    })
 
     protected assignmentStatement = this.RULE("assignmentStatement", () => {
         this.SUBRULE(this.qualifiedName)
@@ -413,4 +447,5 @@ export class BSLParser extends CstParser {
             })
         }
     }
+
 }

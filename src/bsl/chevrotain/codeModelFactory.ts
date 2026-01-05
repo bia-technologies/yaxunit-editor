@@ -10,7 +10,7 @@ import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
 import { editor, MarkerSeverity } from 'monaco-editor-core'
 import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
-import { descendantByRange, getParentMethodDefinition, updateOffset } from "./utils"
+import { descendantByRange, getParentMethodDefinition, updateOffset, findContainingMethod } from "./utils"
 import { RuleNameCalculator } from "../codeModel/calculators/ruleNameCalculator"
 import { CstNode, ILexingError, IRecognitionException } from "chevrotain"
 
@@ -73,12 +73,34 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
         let success = true
 
         for (const range of ranges) {
+            // В промежуточных состояниях (например, при посимвольном расскомментировании)
+            // возможно появление лексических ошибок. В этом случае не пытаемся перестраивать
+            // часть модели (это часто приводит к рассинхронизации), а только сдвигаем оффсеты,
+            // чтобы последующие правки могли примениться инкрементально.
+            if (range.errors && range.errors.length > 0) {
+                const method = findContainingMethod(codeModel, range.start, range.end)
+                if (method && isMethodDefinition(method)) {
+                    shiftMethodOffsetsAfterEdit(method, range.start, range.diff)
+                    moveModelItems(codeModel, method, range.diff)
+                    codeModel.afterUpdate(codeModel)
+                }
+                continue
+            }
+
             let rangeSymbol: BaseSymbol | undefined = descendantByRange(codeModel, range.start, range.end)
             if (!rangeSymbol) {
-                console.warn('Dont find edited symbol -> rebuild')
-                return false
+                // Если точный символ не найден (например, при расскомментировании),
+                // пытаемся найти ближайший метод, который содержит этот диапазон
+                rangeSymbol = findContainingMethod(codeModel, range.start, range.end)
+                if (!rangeSymbol) {
+                    codeModel.afterUpdate(codeModel)
+                    console.warn('Dont find edited symbol -> full reparse')
+                    // this.reparseWholeModule(codeModel)
+                    return true
+                }
+            } else {
+                rangeSymbol = getParentMethodDefinition(rangeSymbol) ?? rangeSymbol
             }
-            rangeSymbol = getParentMethodDefinition(rangeSymbol) ?? rangeSymbol
 
             let { symbol, newSymbol, editType } = this.parseChange(rangeSymbol, range.diff)
 
@@ -103,6 +125,26 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
             console.warn('Changes parsing error -> rebuild')
         }
         return success
+    }
+
+    private reparseWholeModule(codeModel: BslCodeModel) {
+        const start = performance.now()
+        const { cst } = this.parser.parseChanges('module', 0, Number.MAX_SAFE_INTEGER)
+        const children = this.visitor.visit(cst)
+
+        codeModel.children.length = 0
+        if (Array.isArray(children)) {
+            codeModel.children.push(...children)
+        } else if (children) {
+            codeModel.children.push(children)
+        }
+
+        codeModel.children
+            .filter(isMethodDefinition)
+            .forEach(updateMethodChildrenOffset)
+
+        console.log('reparseWholeModule', performance.now() - start, 'ms')
+        codeModel.afterUpdate(codeModel)
     }
 
     private parseChange(baseSymbol: BaseSymbol | undefined, diff: number): {
@@ -148,6 +190,28 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
     createSymbol(node: CstNode) {
         const newSymbol = this.visitor.visit(node) as BaseSymbol
         return newSymbol
+    }
+}
+
+function shiftMethodOffsetsAfterEdit(method: MethodDefinition, editStartOffset: number, diff: number) {
+    if (diff === 0) {
+        return
+    }
+
+    // Дети методов хранятся с относительными оффсетами (от начала метода).
+    const relEditStart = editStartOffset - method.startOffset
+
+    // Обновляем границы самого метода
+    method.position.endOffset += diff
+
+    // Сдвигаем все элементы метода, которые начинаются строго после точки правки.
+    // (При необходимости это место можно усложнить до "пересекается с правкой",
+    // но для восстановления инкрементальности при временно-невалидном коде достаточно этого.)
+    for (const child of method.children) {
+        if (!child) continue
+        if (child.position.startOffset > relEditStart) {
+            updateOffset([child], diff)
+        }
     }
 }
 

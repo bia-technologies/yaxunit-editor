@@ -1,23 +1,57 @@
-import { ILexingError } from "chevrotain";
+import { ILexingError, IRecognitionException } from "chevrotain";
+
+interface UnifiedError {
+    line?: number;
+    column?: number;
+    offset: number;
+    length?: number;
+    message: string;
+    type: 'lex' | 'parse';
+}
 
 export class ErrorsView {
     domId: string
-    selector: (error: ILexingError) => void = () => { }
+    selector: (error: UnifiedError) => void = () => { }
 
     constructor(domId: string) {
         this.domId = domId
     }
 
-    render(errors: ILexingError[]) {
+    render(lexErrors: ILexingError[], parseErrors: IRecognitionException[]) {
         const container = document.getElementById(this.domId);
         if (!container) {
             return
         }
         container.innerHTML = "";
 
-        if (!errors || errors.length === 0) {
+        // Преобразуем ошибки лексера в унифицированный формат
+        const unifiedLexErrors: UnifiedError[] = lexErrors.map(error => ({
+            line: error.line,
+            column: error.column,
+            offset: error.offset,
+            length: error.length,
+            message: error.message || 'Неизвестная ошибка',
+            type: 'lex'
+        }));
+
+        // Преобразуем ошибки парсера в унифицированный формат
+        const unifiedParseErrors: UnifiedError[] = parseErrors.map(error => ({
+            line: error.token.startLine,
+            column: error.token.startColumn,
+            offset: error.token.startOffset,
+            length: error.token.endOffset !== undefined 
+                ? (error.token.endOffset - error.token.startOffset + 1)
+                : 1,
+            message: error.message || 'Неизвестная ошибка',
+            type: 'parse'
+        }));
+
+        // Объединяем все ошибки
+        const allErrors = [...unifiedLexErrors, ...unifiedParseErrors];
+
+        if (allErrors.length === 0) {
             const emptyDiv = document.createElement('div');
-            emptyDiv.textContent = 'Ошибок лексера не обнаружено';
+            emptyDiv.textContent = 'Ошибок не обнаружено';
             emptyDiv.className = 'success';
             container.appendChild(emptyDiv);
             return;
@@ -30,7 +64,7 @@ export class ErrorsView {
         const header = document.createElement('thead');
         const headerRow = document.createElement('tr');
 
-        ['Строка', 'Столбец', 'Смещение', 'Длина', 'Сообщение'].forEach(text => {
+        ['Тип', 'Строка', 'Столбец', 'Смещение', 'Длина', 'Сообщение'].forEach(text => {
             const th = document.createElement('th');
             th.textContent = text;
             headerRow.appendChild(th);
@@ -40,7 +74,7 @@ export class ErrorsView {
 
         // Тело таблицы
         const tbody = document.createElement('tbody');
-        errors.forEach((error, index) => {
+        allErrors.forEach((error) => {
             const row = document.createElement('tr');
             row.className = 'error-row';
             
@@ -50,6 +84,12 @@ export class ErrorsView {
                     this.selector(error);
                 });
             }
+
+            // Тип ошибки
+            const typeCell = document.createElement('td');
+            typeCell.className = 'error-type';
+            typeCell.textContent = error.type === 'lex' ? 'Лексер' : 'Парсер';
+            row.appendChild(typeCell);
 
             // Строка
             const lineCell = document.createElement('td');
@@ -78,7 +118,7 @@ export class ErrorsView {
             // Сообщение
             const messageCell = document.createElement('td');
             messageCell.className = 'error-message';
-            messageCell.textContent = error.message || 'Неизвестная ошибка';
+            messageCell.textContent = error.message;
             row.appendChild(messageCell);
 
             tbody.appendChild(row);

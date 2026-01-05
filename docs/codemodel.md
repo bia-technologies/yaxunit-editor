@@ -18,7 +18,7 @@
 sequenceDiagram
     actor User
     participant Editor as Monaco Editor
-    participant Factory as ChevrotainSitterCodeModelFactory
+    participant Factory as ChevrotainCodeModelFactory
     participant Parser as BSLParser
     participant Visitor as CodeModelFactoryVisitor
     participant CodeModel as BslCodeModel
