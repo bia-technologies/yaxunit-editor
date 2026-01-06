@@ -11,6 +11,7 @@ import { getEndOffset } from "./tokenUtils";
  */
 export class IncrementalBslParser extends BSLParser {
     lexer: IncrementLexer = new IncrementLexer()
+    private lastParseResult?: ParseResult
 
     private withEOF(tokens: IToken[]): IToken[] {
         const last = tokens.length ? tokens[tokens.length - 1] : undefined
@@ -49,11 +50,13 @@ export class IncrementalBslParser extends BSLParser {
         const end = performance.now()
         console.log('Parse time: ', end - start, 'ms')
 
-        return {
+        this.lastParseResult = {
             cst: cst,
             lexErrors: lexResult.errors,
             parseErrors: this.errors,
         };
+
+        return this.lastParseResult;
     }
 
     /**
@@ -66,7 +69,25 @@ export class IncrementalBslParser extends BSLParser {
      * @returns Массив объектов с информацией об обработанных диапазонах
      */
     public updateTokens(changes: IModelContentChange[]) {
-        return this.lexer.updateTokens(changes)
+        const result = this.lexer.updateTokens(changes)
+        
+        // Обновляем информацию о последних ошибках
+        // Собираем все ошибки из ranges
+        const lexErrors = result.flatMap(r => r.errors || [])
+        
+        // При инкрементальном обновлении сохраняем предыдущий CST
+        // так как у нас нет полного нового CST, только фрагменты
+        // Ошибки парсера при инкрементальном обновлении не собираем,
+        // так как они уже обработаны в parseChanges
+        if (this.lastParseResult) {
+            this.lastParseResult = {
+                cst: this.lastParseResult.cst,
+                lexErrors,
+                parseErrors: this.lastParseResult.parseErrors
+            }
+        }
+        
+        return result
     }
 
     /**
@@ -101,6 +122,23 @@ export class IncrementalBslParser extends BSLParser {
             parseErrors: this.errors,
         };
     }
+
+    /**
+     * Получает результат последнего парсинга
+     * @returns последний результат парсинга или undefined
+     */
+    public getLastParseResult(): ParseResult | undefined {
+        return this.lastParseResult
+    }
+}
+
+/**
+ * Результат парсинга модуля
+ */
+export interface ParseResult {
+    cst: CstNode
+    lexErrors: any[]
+    parseErrors: any[]
 }
 
 /**

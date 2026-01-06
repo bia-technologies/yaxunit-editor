@@ -49,9 +49,10 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         this.scope = new BslModuleScope(this.editorModel)
 
         this.codeModel = this.codeModelFactory.buildModel(this.editorModel)
-        model.onDidChangeContent(e => {
-            if (!this.codeModelFactory.updateModel(this.codeModel, e.changes)) {
-                this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
+        model.onDidChangeContent(async e => {
+            const success = await this.codeModelFactory.updateModel(this.codeModel, e.changes)
+            if (!success) {
+                await this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
             }
         })
     }

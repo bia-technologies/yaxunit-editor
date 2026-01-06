@@ -7,12 +7,14 @@ import {
     MethodDefinition
 } from "../codeModel"
 import { BaseSymbol, CompositeSymbol, SymbolPosition } from "@/common/codeModel"
-import { editor, MarkerSeverity } from 'monaco-editor-core'
 import { AutoDisposable } from "@/common/utils/autodisposable"
 import { CodeModelFactoryVisitor } from "./codeModelFactoryVisitor"
 import { descendantByRange, getParentMethodDefinition, updateOffset, findContainingMethod } from "./utils"
 import { RuleNameCalculator } from "../codeModel/calculators/ruleNameCalculator"
 import { CstNode, ILexingError, IRecognitionException } from "chevrotain"
+import { ErrorCollector } from "@/bsl/diagnostics"
+import { MarkersManager } from "@/bsl/editor/diagnostics"
+import { editor } from 'monaco-editor-core'
 
 enum EditType {
     replace,
@@ -23,25 +25,27 @@ enum EditType {
 export class ChevrotainCodeModelFactory extends AutoDisposable {
     parser = new IncrementalBslParser()
     visitor = new CodeModelFactoryVisitor()
-    errors: ErrorInfo[] = []
+    private errorCollector = new ErrorCollector()
+    private markersManager?: MarkersManager
 
     buildModel(model: ModuleModel | string): BslCodeModel {
         const codeModel = new BslCodeModel()
+        // Запускаем асинхронную перестройку, но не ждем завершения
+        // чтобы не менять сигнатуру buildModel
         this.reBuildModel(codeModel, model)
         return codeModel
     }
 
-    reBuildModel(codeModel: BslCodeModel, model: ModuleModel | string) {
+    async reBuildModel(codeModel: BslCodeModel, model: ModuleModel | string) {
         const start = performance.now()
         const text = isModel(model) ? model.getValue() : model
         const tree = this.parser.parseModule(text)
 
-        this.errors = handleErrors(tree.lexErrors, tree.parseErrors)
-
-        if (isModel(model)) {
-            const markers = convertErrorsToMarkers(this.errors, model);
-            editor.setModelMarkers(model, 'chevrotain', markers);
+        // Инициализация MarkersManager для Monaco модели
+        if (isModel(model) && !this.markersManager) {
+            this.markersManager = new MarkersManager(model)
         }
+
         const visitorStart = performance.now()
         const children = this.visitor.visit(tree.cst)
 
@@ -58,10 +62,15 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
             .filter(isMethodDefinition)
             .forEach(updateMethodChildrenOffset)
 
-        codeModel.afterUpdate(codeModel)
+        await codeModel.afterUpdate(codeModel)
+        
+        // Обновляем маркеры после построения модели
+        if (isModel(model)) {
+            this.updateMarkers(codeModel, tree.lexErrors, tree.parseErrors, tree.cst)
+        }
     }
 
-    updateModel(codeModel: BslCodeModel, changes: IModelContentChange[]): boolean {
+    async updateModel(codeModel: BslCodeModel, changes: IModelContentChange[]): Promise<boolean> {
         if (!codeModel.children.length || isReplace(codeModel, changes)) {
             console.warn('Model empty or text replaced -> rebuild')
             return false
@@ -82,7 +91,7 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
                 if (method && isMethodDefinition(method)) {
                     shiftMethodOffsetsAfterEdit(method, range.start, range.diff)
                     moveModelItems(codeModel, method, range.diff)
-                    codeModel.afterUpdate(codeModel)
+                    await codeModel.afterUpdate(codeModel)
                 }
                 continue
             }
@@ -93,7 +102,7 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
                 // пытаемся найти ближайший метод, который содержит этот диапазон
                 rangeSymbol = findContainingMethod(codeModel, range.start, range.end)
                 if (!rangeSymbol) {
-                    codeModel.afterUpdate(codeModel)
+                    await codeModel.afterUpdate(codeModel)
                     console.warn('Dont find edited symbol -> full reparse')
                     // this.reparseWholeModule(codeModel)
                     return true
@@ -121,31 +130,19 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
         }
         if (success) {
             console.log('Increment update changes', changes, performance.now() - start, 'ms')
+            
+            // Обновляем маркеры после успешного инкрементального обновления
+            // Для инкрементального обновления нужно перепарсить весь модуль
+            // чтобы получить актуальный CST и все ошибки
+            if (this.markersManager) {
+                await this.updateMarkersAfterIncremental(codeModel)
+            }
         } else {
             console.warn('Changes parsing error -> rebuild')
         }
         return success
     }
 
-    private reparseWholeModule(codeModel: BslCodeModel) {
-        const start = performance.now()
-        const { cst } = this.parser.parseChanges('module', 0, Number.MAX_SAFE_INTEGER)
-        const children = this.visitor.visit(cst)
-
-        codeModel.children.length = 0
-        if (Array.isArray(children)) {
-            codeModel.children.push(...children)
-        } else if (children) {
-            codeModel.children.push(children)
-        }
-
-        codeModel.children
-            .filter(isMethodDefinition)
-            .forEach(updateMethodChildrenOffset)
-
-        console.log('reparseWholeModule', performance.now() - start, 'ms')
-        codeModel.afterUpdate(codeModel)
-    }
 
     private parseChange(baseSymbol: BaseSymbol | undefined, diff: number): {
         symbol: BaseSymbol | undefined, newSymbol: BaseSymbol | BaseSymbol[] | undefined, editType: EditType
@@ -190,6 +187,66 @@ export class ChevrotainCodeModelFactory extends AutoDisposable {
     createSymbol(node: CstNode) {
         const newSymbol = this.visitor.visit(node) as BaseSymbol
         return newSymbol
+    }
+
+    /**
+     * Обновляет маркеры Monaco, объединяя ошибки парсера и модели
+     */
+    private updateMarkers(
+        codeModel: BslCodeModel,
+        lexErrors: ILexingError[],
+        parseErrors: IRecognitionException[],
+        cst?: CstNode
+    ): void {
+        if (!this.markersManager) {
+            return
+        }
+
+        // Собираем ошибки парсера/лексера
+        const parserDiagnostics = this.errorCollector.combineErrors(
+            this.errorCollector.collectLexerErrors(lexErrors),
+            this.errorCollector.collectParserErrors(parseErrors)
+        )
+
+        // Собираем ошибки из garbageToken, если CST предоставлен
+        const garbageDiagnostics = cst 
+            ? this.errorCollector.collectGarbageTokenErrors(cst)
+            : []
+
+        // Объединяем с ошибками модели
+        const allDiagnostics = this.errorCollector.combineErrors(
+            parserDiagnostics,
+            garbageDiagnostics,
+            codeModel.diagnostics
+        )
+
+        // Устанавливаем маркеры
+        this.markersManager.updateMarkers(allDiagnostics)
+    }
+
+    /**
+     * Обновляет маркеры после инкрементального обновления.
+     * Перепарсивает весь модуль для получения актуальных ошибок и CST.
+     */
+    private async updateMarkersAfterIncremental(codeModel: BslCodeModel): Promise<void> {
+        if (!this.markersManager) {
+            return
+        }
+
+        // Получаем текст из модели
+        const model = (this.markersManager as any).model as editor.ITextModel
+        const text = model.getValue()
+
+        // Перепарсиваем весь модуль для получения актуального CST и ошибок
+        const parseResult = this.parser.parseModule(text)
+
+        // Обновляем маркеры с актуальными данными
+        this.updateMarkers(
+            codeModel,
+            parseResult.lexErrors,
+            parseResult.parseErrors,
+            parseResult.cst
+        )
     }
 }
 
@@ -448,44 +505,4 @@ function isReplace(codeModel: BslCodeModel, changes: IModelContentChange[]) {
         }
     }
     return false
-}
-
-// Функция для конвертации ошибок Chevrotain в маркеры Monaco
-function convertErrorsToMarkers(errors: ErrorInfo[], model: editor.ITextModel): editor.IMarkerData[] {
-    return errors.map(error => {
-        const startPosition = model.getPositionAt(error.startOffset);
-        const endPosition = model.getPositionAt(error.endOffset);
-        return {
-            severity: MarkerSeverity.Error,
-            message: error.message,
-            startLineNumber: startPosition.lineNumber,
-            startColumn: startPosition.column,
-            endLineNumber: endPosition.lineNumber,
-            endColumn: endPosition.column,
-            source: 'chevrotain'
-        }
-    })
-}
-
-interface ErrorInfo {
-    message: string
-    startOffset: number
-    endOffset: number
-}
-function handleErrors(lexErrors: ILexingError[], parseErrors: IRecognitionException[]): ErrorInfo[] {
-    lexErrors.forEach(e => console.error('lexError', e))
-    parseErrors.forEach(e => console.error('parseError', e.token, e))
-    return lexErrors.map(error => {
-        return {
-            message: `Лексическая ошибка: ${error.message || 'Неизвестная ошибка'}`,
-            startOffset: error.offset,
-            endOffset: error.offset + error.length
-        }
-    }).concat(parseErrors.map(error => {
-        return {
-            message: `Синтаксическая ошибка: ${error.message}`,
-            startOffset: error.token.startOffset,
-            endOffset: (error.token.endOffset ?? error.token.startOffset) + 1
-        }
-    }))
 }

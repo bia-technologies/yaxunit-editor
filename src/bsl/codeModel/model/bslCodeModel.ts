@@ -8,6 +8,8 @@ import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslVariable } from "./members";
 import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";
 import { GlobalScope } from "@/common/scope";
+import { DiagnosticMessage } from "@/bsl/diagnostics";
+import { ModelValidator } from "../validators";
 
 export class BslCodeModel extends AutoDisposable implements VariablesScope, CompositeSymbol {
     calculators = {
@@ -18,12 +20,22 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
 
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
+    
+    private validator = new ModelValidator()
+    private _diagnostics: DiagnosticMessage[] = []
 
     constructor() {
         super()
         GlobalScope.onLoaded(() => this.calculators.types.calculate(this))
     }
     private onDidChangeModelEmitter: Emitter<BslCodeModel> = new Emitter()
+    
+    /**
+     * Получает диагностические сообщения модели
+     */
+    get diagnostics(): DiagnosticMessage[] {
+        return this._diagnostics
+    }
 
     get methods() {
         return (new MethodsCalculator()).calculate(this)
@@ -49,6 +61,10 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
             this.updateTypes(methods)
 
         }
+        
+        // Валидация модели
+        this._diagnostics = this.validator.validate(this)
+        
         this.onDidChangeModelEmitter.fire(this)
     }
 
