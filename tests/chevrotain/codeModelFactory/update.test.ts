@@ -11,15 +11,16 @@ describe('updateModel', () => {
         codeModelFactory = setupTestEnvironment()
     })
 
-    test('должен обновить модель при вставке', () => {
+    test('должен обновить модель при вставке', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
+
         // Вставляем " + 2" после "1" (offset 24 = позиция после "1")
-        const change = insert(24, ' + 2')
+        const result = await codeModelFactory.updateModel(codeModel, [
+            insert(24, ' + 2')
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
-
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expectExpression(expression, {
             left: { value: '1' },
@@ -28,90 +29,94 @@ describe('updateModel', () => {
         })
     })
 
-    test('должен обновить модель при удалении', () => {
+    test('должен обновить модель при удалении', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1 + 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
+
         // Удаляем " + 2" (offset 24, length 4)
-        const change = remove(24, 4)
+        const result = await codeModelFactory.updateModel(codeModel, [
+            remove(24, 4)
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
-
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expectExpression(expression, { value: '1' })
     })
 
-    test('должен обновить модель при замене', () => {
+    test('должен обновить модель при замене', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
+
         // Заменяем "1" на "2" (offset 23, length 1)
-        const change = replace(23, 1, '2')
+        const result = await codeModelFactory.updateModel(codeModel, [
+            replace(23, 1, '2')
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
-
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expectExpression(expression, { value: '2' })
     })
 
-    test('должен обрабатывать изменения в сигнатуре процедуры', () => {
+    test('должен обрабатывать изменения в сигнатуре процедуры', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
+
         // Заменяем имя процедуры "Тест" на "НовыйТест" (offset 10, length 4)
-        const change = replace(10, 4, 'НовыйТест')
+        const result = await codeModelFactory.updateModel(codeModel, [
+            replace(10, 4, 'НовыйТест')
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
-
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].name).toBe('НовыйТест')
     })
 
-    test('должен обрабатывать добавление нового оператора', () => {
+    test('должен обрабатывать добавление нового оператора', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
+
         // Вставляем новый оператор после первого (offset 25 = после "1;")
-        const change = insert(25, '\n  б = 2;')
+        const result = await codeModelFactory.updateModel(codeModel, [
+            insert(25, '\n  б = 2;')
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
-
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(2)
         expect(codeModel.children[0].children[1].variable.name).toBe('б')
     })
 
-    test('должен вернуть false для полной замены текста', () => {
+    test('должен вернуть false для полной замены текста', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const newCode = 'Процедура НовыйТест()\n  б = 2;\nКонецПроцедуры'
+        
         // Полная замена всего текста
-        const change = replace(0, initialCode.length, newCode)
+        const result = await codeModelFactory.updateModel(codeModel, [
+            replace(0, initialCode.length, newCode)
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
-
-        expect(result).toBe(false)
+        expect(result).toBeFalsy()
     })
 
-    test('должен вернуть false для пустой модели', () => {
+    test('должен вернуть false для пустой модели', async () => {
         const codeModel = new BslCodeModel()
         const change = insert(0, 'Процедура Тест()')
 
-        const result = codeModelFactory.updateModel(codeModel, [change])
+        const result = await codeModelFactory.updateModel(codeModel, [change])
 
-        expect(result).toBe(false)
+        expect(result).toBeFalsy()
     })
 
-    test('должен обрабатывать множественные изменения', () => {
+    test('должен обрабатывать множественные изменения', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\n  б = 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
+
         // Заменяем "1" на "10" и "2" на "20"
-        const changes = [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(23, 1, '10'),
             replace(32, 1, '20')
-        ]
+        ])
 
-        const result = codeModelFactory.updateModel(codeModel, changes)
-
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expectExpression(codeModel.children[0].children[0].expression, { value: '10' })
         expectExpression(codeModel.children[0].children[1].expression, { value: '20' })
     })
@@ -124,31 +129,31 @@ describe('интеграционные тесты', () => {
         codeModelFactory = setupTestEnvironment()
     })
 
-    test('процесс построения и обновления', () => {
+    test('процесс построения и обновления', async () => {
         // Шаг 1: Начальное построение пустой процедуры
         const initialCode = 'Процедура Тест()\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         expect(codeModel.children.length).toBe(1)
 
         // Шаг 2: Добавляем первый оператор
-        let result = codeModelFactory.updateModel(codeModel, [
+        let result = await codeModelFactory.updateModel(codeModel, [
             insert(16, '\n  а = 1;')
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(1)
 
         // Шаг 3: Изменяем значение в первом операторе
-        result = codeModelFactory.updateModel(codeModel, [
+        result = await codeModelFactory.updateModel(codeModel, [
             replace(23, 1, '10')
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expectExpression(codeModel.children[0].children[0].expression, { value: '10' })
 
         // Шаг 4: Добавляем второй оператор
-        result = codeModelFactory.updateModel(codeModel, [
+        result = await codeModelFactory.updateModel(codeModel, [
             insert(26, '\n  б = 20;')
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(2)
         expectExpression(codeModel.children[0].children[1].expression, { value: '20' })
     })
@@ -161,44 +166,44 @@ describe('внутренние функции и сложные сценарии
         codeModelFactory = setupTestEnvironment()
     })
 
-    test('должен корректировать смещения методов после изменений', () => {
+    test('должен корректировать смещения методов после изменений', async () => {
         const initialCode = 'Процедура Метод1()\n  а = 1;\nКонецПроцедуры\n\nПроцедура Метод2()\n  б = 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialSecondMethodOffset = codeModel.children[1].position.startOffset
 
         // Вставляем текст в первый метод, что должно сдвинуть второй метод
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             insert(26, ' + 10')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         // Проверяем, что позиция второго метода была обновлена (смещена вперед)
         expect(codeModel.children[1].position.startOffset).toBeGreaterThan(initialSecondMethodOffset)
     })
 
-    test('должен правильно обрабатывать добавление нового метода', () => {
+    test('должен правильно обрабатывать добавление нового метода', async () => {
         const initialCode = 'Процедура Метод1()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const newMethodCode = '\n\nПроцедура Метод2()\n  б = 2;\nКонецПроцедуры'
 
         // Добавляем новый метод после существующего
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             insert(35, newMethodCode)
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children.length).toBe(2)
         expect(codeModel.children[1].name).toBe('Метод2')
     })
 
-    test('должен обрабатывать удаление метода', () => {
+    test('должен обрабатывать удаление метода', async () => {
         const initialCode = 'Процедура Метод1()\n  а = 1;\nКонецПроцедуры\n\nПроцедура Метод2()\n  б = 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         expect(codeModel.children.length).toBe(2)
 
         // Удаляем первый метод полностью (включая КонецПроцедуры и переносы строк)
         // Длина первого метода: "Процедура Метод1()\n  а = 1;\nКонецПроцедуры\n\n" = 37 символов
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             remove(0, 42)
         ])
 
@@ -206,64 +211,64 @@ describe('внутренние функции и сложные сценарии
         expect(codeModel.children[0].name).toBe('Метод2')
     })
 
-    test('должен обрабатывать изменение параметров процедуры', () => {
+    test('должен обрабатывать изменение параметров процедуры', async () => {
         const initialCode = 'Процедура Тест(Параметр1)\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             insert(24, ', Параметр2')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].params.length).toBe(2)
         expect(codeModel.children[0].params[1].name).toBe('Параметр2')
     })
 
-    test('должен обрабатывать изменение типа процедуры на функцию', () => {
+    test('должен обрабатывать изменение типа процедуры на функцию', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(0, 9, 'Функция'),
             replace(26, 14, '\n  Возврат 1;\nКонецФункции')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].name).toBe('Тест')
         // Проверяем, что это функция (если есть способ определить тип)
     })
 
-    test('должен обрабатывать изменения в условии if', () => {
+    test('должен обрабатывать изменения в условии if', async () => {
         const initialCode = 'Процедура Тест()\n  Если а > 0 Тогда\n    б = 1;\n  КонецЕсли;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем оператор сравнения с ">" на ">="
         // "Процедура Тест()\n  Если а " = 25 символов, заменяем ">" на ">="
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(27, 1, '>=')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const ifStatement = codeModel.children[0].children[0]
         expect(ifStatement.branches[0].condition.operator).toBe('>=')
     })
 
-    test('должен обрабатывать изменения в цикле for', () => {
+    test('должен обрабатывать изменения в цикле for', async () => {
         const initialCode = 'Процедура Тест()\n  Для а = 0 По 10 Цикл\n    б = а;\n  КонецЦикла;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialEndValue = codeModel.children[0].children[0].end.value
 
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(32, 2, '20')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const forStatement = codeModel.children[0].children[0]
         expect(forStatement.end.value).toBe('20')
         expect(forStatement.end.value).not.toBe(initialEndValue)
     })
 
-    test('должен обрабатывать изменения в вызове метода с аргументами', () => {
+    test('должен обрабатывать изменения в вызове метода с аргументами', async () => {
         const initialCode = 'Процедура Тест()\n  Сообщить(1, 2);\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialArgsCount = codeModel.children[0].children[0].arguments.length
@@ -273,46 +278,46 @@ describe('внутренние функции и сложные сценарии
         const twoIndex = initialCode.indexOf(', 2')
         expect(twoIndex).toBeGreaterThan(0)
         const afterTwoIndex = twoIndex + 3 // позиция после ", 2"
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             insert(afterTwoIndex, ', 3')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const methodCall = codeModel.children[0].children[0]
         expect(methodCall.arguments.length).toBe(3)
         expect(methodCall.arguments.length).toBeGreaterThan(initialArgsCount)
     })
 
-    test('должен обрабатывать изменения в сложном бинарном выражении', () => {
+    test('должен обрабатывать изменения в сложном бинарном выражении', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1 + 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем оператор с "+" на "*"
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(25, 1, '*')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.operator).toBe('*')
     })
 
-    test('должен обрабатывать изменения в доступе к свойствам', () => {
+    test('должен обрабатывать изменения в доступе к свойствам', async () => {
         const initialCode = 'Процедура Тест()\n  а = Объект.Свойство1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Добавляем еще один уровень доступа
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             insert(35, '.Свойство2')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.access.length).toBeGreaterThan(2)
     })
 
-    test('должен обрабатывать изменения в строковых литералах', () => {
+    test('должен обрабатывать изменения в строковых литералах', async () => {
         const initialCode = 'Процедура Тест()\n  а = "Привет";\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialValue = codeModel.children[0].children[0].expression.value
@@ -322,46 +327,46 @@ describe('внутренние функции и сложные сценарии
         const quoteIndex = initialCode.indexOf('"Привет"')
         expect(quoteIndex).toBeGreaterThan(0)
         const privetIndex = quoteIndex + 1 // позиция после открывающей кавычки
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(privetIndex, 6, 'Мир')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.value).toBe('Мир')
         expect(expression.value).not.toBe(initialValue)
     })
 
-    test('должен обрабатывать изменения в тернарном операторе', () => {
+    test('должен обрабатывать изменения в тернарном операторе', async () => {
         const initialCode = 'Процедура Тест()\n  а = ?(б > 0, 1, 2);\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем альтернативное значение
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(33, 1, '3')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.alternative.value).toBe('3')
     })
 
-    test('должен обрабатывать изменения в унарном операторе', () => {
+    test('должен обрабатывать изменения в унарном операторе', async () => {
         const initialCode = 'Процедура Тест()\n  а = -1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем унарный оператор с "-" на "не"
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(23, 1, 'не ')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.operator).toBe('не')
     })
 
-    test('должен обрабатывать изменения в конструкторе Новый', () => {
+    test('должен обрабатывать изменения в конструкторе Новый', async () => {
         const initialCode = 'Процедура Тест()\n  а = Новый Массив;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialName = codeModel.children[0].children[0].expression.name
@@ -371,32 +376,32 @@ describe('внутренние функции и сложные сценарии
         // Находим позицию "Массив" в исходном коде
         const arrayIndex = initialCode.indexOf('Массив')
         expect(arrayIndex).toBeGreaterThan(0)
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(arrayIndex, 6, 'Структура')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.name).toBe('Структура')
         expect(expression.name).not.toBe(initialName)
     })
 
-    test('должен обрабатывать изменения в индексе массива', () => {
+    test('должен обрабатывать изменения в индексе массива', async () => {
         const initialCode = 'Процедура Тест()\n  а = Массив[0];\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем индекс
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(30, 1, '1')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression.access[1].index.value).toBe('1')
     })
 
-    test('должен обрабатывать изменения в цикле while', () => {
+    test('должен обрабатывать изменения в цикле while', async () => {
         const initialCode = 'Процедура Тест()\n  Пока а < 10 Цикл\n    б = а;\n  КонецЦикла;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialValue = codeModel.children[0].children[0].condition.right.value
@@ -404,32 +409,32 @@ describe('внутренние функции и сложные сценарии
         // Изменяем условие цикла - заменяем "10" на "20"
         const valueIndex = initialCode.indexOf('10')
         expect(valueIndex).toBeGreaterThan(0)
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(valueIndex, 2, '20')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const whileStatement = codeModel.children[0].children[0]
         expect(whileStatement.condition.right.value).toBe('20')
         expect(whileStatement.condition.right.value).not.toBe(initialValue)
     })
 
-    test('должен обрабатывать изменения в операторе return', () => {
+    test('должен обрабатывать изменения в операторе return', async () => {
         const initialCode = 'Функция Тест()\n  Возврат 1;\nКонецФункции'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем возвращаемое значение
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(25, 1, '2')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const returnStatement = codeModel.children[0].children[0]
         expect(returnStatement.expression.value).toBe('2')
     })
 
-    test('должен обрабатывать изменения в try-catch блоке', () => {
+    test('должен обрабатывать изменения в try-catch блоке', async () => {
         const initialCode = 'Процедура Тест()\n  Попытка\n    а = 1;\n  Исключение\n    б = 2;\n  КонецПопытки;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
@@ -438,12 +443,12 @@ describe('внутренние функции и сложные сценарии
         const valueIndex = initialCode.indexOf('а = 1')
         expect(valueIndex).toBeGreaterThan(0)
         const oneIndex = valueIndex + 4 // позиция после "а = "
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(oneIndex, 1, '10')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const tryStatement = codeModel.children[0].children[0]
         expect(tryStatement).toBeDefined()
         if (tryStatement && tryStatement.body && tryStatement.body.length > 0) {
@@ -454,36 +459,36 @@ describe('внутренние функции и сложные сценарии
         }
     })
 
-    test('должен вернуть false при изменении, которое делает код невалидным', () => {
+    test('должен вернуть true при изменении, которое делает код невалидным', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Удаляем закрывающую скобку, что делает код невалидным
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             remove(18, 1) // Удаляем ")"
         ])
 
         // В зависимости от реализации, это может вернуть false или true
         // Если парсер может обработать неполный код, вернется true
         // Если нет - false
-        expect(typeof result).toBe('boolean')
+        expect(result).toBeTruthy()
     })
 
-    test('должен обрабатывать изменения в многострочном выражении', () => {
+    test('должен обрабатывать изменения в многострочном выражении', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1 +\n    2 +\n    3;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем среднее значение
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(30, 1, '20')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const expression = codeModel.children[0].children[0].expression
         expect(expression).toBeDefined()
     })
 
-    test('должен обрабатывать изменения в переменной с дефолтным значением', () => {
+    test('должен обрабатывать изменения в переменной с дефолтным значением', async () => {
         const initialCode = 'Процедура Тест(Параметр = 1)\n  а = Параметр;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialValue = codeModel.children[0].params[0].defaultValue.value
@@ -492,45 +497,45 @@ describe('внутренние функции и сложные сценарии
         const valueIndex = initialCode.indexOf('= 1')
         expect(valueIndex).toBeGreaterThan(0)
         const oneIndex = valueIndex + 2 // позиция после "= "
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(oneIndex, 1, '2')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].params[0].defaultValue.value).toBe('2')
         expect(codeModel.children[0].params[0].defaultValue.value).not.toBe(initialValue)
     })
 
-    test('должен обрабатывать изменения в операторе сравнения', () => {
+    test('должен обрабатывать изменения в операторе сравнения', async () => {
         const initialCode = 'Процедура Тест()\n  Если а = б Тогда\n    в = 1;\n  КонецЕсли;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Изменяем оператор сравнения
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(28, 1, '<>')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const ifStatement = codeModel.children[0].children[0]
         expect(ifStatement.branches[0].condition.operator).toBe('<>')
     })
 
-    test('должен обрабатывать изменения в цепочке вызовов методов', () => {
+    test('должен обрабатывать изменения в цепочке вызовов методов', async () => {
         const initialCode = 'Процедура Тест()\n  Объект.Метод1().Метод2();\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
         // Добавляем еще один вызов метода
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             insert(36, '.Метод3()')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const methodCall = codeModel.children[0].children[0]
         expect(methodCall).toBeDefined()
     })
 
-    test('должен обрабатывать изменения в операторе for each', () => {
+    test('должен обрабатывать изменения в операторе for each', async () => {
         const initialCode = 'Процедура Тест()\n  Для Каждого Элемент Из Коллекция Цикл\n    а = Элемент;\n  КонецЦикла;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         const initialVarName = codeModel.children[0].children[0].variable.name
@@ -540,18 +545,18 @@ describe('внутренние функции и сложные сценарии
         const forEachIndex = initialCode.indexOf('Для Каждого ')
         expect(forEachIndex).toBeGreaterThan(0)
         const elementIndex = forEachIndex + 'Для Каждого '.length
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(elementIndex, 7, 'Элемент2')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const forEachStatement = codeModel.children[0].children[0]
         expect(forEachStatement.variable.name).toBe('Элемент2')
         expect(forEachStatement.variable.name).not.toBe(initialVarName)
     })
 
-    test('должен обрабатывать изменения в условном операторе с else', () => {
+    test('должен обрабатывать изменения в условном операторе с else', async () => {
         const initialCode = 'Процедура Тест()\n  Если а > 0 Тогда\n    б = 1;\n  Иначе\n    в = 2;\n  КонецЕсли;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
 
@@ -560,12 +565,12 @@ describe('внутренние функции и сложные сценарии
         const elseIndex = initialCode.indexOf('в = 2')
         expect(elseIndex).toBeGreaterThan(0)
         const twoIndex = elseIndex + 4 // позиция после "в = "
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             replace(twoIndex, 1, '3')
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         const ifStatement = codeModel.children[0].children[0]
         expect(ifStatement).toBeDefined()
         expect(ifStatement.branches).toBeDefined()
@@ -578,7 +583,7 @@ describe('внутренние функции и сложные сценарии
         }
     })
 
-    test('должен обрабатывать расскомментирование блока кода без rebuild', () => {
+    test('должен обрабатывать расскомментирование блока кода без rebuild', async () => {
         // Начальный код с закомментированным оператором
         const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
@@ -588,18 +593,18 @@ describe('внутренние функции и сложные сценарии
         // Позиция "// " в строке: "Процедура Тест()\n  а = 1;\n  " = 25 символов
         const commentStart = initialCode.indexOf('// ')
         expect(commentStart).toBeGreaterThan(0)
-        
-        const result = codeModelFactory.updateModel(codeModel, [
+
+        const result = await codeModelFactory.updateModel(codeModel, [
             remove(commentStart, 3) // Удаляем "// " (3 символа)
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(2) // Теперь два оператора
         expect(codeModel.children[0].children[1].variable.name).toBe('б')
         expectExpression(codeModel.children[0].children[1].expression, { value: '2' })
     })
 
-    test('должен обрабатывать расскомментирование нескольких строк без rebuild', () => {
+    test('должен обрабатывать расскомментирование нескольких строк без rebuild', async () => {
         // Начальный код с закомментированным блоком
         const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\n  // в = 3;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
@@ -607,42 +612,42 @@ describe('внутренние функции и сложные сценарии
 
         // Расскомментируем первую строку
         const firstCommentStart = initialCode.indexOf('// ')
-        const result1 = codeModelFactory.updateModel(codeModel, [
+        const result1 = await codeModelFactory.updateModel(codeModel, [
             remove(firstCommentStart, 3)
         ])
 
-        expect(result1).toBe(true)
+        expect(result1).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(2)
 
         // Расскомментируем вторую строку
         // После первого расскомментирования позиция второго комментария сместилась на -3
         const secondCommentStart = initialCode.lastIndexOf('// ') - 3
-        const result2 = codeModelFactory.updateModel(codeModel, [
+        const result2 = await codeModelFactory.updateModel(codeModel, [
             remove(secondCommentStart, 3)
         ])
 
-        expect(result2).toBe(true)
+        expect(result2).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(3)
         expect(codeModel.children[0].children[2].variable.name).toBe('в')
     })
 
-    test('должен обрабатывать расскомментирование в середине процедуры без rebuild', () => {
+    test('должен обрабатывать расскомментирование в середине процедуры без rebuild', async () => {
         const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\n  в = 3;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
         expect(codeModel.children[0].children.length).toBe(2) // а = 1 и в = 3
 
         // Расскомментируем среднюю строку
         const commentStart = initialCode.indexOf('// ')
-        const result = codeModelFactory.updateModel(codeModel, [
+        const result = await codeModelFactory.updateModel(codeModel, [
             remove(commentStart, 3)
         ])
 
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
         expect(codeModel.children[0].children.length).toBe(3)
         expect(codeModel.children[0].children[1].variable.name).toBe('б')
     })
 
-    test('должен обрабатывать посимвольное расскомментирование без rebuild', () => {
+    test('должен обрабатывать посимвольное расскомментирование без rebuild', async () => {
         // Начальный код с закомментированным оператором
         const initialCode = 'Процедура Тест()\n  а = 1;\n  // б = 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
@@ -651,22 +656,22 @@ describe('внутренние функции и сложные сценарии
         // Шаг 1: Удаляем первый символ "/"
         // После удаления получается "/ б = 2;", что может быть невалидным кодом
         const firstSlashPos = initialCode.indexOf('//')
-        let result = codeModelFactory.updateModel(codeModel, [
+        let result = await codeModelFactory.updateModel(codeModel, [
             remove(firstSlashPos, 1)
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
 
-        result = codeModelFactory.updateModel(codeModel, [
+        result = await codeModelFactory.updateModel(codeModel, [
             remove(firstSlashPos, 1)
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
 
         // После удаления второго "/" код должен стать активным
         expect(codeModel.children[0].children.length).toBe(2)
         expect(codeModel.children[0].children[1].variable.name).toBe('б')
     })
 
-    test('должен обрабатывать посимвольное комментирование без rebuild', () => {
+    test('должен обрабатывать посимвольное комментирование без rebuild', async () => {
         // Начальный код с незакомментированным оператором
         const initialCode = 'Процедура Тест()\n  а = 1;\n  б = 2;\nКонецПроцедуры'
         const codeModel = codeModelFactory.buildModel(initialCode)
@@ -677,22 +682,22 @@ describe('внутренние функции и сложные сценарии
         expect(bLineStart).toBeGreaterThan(0)
 
         // Шаг 1: Добавляем первый символ "/"
-        let result = codeModelFactory.updateModel(codeModel, [
+        let result = await codeModelFactory.updateModel(codeModel, [
             insert(bLineStart, '/')
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
 
         // Шаг 2: Добавляем второй символ "/"
-        result = codeModelFactory.updateModel(codeModel, [
+        result = await codeModelFactory.updateModel(codeModel, [
             insert(bLineStart + 1, '/')
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
 
         // Шаг 3: Добавляем пробел после "//"
-        result = codeModelFactory.updateModel(codeModel, [
+        result = await codeModelFactory.updateModel(codeModel, [
             insert(bLineStart + 2, ' ')
         ])
-        expect(result).toBe(true)
+        expect(result).toBeTruthy()
 
         // После добавления "// " код должен стать закомментированным
         expect(codeModel.children[0].children.length).toBe(1) // Только один оператор остался

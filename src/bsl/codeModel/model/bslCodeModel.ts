@@ -20,7 +20,7 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
 
     children: BaseSymbol[] = []
     vars: BslVariable[] = []
-    
+
     private validator = new ModelValidator()
     private _diagnostics: DiagnosticMessage[] = []
 
@@ -29,7 +29,7 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
         GlobalScope.onLoaded(() => this.calculators.types.calculate(this))
     }
     private onDidChangeModelEmitter: Emitter<BslCodeModel> = new Emitter()
-    
+
     /**
      * Получает диагностические сообщения модели
      */
@@ -55,16 +55,15 @@ export class BslCodeModel extends AutoDisposable implements VariablesScope, Comp
             this.calculators.variables.calculate(this)
             await this.calculators.types.calculate(this)
         } else {
-            symbol.forEach(this.calculators.parents.calculate.bind(this.calculators.parents))
+            symbol.forEach(s => this.calculators.parents.calculate(s))
             const methods = [...new Set(symbol.map(getParentMethodDefinition).filter(s => s))] as (ProcedureDefinitionSymbol | FunctionDefinitionSymbol)[]
-            methods.forEach(this.calculators.variables.calculate.bind(this.calculators.variables))
+            methods.forEach(m => this.calculators.variables.calculate(m))
             this.updateTypes(methods)
-
         }
-        
+
         // Валидация модели
         this._diagnostics = this.validator.validate(this)
-        
+
         this.onDidChangeModelEmitter.fire(this)
     }
 
