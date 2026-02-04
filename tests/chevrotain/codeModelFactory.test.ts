@@ -24,7 +24,7 @@ import {
     UnaryExpressionSymbol,
     VariableDefinitionSymbol,
     WhileStatementSymbol
-} from '../../src/bsl/codeModel'
+} from '@/bsl/codeModel'
 import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain'
 import { describe, expect, test } from 'vitest'
 
