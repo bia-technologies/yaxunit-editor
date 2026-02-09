@@ -7,7 +7,7 @@ import { ModuleModel } from '../../moduleModel'
 import { BaseExpressionSymbol, ConstructorSymbol, MethodCallSymbol } from '@/bsl/codeModel'
 import { BaseSymbol } from '@/common/codeModel'
 import { currentAccessSequence } from '@/bsl/codeModel/utils'
-import { getParentMethodDefinition } from '@/bsl/chevrotain/utils'
+import { getParentMethodDefinition } from '@/bsl/codeModel/utils'
 
 const signatureHelpProvider: languages.SignatureHelpProvider = {
     signatureHelpTriggerCharacters: ['(', ','],

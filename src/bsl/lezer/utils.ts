@@ -8,8 +8,8 @@ export function nodePosition(node: SyntaxNode): SymbolPosition {
     }
 }
 
-export function getNodeText(node: SyntaxNode, source: string): string {
-    return source.slice(node.from, node.to)
+export function getNodeText(node: SyntaxNode | null, source: string): string | undefined {
+    return node ? source.slice(node.from, node.to) : undefined
 }
 
 export function findChildByType(node: SyntaxNode, typeId: number): SyntaxNode | null {

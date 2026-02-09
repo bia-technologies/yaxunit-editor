@@ -33,6 +33,7 @@
     "vitest": "^3.1.2"
   },
   "dependencies": {
+    "@lezer/common": "^1.5.1",
     "@ungap/global-this": "^0.4.4",
     "chevrotain": "^11.0.3",
     "lezer-bsl": "^0.3.0",

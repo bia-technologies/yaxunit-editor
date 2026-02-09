@@ -1,7 +1,7 @@
 import { editor, KeyCode, KeyMod, Uri } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
-import { ChevrotainModuleModel } from '../chevrotain/moduleModel'
 import { ModuleModel } from '../moduleModel'
+import { LezerModuleModel } from '../lezer/moduleModel'
 
 let activeEditor: BslEditor | undefined
 
@@ -92,7 +92,7 @@ export class BslEditor {
 
         const model = editor.createModel('', 'bsl', Uri.parse('Тестовый модуль'));
 
-        return ChevrotainModuleModel.create(model)
+        return LezerModuleModel.create(model)
     }
 }
 

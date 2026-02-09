@@ -35,13 +35,25 @@ export abstract class MethodDefinition extends BaseSymbol implements Signature, 
     children: BaseSymbol[] = []
     member?: Member
     description?: string
-
+    private _bodyParsed = false
+    ensureBody?: () => void
     constructor(position: SymbolPosition, name?: string) {
         super(position)
         this.name = name ?? ''
     }
 
+
+    get bodyParsed() {
+        return this._bodyParsed
+    }
+
+    markBodyParsed() {
+        this._bodyParsed = true
+    }
     getChildrenSymbols() {
+        if (!this._bodyParsed && this.ensureBody) {
+            this.ensureBody()
+        }
         return [...this.params, ...this.children]
     }
 }

@@ -10,15 +10,15 @@ import {
     isAccessProperty,
     MethodCallSymbol
 } from "@/bsl/codeModel";
-import { ChevrotainSitterCodeModelFactory } from "./codeModelFactory";
 import { BslModuleScope } from "@/bsl/scope/bslModuleScope";
 import { BaseSymbol, CodeSymbol } from "@/common/codeModel";
 import { currentAccessSequence, descendantByOffset } from "../codeModel/utils";
+import { LezerCodeModelFactory } from './factory/codeModelFactory';
 
-export class ChevrotainModuleModel extends AutoDisposable implements ExpressionProvider {
+export class LezerModuleModel extends AutoDisposable implements ExpressionProvider {
 
     static create(editorModel: editor.ITextModel): ModuleModel {
-        const moduleModelImpl = new ChevrotainModuleModel(editorModel);
+        const moduleModelImpl = new LezerModuleModel(editorModel);
 
         (editorModel as ModuleModel).getScope = moduleModelImpl.getScope.bind(moduleModelImpl);
         (editorModel as ModuleModel).getCurrentSymbol = moduleModelImpl.getCurrentSymbol.bind(moduleModelImpl);
@@ -37,7 +37,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
     codeModel: BslCodeModel
     editorModel: ModuleModel
     scope: BslModuleScope
-    codeModelFactory = new ChevrotainSitterCodeModelFactory()
+    codeModelFactory = new LezerCodeModelFactory()
 
     constructor(model: editor.ITextModel) {
         super()
@@ -49,7 +49,7 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
 
         this.codeModel = this.codeModelFactory.buildModel(this.editorModel)
         model.onDidChangeContent(e => {
-            if (!this.codeModelFactory.updateModel(this.codeModel, e.changes)) {
+            if (!this.codeModelFactory.updateModel(this.codeModel, this.editorModel, e.changes)) {
                 this.codeModelFactory.reBuildModel(this.codeModel, this.editorModel)
             }
         })
@@ -82,13 +82,13 @@ export class ChevrotainModuleModel extends AutoDisposable implements ExpressionP
         if (isPosition(position)) {
             position = this.editorModel.getOffsetAt(position);
         }
-
+        
         const current = this.currentExpression(position);
         const left = position > 0 ? this.currentExpression(position - 1) : undefined;
 
         // Проверяем, является ли текущий символ допустимым
         const currentValid = current instanceof BaseExpressionSymbol || current instanceof EmptySymbol;
-
+        
         // Если текущий символ недопустим или левый символ является родителем текущего
         if (!currentValid || (left && isParent(left, current))) {
             if (left instanceof AccessSequenceSymbol) {

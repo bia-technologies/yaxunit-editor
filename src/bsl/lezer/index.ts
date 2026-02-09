@@ -1,3 +1,3 @@
-export { LezerCodeModelFactory } from './codeModelFactory'
-export { LezerCodeModelFactoryVisitor } from './codeModelFactoryVisitor'
+export { LezerCodeModelFactory } from './factory/codeModelFactory'
+export { LezerCodeModelFactoryVisitor } from './factory/codeModelFactoryVisitor'
 export * from './utils'

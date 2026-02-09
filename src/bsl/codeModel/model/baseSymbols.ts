@@ -50,6 +50,11 @@ export class IndexAccessSymbol extends BaseExpressionSymbol implements Acceptabl
     index?: BaseSymbol
     member?: Member
 
+    constructor(position: SymbolPosition, index?: BaseSymbol) {
+        super(position)
+        this.index = index
+    }
+
     accept(visitor: CodeModelVisitor): any {
         return visitor.visitIndexAccessSymbol(this)
     }

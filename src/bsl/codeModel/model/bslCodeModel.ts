@@ -6,7 +6,7 @@ import { ParentsCalculator } from "../calculators";
 import { Emitter, IEvent } from 'monaco-editor-core';
 import { AutoDisposable } from "@/common/utils/autodisposable";
 import { BslVariable } from "./members";
-import { getParentMethodDefinition } from "@/bsl/chevrotain/utils";
+import { getParentMethodDefinition } from "@/bsl/codeModel/utils";
 import { GlobalScope } from "@/common/scope";
 
 export class BslCodeModel extends AutoDisposable implements VariablesScope, CompositeSymbol {

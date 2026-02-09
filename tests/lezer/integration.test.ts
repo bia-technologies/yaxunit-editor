@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { LezerCodeModelFactory } from '@/bsl/lezer/codeModelFactory'
-import { ChevrotainSitterCodeModelFactory } from '@/bsl/chevrotain/codeModelFactory'
+import { LezerCodeModelFactory } from '../../src/bsl/lezer/codeModelFactory'
+import { ChevrotainSitterCodeModelFactory } from '../../src/bsl/chevrotain/codeModelFactory'
 
 describe('Lezer vs Chevrotain Integration Tests', () => {
     const lezerFactory = new LezerCodeModelFactory()

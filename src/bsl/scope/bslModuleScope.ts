@@ -4,7 +4,7 @@ import { ModuleModel } from '@/bsl/moduleModel'
 import { IPosition } from 'monaco-editor-core'
 import { FunctionDefinitionSymbol, ProcedureDefinitionSymbol } from '../codeModel'
 import { VariablesCalculator } from '../codeModel/calculators'
-import { getParentMethodDefinition } from '../chevrotain/utils'
+import { getParentMethodDefinition } from '../codeModel/utils'
 
 export class BslModuleScope extends BaseScope {
     protected readonly model: ModuleModel
