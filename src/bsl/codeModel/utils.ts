@@ -1,14 +1,19 @@
 import { BaseSymbol, CodeSymbol, CompositeSymbol, isCompositeSymbol } from "@/common/codeModel"
-import { AccessProperty, AccessSequenceSymbol, MethodCallSymbol } from './model'
+import { AccessProperty, AccessSequenceSymbol, MethodCallSymbol, PropertySymbol, VariableSymbol } from './model'
 import { editor, IRange } from 'monaco-editor-core'
 import { FunctionDefinitionSymbol, isMethodDefinition, ProcedureDefinitionSymbol } from "../codeModel"
 
 export function currentAccessSequence(symbol: AccessProperty | MethodCallSymbol) {
-    if (symbol.parent instanceof AccessSequenceSymbol) {
-        const seq = new AccessSequenceSymbol(symbol.parent.position)
-        seq.parent = symbol.parent.parent
+    let parent = symbol.parent
+    while (parent && !(parent instanceof AccessSequenceSymbol)) {
+        parent = parent.parent
+    }
 
-        seq.access = [...symbol.parent.access]
+    if (parent instanceof AccessSequenceSymbol) {
+        const seq = new AccessSequenceSymbol(parent.position)
+        seq.parent = parent.parent
+
+        seq.access = [...parent.access]
         for (let index = seq.access.length; index > 0; index--) {
             if (symbol === seq.access[index - 1]) {
                 seq.access.length = index
@@ -17,6 +22,59 @@ export function currentAccessSequence(symbol: AccessProperty | MethodCallSymbol)
         }
         seq.type = seq.last.type
         return seq
+    }
+}
+
+export function sourceAccessSequenceForMethodCall(
+    symbol: MethodCallSymbol,
+    model: editor.ITextModel
+): AccessSequenceSymbol | undefined {
+    const methodOffset = getParentMethodDefinition(symbol)?.startOffset ?? 0
+    const absoluteStartOffset = findMethodCallStartOffset(symbol, model, methodOffset)
+    if (absoluteStartOffset === undefined) {
+        return undefined
+    }
+    const position = model.getPositionAt(absoluteStartOffset)
+    const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1)
+    const match = /([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*)\.$/.exec(linePrefix)
+    if (!match) {
+        return undefined
+    }
+
+    const parts = match[1].split('.')
+    if (!parts.length) {
+        return undefined
+    }
+
+    const sequence = new AccessSequenceSymbol({
+        startOffset: symbol.startOffset - match[0].length,
+        endOffset: symbol.endOffset
+    })
+    sequence.parent = getParentMethodDefinition(symbol) ?? symbol.parent
+    sequence.access = [
+        ...parts.map((name, index) => {
+            const symbolPosition = {
+                startOffset: sequence.startOffset,
+                endOffset: sequence.startOffset + match[0].length
+            }
+            return index === 0
+                ? new VariableSymbol(symbolPosition, name)
+                : new PropertySymbol(symbolPosition, name)
+        }),
+        symbol
+    ]
+    return sequence
+}
+
+function findMethodCallStartOffset(
+    symbol: MethodCallSymbol,
+    model: editor.ITextModel,
+    methodOffset: number
+): number | undefined {
+    for (const offset of [methodOffset + symbol.startOffset, symbol.startOffset]) {
+        if (model.getValue().slice(offset, offset + symbol.name.length).toLocaleLowerCase() === symbol.name.toLocaleLowerCase()) {
+            return offset
+        }
     }
 }
 

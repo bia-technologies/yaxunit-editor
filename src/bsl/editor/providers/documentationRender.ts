@@ -18,6 +18,7 @@ import { IMarkdownString } from 'monaco-editor-core'
 import { ModuleModel } from "../../moduleModel"
 import { BaseTypes } from "../../scope/baseTypes"
 import { TypesCalculator } from "@/bsl/codeModel/calculators"
+import { sourceAccessSequenceForMethodCall } from "@/bsl/codeModel/utils"
 
 export function signatureLabel(method: Member | string, signature: Signature) {
     const name = (method as Member).name ?? method
@@ -39,8 +40,12 @@ export function parameterDocumentation(p: Parameter) {
     }
 }
 
-export async function hoverSymbolDescription(symbol: CodeSymbol, model: ModuleModel): Promise<IMarkdownString[] | undefined> {
-    const visitor = new HoverVisitor(model)
+export async function hoverSymbolDescription(
+    symbol: CodeSymbol,
+    model: ModuleModel,
+    typesCalculator: TypesCalculator = TypesCalculator.instance
+): Promise<IMarkdownString[] | undefined> {
+    const visitor = new HoverVisitor(model, typesCalculator)
     if (!isAcceptable(symbol)) {
         return
     }
@@ -56,18 +61,20 @@ export async function hoverSymbolDescription(symbol: CodeSymbol, model: ModuleMo
 
 class HoverVisitor extends BaseCodeModelVisitor {
     model: ModuleModel
+    typesCalculator: TypesCalculator
 
-    constructor(model: ModuleModel) {
+    constructor(model: ModuleModel, typesCalculator: TypesCalculator) {
         super()
         this.model = model
+        this.typesCalculator = typesCalculator
     }
 
     visitVariableSymbol(symbol: VariableSymbol) {
-        return variableDescription(symbol)
+        return variableDescription(symbol, this.typesCalculator)
     }
 
     visitAccessSequenceSymbol(symbol: AccessSequenceSymbol) {
-        return fieldDescription(symbol)
+        return fieldDescription(symbol, this.model, this.typesCalculator)
     }
 
     visitConstructorSymbol(symbol: ConstructorSymbol) {
@@ -83,7 +90,7 @@ class HoverVisitor extends BaseCodeModelVisitor {
     }
 
     visitMethodCallSymbol(symbol: MethodCallSymbol) {
-        return methodDescription(symbol)
+        return methodDescription(symbol, this.model, this.typesCalculator)
     }
 
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
@@ -113,11 +120,11 @@ async function constructorDescription(symbol: ConstructorSymbol) {
     return content
 }
 
-async function methodDescription(symbol: MethodCallSymbol) {
+async function methodDescription(symbol: MethodCallSymbol, model: ModuleModel, typesCalculator: TypesCalculator) {
     const content: string[] = []
 
     if (!symbol.type) {
-        await TypesCalculator.instance.calculate(symbol)
+        await typesCalculator.calculate(sourceAccessSequenceForMethodCall(symbol, model) ?? symbol)
     }
 
     if (symbol.member) {
@@ -133,12 +140,12 @@ async function methodDescription(symbol: MethodCallSymbol) {
     return content
 }
 
-async function variableDescription(symbol: VariableSymbol) {
+async function variableDescription(symbol: VariableSymbol, typesCalculator: TypesCalculator) {
     const content: string[] = []
 
     let type = symbol.member?.type || symbol.type
     if (!type) {
-        await TypesCalculator.instance.calculate(symbol)
+        await typesCalculator.calculate(symbol)
         type = symbol.member?.type || symbol.type
     }
 
@@ -186,23 +193,23 @@ function memberDescription(member: Member, isVar: boolean) {
     return memberDescription
 }
 
-async function fieldDescription(symbol: AccessSequenceSymbol) {
+async function fieldDescription(symbol: AccessSequenceSymbol, model: ModuleModel, typesCalculator: TypesCalculator) {
     if (!symbol) {
         return 'Неизвестно'
     }
     if (!symbol.type) {
-        await TypesCalculator.instance.calculate(symbol)
+        await typesCalculator.calculate(symbol)
     }
 
     const last = symbol.last
     if (last instanceof VariableSymbol) {
-        return variableDescription(last)
+        return variableDescription(last, typesCalculator)
     } else if (last instanceof MethodCallSymbol) {
-        return methodDescription(last)
+        return methodDescription(last, model, typesCalculator)
     }
 
     if (!last.type) {
-        TypesCalculator.instance.calculate(symbol)
+        await typesCalculator.calculate(symbol)
     }
     const content: string[] = []
 

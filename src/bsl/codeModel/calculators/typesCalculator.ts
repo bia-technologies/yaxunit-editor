@@ -31,7 +31,7 @@ import {
 } from "@/bsl/codeModel";
 import { Operators, isCompareOperator } from "../model/operators"
 import { CodeModelVisitor, isAcceptable } from "../visitor"
-import { BaseScope, GlobalScope, Scope, UnionScope } from "@/common/scope"
+import { BaseScope, GlobalScope, Scope, TypeDefinition, UnionScope } from "@/common/scope"
 import { BaseSymbol, CodeSymbol } from "@/common/codeModel"
 import { isVariablesScope, VariablesScope } from "../model/interfaces"
 import { ModelCalculator } from "./calculator";
@@ -41,7 +41,11 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     codeModel?: BslCodeModel
 
-    constructor(codeModel?: BslCodeModel) {
+    constructor(
+        codeModel?: BslCodeModel,
+        private readonly externalScopes: Scope[] = [],
+        private readonly typeResolver?: { resolveType(typeId: string | undefined): Promise<TypeDefinition | undefined> }
+    ) {
         this.codeModel = codeModel
     }
 
@@ -69,10 +73,10 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
         }
 
         if (!parent) {
-            return
+            this.initExternalScope()
         }
         if (isAcceptable(symbol)) {
-            symbol.accept(this)
+            await symbol.accept(this)
         }
     }
 
@@ -196,7 +200,9 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
         let parentType: string | undefined = 'global'
         for (const item of symbol.access) {
             if (!item.type) {
-                const parentScope: Scope | undefined = parentType === 'global' ? this.fullScope : await GlobalScope.resolveType(parentType)
+                const parentScope: Scope | undefined = parentType === 'global'
+                    ? this.fullScope
+                    : await this.resolveType(parentType)
                 if (parentScope) {
                     if (item instanceof IndexAccessSymbol) { // TODO Index access
                         break
@@ -278,7 +284,16 @@ export class TypesCalculator implements CodeModelVisitor, ModelCalculator {
 
     private initScope(symbol: VariablesScope) {
         this.localScope = new BaseScope([...symbol.vars, ...(this.codeModel?.methods ?? [])])
-        this.fullScope.scopes = [this.localScope, ...GlobalScope.scopes]
+        this.fullScope.scopes = [this.localScope, ...this.externalScopes, ...GlobalScope.scopes]
+    }
+
+    private initExternalScope() {
+        this.localScope = new BaseScope([])
+        this.fullScope.scopes = [this.localScope, ...this.externalScopes, ...GlobalScope.scopes]
+    }
+
+    private async resolveType(typeId: string | undefined): Promise<TypeDefinition | undefined> {
+        return await this.typeResolver?.resolveType(typeId) ?? GlobalScope.resolveType(typeId)
     }
 
     protected async acceptItems(items: (CodeSymbol | undefined)[] | undefined) {

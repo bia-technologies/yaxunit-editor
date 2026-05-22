@@ -129,6 +129,13 @@ export class EditorScope extends UnionScope {
         return scope
     }
 
+    static disposeScope(value: editor.ITextModel | editor.IStandaloneCodeEditor): void {
+        const model = getModel(value)
+        if (model) {
+            editorsScopes.delete(model)
+        }
+    }
+
     static getScope(value: editor.ITextModel | editor.IStandaloneCodeEditor): EditorScope {
         const model = getModel(value)
         if (!model) {

@@ -5,11 +5,9 @@ import {
     ConstructorSymbol,
     ConstSymbol,
     isMemberRef,
-    MethodCallSymbol,
-    PropertySymbol,
-    VariableSymbol
+    MethodCallSymbol
 } from '@/bsl/codeModel'
-import { currentAccessSequence, getParentMethodDefinition, symbolRange } from '@/bsl/codeModel/utils'
+import { currentAccessSequence, getParentMethodDefinition, sourceAccessSequenceForMethodCall, symbolRange } from '@/bsl/codeModel/utils'
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { ModuleModel } from './moduleModel'
 import { EditorScope } from './scope/editorScope'
@@ -27,6 +25,7 @@ import {
 } from '@/common/scope'
 import { appendKeywords, appendSnippets } from './editor/snippets'
 import { hoverSymbolDescription, parameterDocumentation, signatureDocumentation, signatureLabel } from './editor/providers/documentationRender'
+import { TypesCalculator } from './codeModel/calculators'
 
 export async function getBslCompletions(model: ModuleModel, position: IPosition): Promise<languages.CompletionList | undefined> {
     const symbol = model.getEditingExpression(position)
@@ -53,11 +52,9 @@ export async function getBslCompletions(model: ModuleModel, position: IPosition)
         }
     }
 
-    const accessSymbol = inferTrailingAccessSequence(model, position)
-        ?? (symbol instanceof AccessSequenceSymbol ? symbol : undefined)
-
-    if (accessSymbol instanceof AccessSequenceSymbol) {
-        scope = await scopeProvider.resolveSymbolParentScope(activeScope, accessSymbol, editorScope)
+    if (symbol instanceof AccessSequenceSymbol) {
+        markTrailingAccessSequence(model, position, symbol)
+        scope = await scopeProvider.resolveSymbolParentScope(activeScope, symbol, editorScope)
     } else {
         scope = activeScope
     }
@@ -78,9 +75,12 @@ export async function getBslCompletions(model: ModuleModel, position: IPosition)
 }
 
 export async function getBslHover(model: ModuleModel, position: IPosition): Promise<languages.Hover | undefined> {
-    await EditorScope.getScope(model).whenReady()
+    const editorScope = EditorScope.getScope(model)
+    await editorScope.whenReady()
     const symbol = model.getCurrentExpression(position)
-    const content = symbol ? await hoverSymbolDescription(symbol, model) : undefined
+    const activeScope = new UnionScope(editorScope.getScopesAtPosition(position))
+    const typesCalculator = new TypesCalculator(undefined, [activeScope], editorScope)
+    const content = symbol ? await hoverSymbolDescription(symbol, model, typesCalculator) : undefined
     return content ? { contents: content } : undefined
 }
 
@@ -147,7 +147,7 @@ export async function getBslSignatureHelp(
     if (symbol instanceof ConstructorSymbol) {
         signatures = createConstructorSignatures(editorScope, symbol)
     } else if (symbol instanceof MethodCallSymbol) {
-        signatures = await createMethodSignatures(model, symbol, positionOffset)
+        signatures = await createMethodSignatures(model, symbol)
     }
 
     if (!signatures) {
@@ -214,33 +214,16 @@ function completionItemKind(type: MemberType): languages.CompletionItemKind {
     }
 }
 
-function inferTrailingAccessSequence(model: ModuleModel, position: IPosition): AccessSequenceSymbol | undefined {
-    const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1)
-    if (!linePrefix.endsWith('.')) {
-        return undefined
-    }
-
-    const match = /([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*)\.$/.exec(linePrefix)
-    if (!match) {
-        return undefined
-    }
-
+function markTrailingAccessSequence(model: ModuleModel, position: IPosition, symbol: AccessSequenceSymbol): void {
     const offset = model.getOffsetAt(position)
-    const sequence = new AccessSequenceSymbol({
-        startOffset: offset - match[0].length,
-        endOffset: offset
-    })
-    sequence.unclosed = true
-    sequence.access = match[1].split('.').map((name, index) => {
-        const symbolPosition = {
-            startOffset: sequence.startOffset,
-            endOffset: sequence.endOffset
-        }
-        return index === 0
-            ? new VariableSymbol(symbolPosition, name)
-            : new PropertySymbol(symbolPosition, name)
-    })
-    return sequence
+    if (offset > 0 && model.getValueInRange({
+        startLineNumber: position.lineNumber,
+        startColumn: position.column - 1,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column
+    }) === '.') {
+        symbol.unclosed = true
+    }
 }
 
 function createConstructorSignatures(scope: EditorScope, symbol: ConstructorSymbol): languages.SignatureHelp | undefined {
@@ -269,10 +252,9 @@ function createConstructorSignatures(scope: EditorScope, symbol: ConstructorSymb
 
 async function createMethodSignatures(
     model: ModuleModel,
-    symbol: MethodCallSymbol,
-    positionOffset: number
+    symbol: MethodCallSymbol
 ): Promise<languages.SignatureHelp | undefined> {
-    const seq = currentAccessSequence(symbol) ?? inferMethodAccessSequence(model, positionOffset) ?? symbol
+    const seq = currentAccessSequence(symbol) ?? sourceAccessSequenceForMethodCall(symbol, model) ?? symbol
     const method = await scopeProvider.resolveSymbolMember(model, seq)
     if (!method) {
         return undefined
@@ -284,39 +266,6 @@ async function createMethodSignatures(
         activeParameter: 0,
         activeSignature: 0
     }
-}
-
-function inferMethodAccessSequence(model: ModuleModel, positionOffset: number): AccessSequenceSymbol | undefined {
-    const position = model.getPositionAt(positionOffset)
-    const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1)
-    const match = /([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*)\s*\($/.exec(linePrefix)
-    if (!match) {
-        return undefined
-    }
-
-    const parts = match[1].split('.')
-    if (parts.length < 2) {
-        return undefined
-    }
-
-    const sequence = new AccessSequenceSymbol({
-        startOffset: positionOffset - match[0].length,
-        endOffset: positionOffset
-    })
-    sequence.access = parts.map((name, index) => {
-        const symbolPosition = {
-            startOffset: sequence.startOffset,
-            endOffset: sequence.endOffset
-        }
-        if (index === 0) {
-            return new VariableSymbol(symbolPosition, name)
-        }
-        if (index === parts.length - 1) {
-            return new MethodCallSymbol(symbolPosition, name)
-        }
-        return new PropertySymbol(symbolPosition, name)
-    })
-    return sequence
 }
 
 function setActiveSignature(signature: languages.SignatureHelp, args: BaseSymbol[] | undefined) {

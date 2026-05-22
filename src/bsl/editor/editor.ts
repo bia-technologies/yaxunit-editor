@@ -78,8 +78,17 @@ export class BslEditor {
         tuneEditor(this.editor)
 
         this.scope = EditorScope.createScope(this.editor, this.context)
+        const model = this.getModel()
 
-        this.context.addDisposable(this.getModel().onDidChangeContent(e => {
+        this.context.addDisposable({ dispose: () => EditorScope.disposeScope(model) })
+        this.context.addDisposable(this.editor.onDidDispose(() => {
+            if (activeEditor === this) {
+                activeEditor = undefined
+            }
+            this.context.dispose()
+        }))
+
+        this.context.addDisposable(model.onDidChangeContent(e => {
             this.scope.onDidChangeContent(e)
         }))
 

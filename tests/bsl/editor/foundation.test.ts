@@ -4,8 +4,9 @@ import { beforeAll, describe, expect, test } from 'vitest'
 import { editor, languages, Uri } from 'monaco-editor-core'
 import { AdapterBackedModuleModel } from '../../../src/bsl/adapterModuleModel'
 import { BslEditor, BslEditorContext, defaultBslEditorOptions } from '../../../src/bsl/editor'
-import { getBslCompletions, getBslDocumentSymbols, getBslSignatureHelp } from '../../../src/bsl/languageService'
+import { getBslCompletions, getBslDocumentSymbols, getBslHover, getBslSignatureHelp } from '../../../src/bsl/languageService'
 import { createLezerParserAdapter } from '../../../src/bsl/lezer'
+import { EditorScope } from '../../../src/bsl/scope/editorScope'
 import { createTreeSitterParserAdapter, TREE_SITTER_BSL_NODE_MAP, TreeSitterNode } from '../../../src/bsl/treeSitter'
 import { createYAxUnitPlugin, YAxUnitEditor } from '../../../src/yaxunit'
 import { createYAxUnitCodeLensProvider } from '../../../src/yaxunit/features/lensProvider'
@@ -204,6 +205,72 @@ describe('BSL editor foundation contracts', () => {
 
         yaxunitEditor.editor.dispose()
         yaxunitEditor.context.dispose()
+    })
+
+    test('YAxUnit hover uses plugin-provided type information', async () => {
+        const yaxunitEditor = new YAxUnitEditor({
+            container: testContainer(),
+            uri: Uri.parse('inmemory://test/yaxunit-hover.bsl'),
+            editorOptions: testEditorOptions(),
+            initialText: [
+                'Процедура ИсполняемыеСценарии() Экспорт',
+                '    ЮТТесты.ДобавитьТест("Сложение");',
+                'КонецПроцедуры'
+            ].join('\n')
+        })
+
+        await yaxunitEditor.context.whenReady()
+
+        const hover = await getBslHover(yaxunitEditor.getModel(), { lineNumber: 2, column: 17 })
+        const content = hover?.contents.map(item => item.value).join('\n') ?? ''
+
+        expect(content).toContain('Регистрирует тест')
+        expect(content).toContain('**Возвращает:** `ОбщийМодуль.ЮТТесты`')
+
+        yaxunitEditor.editor.dispose()
+        yaxunitEditor.context.dispose()
+    })
+
+    test('YAxUnit completion does not synthesize plugin members inside comments', async () => {
+        const yaxunitEditor = new YAxUnitEditor({
+            container: testContainer(),
+            uri: Uri.parse('inmemory://test/yaxunit-comment-completions.bsl'),
+            editorOptions: testEditorOptions(),
+            initialText: [
+                'Процедура ИсполняемыеСценарии() Экспорт',
+                '    // ЮТТесты.',
+                'КонецПроцедуры'
+            ].join('\n')
+        })
+
+        await yaxunitEditor.context.whenReady()
+
+        const completions = await getBslCompletions(yaxunitEditor.getModel(), { lineNumber: 2, column: 17 })
+        const labels = completions?.suggestions.map(labelText) ?? []
+
+        expect(labels).not.toContain('ДобавитьТест')
+
+        yaxunitEditor.editor.dispose()
+        yaxunitEditor.context.dispose()
+    })
+
+    test('disposing editor disposes plugin context and removes editor scope', async () => {
+        const yaxunitEditor = new YAxUnitEditor({
+            container: testContainer(),
+            uri: Uri.parse('inmemory://test/yaxunit-dispose.bsl'),
+            editorOptions: testEditorOptions(),
+            initialText: 'Процедура ИсполняемыеСценарии() Экспорт\nКонецПроцедуры'
+        })
+
+        await yaxunitEditor.context.whenReady()
+
+        const model = yaxunitEditor.getModel()
+        expect(yaxunitEditor.context.getScopes()).not.toHaveLength(0)
+
+        yaxunitEditor.editor.dispose()
+
+        expect(yaxunitEditor.context.getScopes()).toHaveLength(0)
+        expect(() => EditorScope.getScope(model)).toThrow('Editor scope not exist')
     })
 
     test('Tree-sitter adapter reports explicit gaps without loading a runtime', () => {
