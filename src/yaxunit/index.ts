@@ -1,4 +1,4 @@
-import './scope'
-import './snippets'
-
 export * from './editor'
+export * from './plugin'
+export * from './scope'
+export * from './snippets'

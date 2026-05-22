@@ -1,33 +1,30 @@
-import { registerCommands } from './features/runner'
 import { TestsModel } from './test-model'
-import { TestStatusDecorator } from './features/testStatusDecorator'
-import { TestMessageMarkersProvider } from './features/testMessageMarkers'
 import { TestModelRender } from './interfaces'
 import { TestsResolver } from './test-resolver/resolver'
 import { BslEditor } from '@/bsl/editor'
+import { BslEditorOptions } from '@/bsl/editor'
+import { createYAxUnitPlugin } from './plugin'
 
 export class YAxUnitEditor extends BslEditor {
-    testsModel: TestsModel = new TestsModel()
-    renders: TestModelRender[] = []
-    testsResolver: TestsResolver
+    testsModel: TestsModel
+    renders: TestModelRender[]
+    testsResolver?: TestsResolver
 
     commands: {
         runTest?: string
     } = {}
 
-    constructor() {
-        super()
-
-        this.commands.runTest = registerCommands(this) ?? undefined
-
-        this.renders.push(new TestStatusDecorator(this.editor), new TestMessageMarkersProvider(this.editor))
-        this.testsModel.onDidChangeContent(_ => this.renders.forEach(r => r.update(this.testsModel)))
-
-        this.testsResolver = new TestsResolver(this, this.testsModel)
-
-        this.getModel().getCodeModel().onDidChangeModel(e => {
-            this.testsResolver.onDidChangeContent(e)
+    constructor(options: BslEditorOptions = {}) {
+        const yaxunitPlugin = createYAxUnitPlugin()
+        super({
+            ...options,
+            plugins: [yaxunitPlugin, ...(options.plugins ?? [])]
         })
+
+        this.testsModel = yaxunitPlugin.testsModel
+        this.renders = yaxunitPlugin.renders
+        this.testsResolver = yaxunitPlugin.testsResolver
+        this.commands.runTest = yaxunitPlugin.runTestCommand
     }
 
     getText(): string {

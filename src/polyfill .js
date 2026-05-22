@@ -8,6 +8,21 @@ if (!window.ResizeObserver) {
     window.ResizeObserver = ResizeObserver
 }
 
+if (!window.matchMedia) {
+    window.matchMedia = function (mql) {
+        return {
+            matches: false,
+            media: mql,
+            onchange: null,
+            addListener: function () {},
+            removeListener: function () {},
+            addEventListener: function () {},
+            removeEventListener: function () {},
+            dispatchEvent: function () { return false }
+        }
+    }
+}
+
 if (!window.matchMedia('').addEventListener) {
     var localMatchMedia = window.matchMedia;
     window.matchMedia = function (mql) {

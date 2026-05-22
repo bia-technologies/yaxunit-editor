@@ -31,23 +31,17 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
     }
 
     visitModel(model: BslCodeModel) {
-        this.setVarScope(model)
-        super.visitModel(model)
-        this.clearOldVars(model)
+        this.withVarScope(model, () => super.visitModel(model))
     }
 
     // #region definitions
     visitProcedureDefinition(symbol: ProcedureDefinitionSymbol) {
-        this.setVarScope(symbol)
-        super.visitProcedureDefinition(symbol)
-        this.clearOldVars(symbol)
+        this.withVarScope(symbol, () => super.visitProcedureDefinition(symbol))
 
     }
 
     visitFunctionDefinition(symbol: FunctionDefinitionSymbol) {
-        this.setVarScope(symbol)
-        super.visitFunctionDefinition(symbol)
-        this.clearOldVars(symbol)
+        this.withVarScope(symbol, () => super.visitFunctionDefinition(symbol))
     }
 
     visitParameterDefinition(symbol: ParameterDefinitionSymbol) {
@@ -91,9 +85,19 @@ export class VariablesCalculator extends BaseCodeModelVisitor implements ModelCa
         this.handleVar(symbol)
     }
 
-    private setVarScope(varScope: VariablesScope) {
+    private withVarScope(varScope: VariablesScope, visit: () => void) {
+        const previousVarScope = this.varScope
+        const previousVariables = this.calculatorVariables
+
         this.varScope = varScope
-        this.calculatorVariables.clear()
+        this.calculatorVariables = new CaseInsensitiveMap()
+        try {
+            visit()
+            this.clearOldVars(varScope)
+        } finally {
+            this.varScope = previousVarScope
+            this.calculatorVariables = previousVariables
+        }
     }
 
     private clearOldVars(varScope: VariablesScope) {

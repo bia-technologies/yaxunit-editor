@@ -1,4 +1,4 @@
-import { BslVisitor, SyntaxNode, getChildText, getChildren, hasChild, isExpression } from "lezer-bsl"
+import { BslVisitor, SyntaxNode, getChildText, getChildren, hasChild } from "lezer-bsl"
 import { BaseSymbol, SymbolPosition } from "@/common/codeModel"
 import {
     ProcedureDefinitionSymbol,
@@ -105,10 +105,13 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     protected override visitCallStmt(node: SyntaxNode): BaseSymbol {
         const path = getChildren(node)
             .map(_ => this.visit(_))
-            .toArray()
+            .filter(_ => _ !== undefined)
 
         if (path.length == 1) {
             if (path[0] instanceof MethodCallSymbol) {
+                return path[0]
+            }
+            if (path[0] instanceof AccessSequenceSymbol) {
                 return path[0]
             }
         }
@@ -121,8 +124,8 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     protected override visitAssignmentStmt(node: SyntaxNode): BaseSymbol {
         const symbol = new AssignmentStatementSymbol(nodePosition(node))
 
-        let memberNode = node.getChild("MemberPath", null, "AssignOp")
-        let expressionNode = node.getChild("Expression", "AssignOp")
+        const memberNode = getChildren(node).find(_ => _.type.id === terms.MemberPath)
+        const expressionNode = this.getFirstExpressionAfter(node, "AssignOp")
 
         if (expressionNode) {
             symbol.expression = this.visit(expressionNode) as BaseExpressionSymbol
@@ -143,7 +146,8 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     }
 
     protected override visitIfStmt(node: SyntaxNode): BaseSymbol {
-        const branchNodes = node.getChildren("Branch")
+        const branchNodes = getChildren(node)
+            .filter(_ => _.type.is("IfBranch") || _.type.is("ElseIfBranch") || _.type.is("ElseBranch"))
         const branches: IfBranchSymbol[] = []
         let elseBranch: ElseBranchSymbol | undefined
 
@@ -251,7 +255,8 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     //#region expressions
     protected override visitBinaryExpr(node: SyntaxNode): BaseSymbol {
         const symbol = new BinaryExpressionSymbol(nodePosition(node))
-        const expressions = node.getChildren("Expression")
+        const expressions = getChildren(node)
+            .filter(isBslExpression)
             .map(_ => this.visit(_))
         symbol.left = expressions[0]
         symbol.right = expressions[1]
@@ -270,7 +275,8 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
 
     protected override visitTernaryExpr(node: SyntaxNode): BaseSymbol {
         const symbol = new TernaryExpressionSymbol(nodePosition(node))
-        const expressions = node.getChildren("Expression")
+        const expressions = getChildren(node)
+            .filter(isBslExpression)
             .map(_ => this.visit(_))
 
         symbol.condition = expressions[0]
@@ -281,7 +287,7 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     }
 
     protected override visitCallExpr(node: SyntaxNode): BaseSymbol {
-        const name = getNodeText(node.getChild(terms.Name), this.source) || "UnknownMethod"
+        const name = getNodeText(node.getChild(terms.Name) ?? node.getChild(terms.PropertyName), this.source) || "UnknownMethod"
         const symbol = new MethodCallSymbol(nodePosition(node), name)
 
         symbol.arguments = this.collectArguments(node.getChild(terms.ArgList))
@@ -369,7 +375,7 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
 
     protected override visitParam(node: SyntaxNode): ParameterDefinitionSymbol {
         const name = getChildText(node, terms.Name, this.source)
-        const defaultValue = this.visit(node.getChild("Literal")) as ConstSymbol | undefined
+        const defaultValue = this.nestedExpression(node) as ConstSymbol | undefined
 
         const symbol = new ParameterDefinitionSymbol(nodePosition(node), name)
         symbol.byVal = hasChild(node, terms.val)
@@ -381,9 +387,28 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     //#endregion
 
     protected override visitMemberPath(node: SyntaxNode): BaseSymbol {
-        const path = getChildren(node)
-            .map(_ => this.visit(_))
-            .toArray()
+        const children = getChildren(node)
+        const path: AccessProperty[] = []
+
+        for (let index = 0; index < children.length; index++) {
+            const child = children[index]
+
+            if (child.type.id === terms.VariableName) {
+                const next = children[index + 1]
+                if (next?.type.id === terms.ArgList) {
+                    path.push(this.methodCallFromNameAndArgs(child, next))
+                    index++
+                } else {
+                    path.push(this.visit(child) as AccessProperty)
+                }
+                continue
+            }
+
+            const symbol = this.visit(child)
+            if (symbol) {
+                path.push(symbol as AccessProperty)
+            }
+        }
 
         if (path.length == 1) {
             if (path[0] instanceof VariableSymbol) {
@@ -437,14 +462,13 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
             return getChildren(block)
                 .map(_ => this.visit(_))
                 .filter(_ => _ !== undefined)
-                .toArray()
         }
         return []
     }
 
     private getFirstExpression(node: SyntaxNode): BaseExpressionSymbol | undefined {
         const firstExpression = getChildren(node)
-            .find(isExpression)
+            .find(isBslExpression)
         if (firstExpression) {
             return this.visit(firstExpression)
         } else {
@@ -454,24 +478,14 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
 
     private getAllExpressions(node: SyntaxNode): BaseExpressionSymbol[] {
         return getChildren(node)
-            .filter(isExpression)
+            .filter(isBslExpression)
             .map(_ => this.visit(_))
             .filter(_ => _ !== undefined)
-            .toArray()
     }
 
     private getOperator(node: SyntaxNode): string {
         const operator = node.getChild("Operator")
         return operator ? getNodeText(operator, this.source)!! : ""
-    }
-
-    private findChild(node: SyntaxNode, termId: number): SyntaxNode | null {
-        for (let child = node.firstChild; child; child = child.nextSibling) {
-            if (child.type.id === termId) return child
-            const found = this.findChild(child, termId)
-            if (found) return found
-        }
-        return null
     }
 
     private getParameters(node: SyntaxNode): ParameterDefinitionSymbol[] {
@@ -501,7 +515,42 @@ export class LezerCodeModelFactoryVisitor extends BslVisitor<BaseSymbol> {
     }
 
     private nestedExpression(node: SyntaxNode | null) {
-        return node ? this.visit(node.getChild("Expression"))  as BaseExpressionSymbol : undefined
+        const expression = this.findFirstNestedExpression(node)
+        return expression ? this.visit(expression) as BaseExpressionSymbol : undefined
+    }
+
+    private getFirstExpressionAfter(node: SyntaxNode, markerTypeName: string): SyntaxNode | undefined {
+        let foundMarker = false
+        for (const child of getChildren(node)) {
+            if (foundMarker && isBslExpression(child)) {
+                return child
+            }
+            foundMarker ||= child.type.name === markerTypeName
+        }
+        return undefined
+    }
+
+    private findFirstNestedExpression(node: SyntaxNode | null): SyntaxNode | undefined {
+        if (!node) return undefined
+
+        for (const child of getChildren(node)) {
+            if (isBslExpression(child)) {
+                return child
+            }
+            const nested = this.findFirstNestedExpression(child)
+            if (nested) {
+                return nested
+            }
+        }
+
+        return undefined
+    }
+
+    private methodCallFromNameAndArgs(nameNode: SyntaxNode, argListNode: SyntaxNode): MethodCallSymbol {
+        const name = getNodeText(nameNode, this.source) || "UnknownMethod"
+        const symbol = new MethodCallSymbol(nodePosition(nameNode), name)
+        symbol.arguments = this.collectArguments(argListNode)
+        return symbol
     }
 }
 
@@ -510,4 +559,26 @@ function nodePosition(node: SyntaxNode): SymbolPosition {
         startOffset: node.from,
         endOffset: node.to
     }
+}
+
+function isBslExpression(node: SyntaxNode): boolean {
+    return [
+        terms.BinaryExpr,
+        terms.UnaryExpr,
+        terms.TernaryExpr,
+        terms.CallExpr,
+        terms.MemberPath,
+        terms.NewExpr,
+        terms.NewMethodExpr,
+        terms.AwaitExpr,
+        terms.ParenthesizedExpr,
+        terms.Number,
+        terms.String,
+        terms.MultilineString,
+        terms.Date,
+        terms.VariableName,
+        terms.bool,
+        terms._null,
+        terms.undefined
+    ].includes(node.type.id)
 }

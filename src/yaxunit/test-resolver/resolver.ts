@@ -1,6 +1,6 @@
 import { IPosition } from 'monaco-editor-core';
 import { ROOT_METHOD, TestsModel } from "../test-model";
-import { YAxUnitEditor } from "../editor";
+import { BslEditor } from "@/bsl/editor";
 import { Method } from "@/common/codeModel";
 import { ModuleModel } from "@/bsl/moduleModel";
 import { BslCodeModel } from "@/bsl/codeModel";
@@ -8,10 +8,10 @@ import { BslCodeModel } from "@/bsl/codeModel";
 const REGISTERED_TEST_PATTERN = /\.\s*(?:ДобавитьТест|ДобавитьСерверныйТест|ДобавитьКлиентскийТест)\s*\(\s*"([\w\dА-Яа-я_]+)"\s*\)/guim
 
 export class TestsResolver {
-    editor: YAxUnitEditor
+    editor: BslEditor
     model: TestsModel
 
-    constructor(editor: YAxUnitEditor, tests: TestsModel) {
+    constructor(editor: BslEditor, tests: TestsModel) {
         this.editor = editor
         this.model = tests
     }

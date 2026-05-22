@@ -2,31 +2,44 @@ import { editor, KeyCode, KeyMod, Uri } from 'monaco-editor-core'
 import { EditorScope } from '@/bsl/scope/editorScope'
 import { ModuleModel } from '../moduleModel'
 import { LezerModuleModel } from '../lezer/moduleModel'
+import { ParserAdapterFactory } from '../parserAdapter'
+import { AdapterBackedModuleModel } from '../adapterModuleModel'
+import { createLezerParserAdapter } from '../lezer/parserAdapter'
+import { BslEditorContext } from './context'
+import { BslEditorPlugin } from './plugins'
 
 let activeEditor: BslEditor | undefined
 
 export class BslEditor {
     editor: editor.IStandaloneCodeEditor
     scope: EditorScope
+    context: BslEditorContext
 
     commands: {
         runTest?: string
     } = {}
 
-    constructor() {
+    constructor(options: BslEditorOptions = {}) {
         activeEditor = this
-        const container = document.getElementById('container')
+        this.context = new BslEditorContext()
+
+        for (const plugin of options.plugins ?? []) {
+            void plugin.contribute(this.context)
+        }
+
+        const container = options.container ?? document.getElementById(options.containerId ?? 'container')
         if (container === null) {
             throw 'Error!';
         }
 
         this.editor = editor.create(container, {
+            ...options.editorOptions,
             language: 'bsl',
             automaticLayout: true,
             glyphMargin: true,
             useShadowDOM: false,
             contextmenu: false,
-            wordBasedSuggestions: false,
+            wordBasedSuggestions: 'off',
 
             multiCursorModifier: 'ctrlCmd',
 
@@ -59,16 +72,26 @@ export class BslEditor {
                 insertMode: 'replace',
                 localityBonus: true
             },
-            model: this.createModel()
+            model: options.model ? this.createModel(options) : this.createModel(options)
         });
 
         tuneEditor(this.editor)
 
         this.scope = EditorScope.createScope(this.editor)
+        for (const contribution of this.context.scopeContributions) {
+            void this.scope.registerScopeContribution(contribution)
+        }
+        for (const contribution of this.context.snippetContributions) {
+            void this.scope.registerSnippetContribution(contribution)
+        }
 
-        this.getModel().onDidChangeContent(e => {
+        this.context.addDisposable(this.getModel().onDidChangeContent(e => {
             this.scope.onDidChangeContent(e)
-        })
+        }))
+
+        for (const plugin of options.plugins ?? []) {
+            void plugin.onEditorCreated?.(this)
+        }
     }
 
     set content(value: string) {
@@ -88,11 +111,32 @@ export class BslEditor {
         return this.editor.getModel() as ModuleModel
     }
 
-    createModel() {
+    createModel(options: BslEditorOptions = {}) {
 
-        const model = editor.createModel('', 'bsl', Uri.parse('Тестовый модуль'));
+        const model = options.model ?? editor.createModel(options.initialText ?? '', 'bsl', options.uri ?? Uri.parse('Тестовый модуль'));
+
+        if (options.parserAdapter) {
+            return AdapterBackedModuleModel.create(model, options.parserAdapter())
+        }
 
         return LezerModuleModel.create(model)
+    }
+}
+
+export interface BslEditorOptions {
+    container?: HTMLElement
+    containerId?: string
+    model?: editor.ITextModel
+    uri?: Uri
+    initialText?: string
+    editorOptions?: editor.IStandaloneEditorConstructionOptions
+    parserAdapter?: ParserAdapterFactory
+    plugins?: BslEditorPlugin[]
+}
+
+export function defaultBslEditorOptions(): Required<Pick<BslEditorOptions, 'parserAdapter'>> {
+    return {
+        parserAdapter: createLezerParserAdapter
     }
 }
 

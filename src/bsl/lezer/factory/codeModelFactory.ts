@@ -29,6 +29,7 @@ interface ChangedRange {
 export class LezerCodeModelFactory extends AutoDisposable {
     private fastVisitor = new FastLezerVisitor()
     private fullVisitor = new LezerCodeModelFactoryVisitor()
+    protected useFastBuildForString = false
     errors: ErrorInfo[] = []
     private tree?: Tree
     private fragments: readonly TreeFragment[] = []
@@ -55,8 +56,12 @@ export class LezerCodeModelFactory extends AutoDisposable {
             }
 
             const visitorStart = performance.now()
-            // Используем FAST visitor - только декларации
-            const children = this.fastVisitor.module(this.tree.topNode, text)
+            const useFastBuild = isModel(model) || this.useFastBuildForString
+            const children = useFastBuild
+                // Используем FAST visitor для editor-моделей: только декларации, тела грузятся лениво.
+                ? this.buildFastTopLevelModel(this.tree.topNode, text)
+                // Строковый factory используется тестами и batch-анализом, где ожидается полная модель.
+                : this.fullVisitor.module(this.tree.topNode, text)
 
             codeModel.children.length = 0
             if (Array.isArray(children)) {
@@ -91,6 +96,21 @@ export class LezerCodeModelFactory extends AutoDisposable {
         }
     }
 
+    private buildFastTopLevelModel(node: SyntaxNode, text: string): BaseSymbol[] {
+        const children = this.fastVisitor.module(node, text)
+
+        for (let child = node.firstChild; child; child = child.nextSibling) {
+            if (child.type.id !== terms.ModuleBlock) continue
+
+            for (let stmt = child.firstChild; stmt; stmt = stmt.nextSibling) {
+                const symbol = this.fullVisitor.visit(stmt, text)
+                if (symbol) children.push(symbol)
+            }
+        }
+
+        return children
+    }
+
     /**
      * Ленивая загрузка тела метода
      */
@@ -100,7 +120,7 @@ export class LezerCodeModelFactory extends AutoDisposable {
         const start = performance.now()
         
         // Найти узел метода в дереве
-        let node = this.tree.resolve(method.startOffset, 1)
+        let node: SyntaxNode | null = this.tree.resolve(method.startOffset, 1)
         
         // Найти родительский ProcedureDef/FunctionDef
         while (node && !node.type.is(terms.ProcedureDef) && !node.type.is(terms.FunctionDef)) {
@@ -153,6 +173,11 @@ export class LezerCodeModelFactory extends AutoDisposable {
         const text = model.getValue()
         this.sourceText = text
 
+        if (this.hasTopLevelChange(codeModel, changes)) {
+            this.reBuildModel(codeModel, text)
+            return true
+        }
+
         try {
             const lezerChanges = this.convertChangesToLezer(changes)
             this.fragments = TreeFragment.applyChanges(this.fragments, lezerChanges)
@@ -161,21 +186,19 @@ export class LezerCodeModelFactory extends AutoDisposable {
             
             const visitorStart = performance.now()
 
-            // Быстрое обновление - только декларации
-            const newChildren = this.fastVisitor.module(this.tree.topNode, text)
-            
-            // Обновляем измененные методы
-            this.updateChangedMethods(codeModel, newChildren, lezerChanges)
-            
+            // Быстрое обновление - только декларации и верхнеуровневые операторы.
+            const newChildren = this.buildFastTopLevelModel(this.tree.topNode, text)
+
+            this.replaceTopLevelChildren(codeModel, newChildren)
+
             codeModel.children
                 .filter(isMethodDefinition)
                 .forEach(method => {
                     method.ensureBody = () => this.ensureMethodBody(method)
                     updateUtils.updateMethodChildrenOffset(method)
                 })
+            codeModel.afterUpdate(codeModel)
 
-            // codeModel.afterUpdate(codeModel)
-        
             const end = performance.now()
             console.log('Incremental update: Parse:', visitorStart - start, 'ms; model build:', end - visitorStart, '; full:', end - start)
             return true
@@ -185,34 +208,18 @@ export class LezerCodeModelFactory extends AutoDisposable {
         }
     }
 
-    private updateChangedMethods(codeModel: BslCodeModel, newChildren: BaseSymbol[], changes: ChangedRange[]) {
-        for (const change of changes) {
-            // Найти затронутый метод в старой модели
-            const oldMethod = this.findMethodByOffset(codeModel.children, change.fromA)
-            const newMethod = this.findMethodByOffset(newChildren, change.fromB)
-            
-            if (oldMethod && newMethod && isMethodDefinition(oldMethod) && isMethodDefinition(newMethod)) {
-                // Если тело было загружено - сбросить флаг
-                if (oldMethod.bodyParsed) {
-                    (newMethod as any)._bodyParsed = false
-                }
-                
-                const diff = (change.toB - change.fromB) - (change.toA - change.fromA)
-                updateUtils.replaceSymbol(codeModel, oldMethod, newMethod, diff)
-            }
-        }
-        
-        // Обновить методы, которые не изменились
-        for (let i = 0; i < newChildren.length; i++) {
-            if (!codeModel.children[i]) {
-                codeModel.children[i] = newChildren[i]
-            }
-        }
+    private replaceTopLevelChildren(codeModel: BslCodeModel, newChildren: BaseSymbol[]) {
+        codeModel.children.length = 0
+        codeModel.children.push(...newChildren)
+    }
+
+    private hasTopLevelChange(codeModel: BslCodeModel, changes: IModelContentChange[]): boolean {
+        return changes.some(change => !this.findMethodByOffset(codeModel.children, change.rangeOffset))
     }
 
     private findMethodByOffset(children: BaseSymbol[], offset: number): BaseSymbol | undefined {
-        return children.find(child => 
-            child.startOffset <= offset && child.endOffset >= offset
+        return children.find(child =>
+            isMethodDefinition(child) && child.startOffset <= offset && child.endOffset >= offset
         )
     }
 
@@ -225,7 +232,7 @@ export class LezerCodeModelFactory extends AutoDisposable {
         }))
     }
 
-    private convertErrorsToMarkers(errors: ErrorInfo[], model: ModuleModel): editor.IMarkerData[] {
+    private convertErrorsToMarkers(errors: ErrorInfo[], _model: ModuleModel): editor.IMarkerData[] {
         return errors.map(error => ({
             severity: MarkerSeverity.Error,
             message: error.message,

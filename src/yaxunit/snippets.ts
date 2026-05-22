@@ -2,7 +2,9 @@ import { registerSnippets } from '@/bsl/editor/snippets'
 import { EMPTY_RANGE } from '@/monaco/utils'
 import { languages } from 'monaco-editor-core'
 
-registerSnippets(loadSnippets())
+export function registerYAxUnitSnippets(): void {
+    registerSnippets(loadSnippets())
+}
 
 async function loadSnippets() {
     const snippets = await import('./snippets.json')

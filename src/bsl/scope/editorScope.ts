@@ -4,6 +4,8 @@ import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
 import { ModuleModel } from '../moduleModel'
 import { BslModuleScope } from './bslModuleScope'
+import { languages } from 'monaco-editor-core'
+import { ScopeContribution, SnippetContribution } from '../editor/context'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -19,6 +21,7 @@ export class EditorScope extends UnionScope {
     moduleScope: BslModuleScope
     editor: editor.IStandaloneCodeEditor
     modelVersionId: number = 0
+    private snippets: languages.CompletionItem[] = []
 
     constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
         super()
@@ -27,6 +30,24 @@ export class EditorScope extends UnionScope {
 
         this.scopes.push(this.moduleScope)
         this.scopes.push(GlobalScope)
+    }
+
+    registerScope(scope: Scope): void {
+        this.scopes.push(scope)
+    }
+
+    async registerScopeContribution(contribution: ScopeContribution): Promise<void> {
+        this.registerScope(await contribution.scope)
+    }
+
+    async registerSnippetContribution(contribution: SnippetContribution): Promise<void> {
+        this.snippets.push(...await contribution.snippets)
+    }
+
+    appendSnippets(suggestions: languages.CompletionItem[], range: languages.CompletionItem['range']): void {
+        this.snippets.forEach(snippet => {
+            suggestions.push({ ...snippet, range })
+        })
     }
 
     getScopesAtPosition(position: IPosition | null): Scope[] {

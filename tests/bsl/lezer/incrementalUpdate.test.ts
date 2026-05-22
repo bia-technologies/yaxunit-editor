@@ -142,6 +142,34 @@ describe('LezerCodeModelFactory - Incremental Update', () => {
             const fullModel = factory.buildModel(newCode)
             
             expect(codeModel.children).toHaveLength(fullModel.children.length)
+            expect(codeModel.children[0]).toMatchObject({
+                variable: { name: 'a' },
+                expression: { value: '100', type: 'Число' }
+            })
+        })
+
+        test('should remove stale top-level methods after deleting a method', () => {
+            const factory = new LezerCodeModelFactory()
+            const deletedMethod = 'Процедура A()\nКонецПроцедуры\n\n'
+            const initialCode = `${deletedMethod}Процедура B()\nКонецПроцедуры`
+            const model = createMockModel(initialCode)
+            const codeModel = factory.buildModel(initialCode)
+
+            const newCode = initialCode.slice(deletedMethod.length)
+            model.setValue(newCode)
+
+            const changes: IModelContentChange[] = [{
+                rangeOffset: 0,
+                rangeLength: deletedMethod.length,
+                text: ''
+            }]
+
+            const result = factory.updateModel(codeModel, model, changes)
+            const fullModel = factory.buildModel(newCode)
+
+            expect(result).toBe(true)
+            expect(codeModel.children).toHaveLength(fullModel.children.length)
+            expect(codeModel.methods.map(method => method.name)).toEqual(['B'])
         })
 
         test('should handle complex code changes', () => {

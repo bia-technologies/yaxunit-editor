@@ -1,8 +1,10 @@
-import { MemberType, PredefinedType, MethodMember, GlobalScope, GlobalScopeItem } from "@/common/scope"
+import { MemberType, PredefinedType, MethodMember, GlobalScopeItem } from "@/common/scope"
 
 class YAxUnitScope extends GlobalScopeItem { }
 
-async function loadScope() {
+export const YAXUNIT_SCOPE_ID = 'yaxunit-scope'
+
+export async function loadYAxUnitScope() {
     const scopeData = await import('@assets/yaxunit-scope.json')
     const types = scopeData.default.map(t => {
         return new PredefinedType(t.name, t.methods.map(handleMethod))
@@ -27,5 +29,3 @@ function handleMethod(m: any): MethodMember {
         params: m.params
     }
 }
-
-GlobalScope.registerScope('yaxunit-scope', loadScope())

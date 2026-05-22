@@ -8,6 +8,8 @@
 
 [Возможности редактора](./docs/features.md)
 
+[BSL editor foundation](./docs/bsl-editor-foundation.md)
+
 ## Благодарность
 
 В проекте используются идеи и наработки следующих проектов

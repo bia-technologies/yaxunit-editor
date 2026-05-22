@@ -1,44 +1,51 @@
-import { getActiveEditor } from '@/bsl/editor'
+import { BslEditor } from '@/bsl/editor'
 import { languages } from 'monaco-editor-core'
-import { YAxUnitEditor } from '../editor'
+import { TestsModel } from '../test-model'
 
-const codeLensProvider: languages.CodeLensProvider = {
-
-    provideCodeLenses: function () {
-        const editor = getActiveEditor()
-        if (editor instanceof YAxUnitEditor) {
-            const lenses = editor ? editor.testsModel.getTests().map(m => {
+export function createYAxUnitCodeLensProvider(
+    editor: BslEditor,
+    testsModel: TestsModel,
+    getRunTestCommand: () => string | undefined
+): languages.CodeLensProvider {
+    return {
+        provideCodeLenses(model) {
+            if (model !== editor.getModel()) {
                 return {
-                    range: {
-                        startLineNumber: m.lineNumber,
-                        startColumn: 1,
-                        endLineNumber: m.lineNumber,
-                        endColumn: 1,
-                    },
-                    id: "RunTest" + m.method,
-                    command: {
-                        id: editor.commands.runTest ?? '',
-                        title: "Run test",
-                        arguments: [m.method]
-
-                    },
+                    lenses: [],
+                    dispose: () => {}
                 }
-            }) : []
+            }
+
+            const commandId = getRunTestCommand() ?? ''
             return {
-                lenses: lenses,
-                dispose: () => { },
-            };
+                lenses: testsModel.getTests().map(test => ({
+                    range: {
+                        startLineNumber: test.lineNumber,
+                        startColumn: 1,
+                        endLineNumber: test.lineNumber,
+                        endColumn: 1
+                    },
+                    id: `RunTest${test.method}`,
+                    command: {
+                        id: commandId,
+                        title: 'Run test',
+                        arguments: [test.method]
+                    }
+                })),
+                dispose: () => {}
+            }
+        },
+        resolveCodeLens(_, codeLens) {
+            return codeLens
         }
-    },
-    resolveCodeLens: function (_, codeLens) {
-        return codeLens;
-    },
+    }
 }
 
-languages.onLanguage('bsl', () => {
-    languages.registerCodeLensProvider('bsl', codeLensProvider)
-})
-
-export {
-    codeLensProvider
+export function registerYAxUnitCodeLensProvider(
+    editor: BslEditor,
+    testsModel: TestsModel,
+    getRunTestCommand: () => string | undefined
+) {
+    const provider = createYAxUnitCodeLensProvider(editor, testsModel, getRunTestCommand)
+    return languages.registerCodeLensProvider('bsl', provider)
 }
