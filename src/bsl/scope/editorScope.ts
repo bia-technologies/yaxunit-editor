@@ -1,11 +1,11 @@
-import { Scope, UnionScope, GlobalScope } from '@/common/scope'
+import { Constructor, Scope, TypeDefinition, UnionScope, GlobalScope } from '@/common/scope'
 import { IPosition, editor } from 'monaco-editor-core'
 import { Method } from '@/common/codeModel'
 import { isModel } from '@/monaco/utils'
 import { ModuleModel } from '../moduleModel'
 import { BslModuleScope } from './bslModuleScope'
 import { languages } from 'monaco-editor-core'
-import { ScopeContribution, SnippetContribution } from '../editor/context'
+import { BslEditorContext, ScopeContribution, SnippetContribution } from '../editor/context'
 
 const editorsScopes: Map<editor.ITextModel, EditorScope> = new Map()
 
@@ -22,18 +22,21 @@ export class EditorScope extends UnionScope {
     editor: editor.IStandaloneCodeEditor
     modelVersionId: number = 0
     private snippets: languages.CompletionItem[] = []
+    private readonly extraScopes: Scope[] = []
+    private readonly context?: BslEditorContext
 
-    constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor) {
+    constructor(model: editor.ITextModel, editor: editor.IStandaloneCodeEditor, context?: BslEditorContext) {
         super()
         this.moduleScope = (model as ModuleModel).getScope()
         this.editor = editor
+        this.context = context
 
-        this.scopes.push(this.moduleScope)
-        this.scopes.push(GlobalScope)
+        this.scopes.push(...this.baseScopes())
     }
 
     registerScope(scope: Scope): void {
-        this.scopes.push(scope)
+        this.extraScopes.push(scope)
+        this.scopes = this.baseScopes()
     }
 
     async registerScopeContribution(contribution: ScopeContribution): Promise<void> {
@@ -45,20 +48,24 @@ export class EditorScope extends UnionScope {
     }
 
     appendSnippets(suggestions: languages.CompletionItem[], range: languages.CompletionItem['range']): void {
+        this.context?.getSnippets().forEach(snippet => {
+            suggestions.push({ ...snippet, range })
+        })
         this.snippets.forEach(snippet => {
             suggestions.push({ ...snippet, range })
         })
     }
 
     getScopesAtPosition(position: IPosition | null): Scope[] {
+        const scopes = this.baseScopes()
         if (!position) {
-            return this.scopes;
+            return scopes;
         }
         const method = this.moduleScope.collectScopeAtPosition(position)
         if (!method) {
-            return this.scopes;
+            return scopes;
         } else {
-            return [method].concat(this.scopes)
+            return [method].concat(scopes)
         }
     }
 
@@ -86,12 +93,37 @@ export class EditorScope extends UnionScope {
         this.update()
     }
 
-    static createScope(value: editor.IStandaloneCodeEditor): EditorScope {
+    async whenReady(): Promise<void> {
+        await this.context?.whenReady()
+    }
+
+    async resolveType(typeId: string | undefined): Promise<TypeDefinition | undefined> {
+        return await this.context?.resolveType(typeId) ?? GlobalScope.resolveType(typeId)
+    }
+
+    getConstructors(): Constructor[] {
+        return [...(this.context?.getConstructors() ?? []), ...GlobalScope.getConstructors()]
+    }
+
+    getConstructor(name: string): Constructor | undefined {
+        return this.getConstructors().find(constructor => constructor.name === name)
+    }
+
+    private baseScopes(): Scope[] {
+        return [
+            this.moduleScope,
+            ...this.extraScopes,
+            ...(this.context?.getScopes() ?? []),
+            GlobalScope
+        ]
+    }
+
+    static createScope(value: editor.IStandaloneCodeEditor, context?: BslEditorContext): EditorScope {
         const model = value.getModel()
         if (!model) {
             throw 'Model don\'t set'
         }
-        const scope = new EditorScope(model, value)
+        const scope = new EditorScope(model, value, context)
         editorsScopes.set(model, scope)
 
         return scope

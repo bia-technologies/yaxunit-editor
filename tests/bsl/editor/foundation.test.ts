@@ -1,19 +1,44 @@
 import '../../../src/polyfill .js'
 import { createRequire } from 'node:module'
-import { describe, expect, test } from 'vitest'
-import { editor } from 'monaco-editor-core'
+import { beforeAll, describe, expect, test } from 'vitest'
+import { editor, languages, Uri } from 'monaco-editor-core'
 import { AdapterBackedModuleModel } from '../../../src/bsl/adapterModuleModel'
-import { BslEditorContext, defaultBslEditorOptions } from '../../../src/bsl/editor'
-import { getBslDocumentSymbols } from '../../../src/bsl/languageService'
+import { BslEditor, BslEditorContext, defaultBslEditorOptions } from '../../../src/bsl/editor'
+import { getBslCompletions, getBslDocumentSymbols, getBslSignatureHelp } from '../../../src/bsl/languageService'
 import { createLezerParserAdapter } from '../../../src/bsl/lezer'
 import { createTreeSitterParserAdapter, TREE_SITTER_BSL_NODE_MAP, TreeSitterNode } from '../../../src/bsl/treeSitter'
-import { createYAxUnitPlugin } from '../../../src/yaxunit'
+import { createYAxUnitPlugin, YAxUnitEditor } from '../../../src/yaxunit'
 import { createYAxUnitCodeLensProvider } from '../../../src/yaxunit/features/lensProvider'
 import { TestsModel } from '../../../src/yaxunit/test-model'
 import { TestsResolver } from '../../../src/yaxunit/test-resolver/resolver'
 
 const optionalTreeSitterRuntime = loadOptionalTreeSitterRuntime()
 const treeSitterRuntimeTest = optionalTreeSitterRuntime ? test : test.skip
+
+beforeAll(() => {
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+        value: () => ({
+            webkitBackingStorePixelRatio: 1,
+            mozBackingStorePixelRatio: 1,
+            msBackingStorePixelRatio: 1,
+            oBackingStorePixelRatio: 1,
+            backingStorePixelRatio: 1,
+            clearRect: () => {},
+            fillRect: () => {},
+            beginPath: () => {},
+            closePath: () => {},
+            stroke: () => {},
+            rect: () => {},
+            moveTo: () => {},
+            lineTo: () => {},
+            drawImage: () => {},
+            getImageData: () => ({ data: [] }),
+            createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
+            putImageData: () => {},
+            measureText: (text: string) => ({ width: text.length })
+        })
+    })
+})
 
 describe('BSL editor foundation contracts', () => {
     test('default editor options select the Lezer parser adapter', () => {
@@ -103,6 +128,82 @@ describe('BSL editor foundation contracts', () => {
         expect(testsModel.getTests().map(test => test.method)).toEqual(['Сложение', 'ИсполняемыеСценарии'])
 
         moduleModel.dispose()
+    })
+
+    test('YAxUnit plugin scope resolves access-chain completions after context readiness', async () => {
+        const yaxunitEditor = new YAxUnitEditor({
+            container: testContainer(),
+            uri: Uri.parse('inmemory://test/yaxunit-completions.bsl'),
+            editorOptions: testEditorOptions(),
+            initialText: [
+                'Процедура ИсполняемыеСценарии() Экспорт',
+                '    ЮТТесты.',
+                'КонецПроцедуры'
+            ].join('\n')
+        })
+
+        await yaxunitEditor.context.whenReady()
+
+        const completions = await getBslCompletions(yaxunitEditor.getModel(), { lineNumber: 2, column: 13 })
+        const labels = completions?.suggestions.map(labelText)
+
+        expect(labels).toContain('ДобавитьТест')
+        expect(labels).toContain('ВТранзакции')
+
+        yaxunitEditor.editor.dispose()
+        yaxunitEditor.context.dispose()
+    })
+
+    test('plain BSL editor does not resolve YAxUnit plugin scope data', async () => {
+        const plainEditor = new BslEditor({
+            container: testContainer(),
+            uri: Uri.parse('inmemory://test/plain-bsl-editor.bsl'),
+            editorOptions: testEditorOptions(),
+            initialText: 'Процедура Тест()\n    ЮТТесты.\nКонецПроцедуры'
+        })
+
+        await plainEditor.context.whenReady()
+
+        const rootCompletions = await getBslCompletions(plainEditor.getModel(), { lineNumber: 2, column: 7 })
+        const accessCompletions = await getBslCompletions(plainEditor.getModel(), { lineNumber: 2, column: 13 })
+        const rootLabels = rootCompletions?.suggestions.map(labelText)
+        const accessLabels = accessCompletions?.suggestions.map(labelText) ?? []
+
+        expect(rootLabels).not.toContain('ЮТТесты')
+        expect(accessLabels).not.toContain('ДобавитьТест')
+
+        plainEditor.editor.dispose()
+        plainEditor.context.dispose()
+    })
+
+    test('YAxUnit signature help uses plugin-provided method signatures', async () => {
+        const yaxunitEditor = new YAxUnitEditor({
+            container: testContainer(),
+            uri: Uri.parse('inmemory://test/yaxunit-signatures.bsl'),
+            editorOptions: testEditorOptions(),
+            initialText: [
+                'Процедура ИсполняемыеСценарии() Экспорт',
+                '    ЮТТесты.ДобавитьТест()',
+                'КонецПроцедуры'
+            ].join('\n')
+        })
+
+        await yaxunitEditor.context.whenReady()
+
+        const callLine = '    ЮТТесты.ДобавитьТест('
+        const positionOffset = yaxunitEditor.getModel().getOffsetAt({ lineNumber: 2, column: callLine.length + 1 })
+        const signatureHelp = await getBslSignatureHelp(yaxunitEditor.getModel(), positionOffset, {
+            activeSignatureHelp: undefined,
+            isRetrigger: false,
+            triggerCharacter: '(',
+            triggerKind: languages.SignatureHelpTriggerKind.TriggerCharacter
+        })
+
+        const labels = signatureHelp?.value.signatures.map(signature => signature.label) ?? []
+        expect(labels.some(label => label.startsWith('ДобавитьТест(') && label.includes('ИмяТестовогоМетода'))).toBe(true)
+
+        yaxunitEditor.editor.dispose()
+        yaxunitEditor.context.dispose()
     })
 
     test('Tree-sitter adapter reports explicit gaps without loading a runtime', () => {
@@ -301,4 +402,23 @@ function tsNode(
         namedChildren,
         childForFieldName: name => fields[name] ?? null
     }
+}
+
+function testContainer(): HTMLElement {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    return container
+}
+
+function testEditorOptions(): editor.IStandaloneEditorConstructionOptions {
+    return {
+        minimap: { enabled: false },
+        overviewRulerLanes: 0
+    }
+}
+
+function labelText(item: { label: unknown }): string {
+    return typeof item.label === 'string'
+        ? item.label
+        : (item.label as { label: string }).label
 }

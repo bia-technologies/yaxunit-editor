@@ -1,5 +1,14 @@
-import { editor, IPosition, languages, Range } from 'monaco-editor-core'
-import { AccessSequenceSymbol, BslVariable, ConstructorSymbol, ConstSymbol, isMemberRef, MethodCallSymbol } from '@/bsl/codeModel'
+import { IPosition, languages, Range } from 'monaco-editor-core'
+import {
+    AccessSequenceSymbol,
+    BslVariable,
+    ConstructorSymbol,
+    ConstSymbol,
+    isMemberRef,
+    MethodCallSymbol,
+    PropertySymbol,
+    VariableSymbol
+} from '@/bsl/codeModel'
 import { currentAccessSequence, getParentMethodDefinition, symbolRange } from '@/bsl/codeModel/utils'
 import { scopeProvider } from '@/bsl/scopeProvider'
 import { ModuleModel } from './moduleModel'
@@ -7,7 +16,6 @@ import { EditorScope } from './scope/editorScope'
 import { BaseExpressionSymbol } from './codeModel'
 import { BaseSymbol } from '@/common/codeModel'
 import {
-    GlobalScope,
     isMethod,
     isPlatformMethod,
     Member,
@@ -27,6 +35,7 @@ export async function getBslCompletions(model: ModuleModel, position: IPosition)
     const word = model.getWordAtPosition(position)
     const range = new Range(position.lineNumber, word?.startColumn ?? position.column, position.lineNumber, word?.endColumn ?? position.column)
     const editorScope = EditorScope.getScope(model)
+    await editorScope.whenReady()
     const activeScope = new UnionScope(editorScope.getScopesAtPosition(position))
 
     if (symbol instanceof ConstSymbol) {
@@ -35,7 +44,7 @@ export async function getBslCompletions(model: ModuleModel, position: IPosition)
 
     if (symbol instanceof ConstructorSymbol) {
         return {
-            suggestions: GlobalScope.getConstructors().map(c => ({
+            suggestions: editorScope.getConstructors().map(c => ({
                 kind: languages.CompletionItemKind.Constructor,
                 label: c.name,
                 insertText: c.name,
@@ -44,8 +53,11 @@ export async function getBslCompletions(model: ModuleModel, position: IPosition)
         }
     }
 
-    if (symbol instanceof AccessSequenceSymbol) {
-        scope = await scopeProvider.resolveSymbolParentScope(activeScope, symbol)
+    const accessSymbol = inferTrailingAccessSequence(model, position)
+        ?? (symbol instanceof AccessSequenceSymbol ? symbol : undefined)
+
+    if (accessSymbol instanceof AccessSequenceSymbol) {
+        scope = await scopeProvider.resolveSymbolParentScope(activeScope, accessSymbol, editorScope)
     } else {
         scope = activeScope
     }
@@ -66,6 +78,7 @@ export async function getBslCompletions(model: ModuleModel, position: IPosition)
 }
 
 export async function getBslHover(model: ModuleModel, position: IPosition): Promise<languages.Hover | undefined> {
+    await EditorScope.getScope(model).whenReady()
     const symbol = model.getCurrentExpression(position)
     const content = symbol ? await hoverSymbolDescription(symbol, model) : undefined
     return content ? { contents: content } : undefined
@@ -111,6 +124,8 @@ export async function getBslSignatureHelp(
     positionOffset: number,
     context: languages.SignatureHelpContext
 ): Promise<languages.SignatureHelpResult | undefined> {
+    const editorScope = EditorScope.getScope(model)
+    await editorScope.whenReady()
     const symbol = model.getEditingMethod(positionOffset)
     const args = symbol?.arguments as BaseExpressionSymbol[]
 
@@ -130,9 +145,9 @@ export async function getBslSignatureHelp(
 
     let signatures: SignatureHelp | undefined
     if (symbol instanceof ConstructorSymbol) {
-        signatures = createConstructorSignatures(symbol)
+        signatures = createConstructorSignatures(editorScope, symbol)
     } else if (symbol instanceof MethodCallSymbol) {
-        signatures = await createMethodSignatures(model, symbol)
+        signatures = await createMethodSignatures(model, symbol, positionOffset)
     }
 
     if (!signatures) {
@@ -199,12 +214,41 @@ function completionItemKind(type: MemberType): languages.CompletionItemKind {
     }
 }
 
-function createConstructorSignatures(symbol: ConstructorSymbol): languages.SignatureHelp | undefined {
+function inferTrailingAccessSequence(model: ModuleModel, position: IPosition): AccessSequenceSymbol | undefined {
+    const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1)
+    if (!linePrefix.endsWith('.')) {
+        return undefined
+    }
+
+    const match = /([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*)\.$/.exec(linePrefix)
+    if (!match) {
+        return undefined
+    }
+
+    const offset = model.getOffsetAt(position)
+    const sequence = new AccessSequenceSymbol({
+        startOffset: offset - match[0].length,
+        endOffset: offset
+    })
+    sequence.unclosed = true
+    sequence.access = match[1].split('.').map((name, index) => {
+        const symbolPosition = {
+            startOffset: sequence.startOffset,
+            endOffset: sequence.endOffset
+        }
+        return index === 0
+            ? new VariableSymbol(symbolPosition, name)
+            : new PropertySymbol(symbolPosition, name)
+    })
+    return sequence
+}
+
+function createConstructorSignatures(scope: EditorScope, symbol: ConstructorSymbol): languages.SignatureHelp | undefined {
     if (!symbol.type) {
         return undefined
     }
 
-    const ctor = GlobalScope.getConstructor(symbol.type)
+    const ctor = scope.getConstructor(symbol.type)
     if (!ctor) {
         return undefined
     }
@@ -223,8 +267,12 @@ function createConstructorSignatures(symbol: ConstructorSymbol): languages.Signa
     }
 }
 
-async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCallSymbol): Promise<languages.SignatureHelp | undefined> {
-    const seq = currentAccessSequence(symbol) ?? symbol
+async function createMethodSignatures(
+    model: ModuleModel,
+    symbol: MethodCallSymbol,
+    positionOffset: number
+): Promise<languages.SignatureHelp | undefined> {
+    const seq = currentAccessSequence(symbol) ?? inferMethodAccessSequence(model, positionOffset) ?? symbol
     const method = await scopeProvider.resolveSymbolMember(model, seq)
     if (!method) {
         return undefined
@@ -236,6 +284,39 @@ async function createMethodSignatures(model: editor.ITextModel, symbol: MethodCa
         activeParameter: 0,
         activeSignature: 0
     }
+}
+
+function inferMethodAccessSequence(model: ModuleModel, positionOffset: number): AccessSequenceSymbol | undefined {
+    const position = model.getPositionAt(positionOffset)
+    const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1)
+    const match = /([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*)\s*\($/.exec(linePrefix)
+    if (!match) {
+        return undefined
+    }
+
+    const parts = match[1].split('.')
+    if (parts.length < 2) {
+        return undefined
+    }
+
+    const sequence = new AccessSequenceSymbol({
+        startOffset: positionOffset - match[0].length,
+        endOffset: positionOffset
+    })
+    sequence.access = parts.map((name, index) => {
+        const symbolPosition = {
+            startOffset: sequence.startOffset,
+            endOffset: sequence.endOffset
+        }
+        if (index === 0) {
+            return new VariableSymbol(symbolPosition, name)
+        }
+        if (index === parts.length - 1) {
+            return new MethodCallSymbol(symbolPosition, name)
+        }
+        return new PropertySymbol(symbolPosition, name)
+    })
+    return sequence
 }
 
 function setActiveSignature(signature: languages.SignatureHelp, args: BaseSymbol[] | undefined) {

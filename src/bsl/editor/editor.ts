@@ -77,13 +77,7 @@ export class BslEditor {
 
         tuneEditor(this.editor)
 
-        this.scope = EditorScope.createScope(this.editor)
-        for (const contribution of this.context.scopeContributions) {
-            void this.scope.registerScopeContribution(contribution)
-        }
-        for (const contribution of this.context.snippetContributions) {
-            void this.scope.registerSnippetContribution(contribution)
-        }
+        this.scope = EditorScope.createScope(this.editor, this.context)
 
         this.context.addDisposable(this.getModel().onDidChangeContent(e => {
             this.scope.onDidChangeContent(e)

@@ -1,5 +1,5 @@
 import { editor } from 'monaco-editor-core';
-import { Scope, Member, GlobalScope } from '@/common/scope';
+import { Scope, Member, GlobalScope, TypeDefinition } from '@/common/scope';
 import { NamedSymbol } from '@/common/codeModel';
 import { isModel } from '@/monaco/utils'
 import { EditorScope } from './scope/editorScope'
@@ -8,24 +8,35 @@ import { AccessProperty, AccessSequenceSymbol, IndexAccessSymbol } from '@/bsl/c
 type ResolvedSymbol = Promise<Member | undefined>
 type ResolvedScope = Promise<Scope | undefined>
 type ModelOrScope = editor.ITextModel | Scope
+type TypeResolver = Pick<EditorScope, 'resolveType'>
 
 const scopeProvider = {
 
     async resolveSymbolMember(model: ModelOrScope, symbol: AccessSequenceSymbol | NamedSymbol): ResolvedSymbol {
-        let scope: Scope | undefined = isModel(model) ? EditorScope.getScope(model) : model
+        let scope: Scope
+        let typeResolver: TypeResolver | undefined
+        if (isModel(model)) {
+            const editorScope = EditorScope.getScope(model)
+            scope = editorScope
+            typeResolver = editorScope
+        } else {
+            scope = model
+            typeResolver = typeResolverFromScope(scope)
+        }
 
         if (symbol instanceof AccessSequenceSymbol) {
-            return resolveSequenceMember(symbol.access, scope)
+            return resolveSequenceMember(symbol.access, scope, typeResolver)
         } else {
             return scope.findMember(symbol.name)
         }
     },
 
-    async resolveSymbolParentScope(scope: Scope, symbol: AccessSequenceSymbol | NamedSymbol): ResolvedScope {
+    async resolveSymbolParentScope(scope: Scope, symbol: AccessSequenceSymbol | NamedSymbol, typeResolver?: TypeResolver): ResolvedScope {
+        const resolver = typeResolver ?? typeResolverFromScope(scope)
         if (symbol instanceof AccessSequenceSymbol) {
             const lastSymbol = symbol.unclosed ? symbol.last : symbol.access[symbol.access.length - 2]
             if (lastSymbol && lastSymbol.type) {
-                return await GlobalScope.resolveType(lastSymbol.type)
+                return await resolveType(lastSymbol.type, resolver)
             }
             const parentSequence = [...symbol.access]
             if (!symbol.unclosed) {
@@ -34,9 +45,9 @@ const scopeProvider = {
             if (parentSequence.length === 0) {
                 return scope
             }
-            const member = await resolveSequenceMember(parentSequence, scope)
+            const member = await resolveSequenceMember(parentSequence, scope, resolver)
             if (member) {
-                return GlobalScope.resolveType(await member.type)
+                return resolveType(await member.type, resolver)
             } else {
                 return undefined
             }
@@ -50,7 +61,7 @@ const scopeProvider = {
     },
 }
 
-async function resolveSequenceMember(symbols: AccessProperty[], scope: Scope) {
+async function resolveSequenceMember(symbols: AccessProperty[], scope: Scope, typeResolver?: TypeResolver) {
 
     let resolvedScope: Scope | undefined = scope
     let resolvedMember: Member | undefined
@@ -61,7 +72,7 @@ async function resolveSequenceMember(symbols: AccessProperty[], scope: Scope) {
         }
 
         if (resolvedMember !== undefined) { // Не первый шаг
-            resolvedScope = await GlobalScope.resolveType(await resolvedMember.type)
+            resolvedScope = await resolveType(await resolvedMember.type, typeResolver)
         }
         if (resolvedScope) {
             resolvedMember = resolvedScope.findMember(accessSymbol.name)
@@ -72,6 +83,16 @@ async function resolveSequenceMember(symbols: AccessProperty[], scope: Scope) {
     }
 
     return resolvedMember
+}
+
+async function resolveType(typeId: string | undefined, typeResolver?: TypeResolver): Promise<TypeDefinition | undefined> {
+    return await typeResolver?.resolveType(typeId) ?? GlobalScope.resolveType(typeId)
+}
+
+function typeResolverFromScope(scope: Scope): TypeResolver | undefined {
+    return 'resolveType' in scope && typeof scope.resolveType === 'function'
+        ? scope as Scope & TypeResolver
+        : undefined
 }
 
 export {
